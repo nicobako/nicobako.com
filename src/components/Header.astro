@@ -3,71 +3,75 @@
 // Layout styles the semantic <nav>/<a> elements; this component owns the
 // header's own layout (the bar, the brand, spacing).
 const links = [
-	{ label: 'Home', href: '/' },
-	{ label: 'Game', href: '/games/classrooms-and-angry-teachers' },
-	{ label: 'GitHub', href: 'https://github.com/nicobako', external: true },
+  { label: "Home", href: "/" },
+  { label: "Games", href: "/games/" },
+  { label: "GitHub", href: "https://github.com/nicobako", external: true },
 ];
 
 const path = Astro.url.pathname;
 const isCurrent = (href: string) =>
-	href === '/' ? path === '/' : path.startsWith(href);
+  href === "/" ? path === "/" : path.startsWith(href);
 ---
 
 <header class="site-header">
-	<a class="brand" href="/">Nico Bako</a>
-	<nav aria-label="Primary">
-		<ul>
-			{
-				links.map((link) => (
-					<li>
-						<a
-							href={link.href}
-							aria-current={!link.external && isCurrent(link.href) ? 'page' : undefined}
-							{...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-						>
-							{link.label}
-						</a>
-					</li>
-				))
-			}
-		</ul>
-	</nav>
+  <a class="brand" href="/">Nico Bako</a>
+  <nav aria-label="Primary">
+    <ul>
+      {
+        links.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              aria-current={
+                !link.external && isCurrent(link.href) ? "page" : undefined
+              }
+              {...(link.external
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
 </header>
 
 <style>
-	.site-header {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.5rem 1.5rem;
-		max-width: var(--measure);
-		margin: 0 auto;
-		padding: 1.25rem 1.25rem;
-		border-bottom: 1px solid var(--border);
-	}
+  .site-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: 1.25rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
 
-	.brand {
-		font-weight: 700;
-		font-size: 1.05rem;
-		color: var(--text);
-		text-decoration: none;
-	}
+  .brand {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text);
+    text-decoration: none;
+  }
 
-	.brand:hover {
-		color: var(--accent);
-	}
+  .brand:hover {
+    color: var(--accent);
+  }
 
-	.site-header nav ul {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1.25rem;
-	}
+  .site-header nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
 
-	/* The active link reads as plain emphasised text rather than a link. */
-	.site-header nav a[aria-current='page'] {
-		color: var(--text);
-		text-decoration: none;
-		font-weight: 600;
-	}
+  /* The active link reads as plain emphasised text rather than a link. */
+  .site-header nav a[aria-current="page"] {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+  }
 </style>

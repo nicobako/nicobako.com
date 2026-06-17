@@ -1,8 +1,134 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
+
+const focus = [
+  {
+    title: "Backend & APIs",
+    body: "Designing clean, well-tested services and APIs that are a pleasure to build on and easy to maintain.",
+  },
+  {
+    title: "The Python Ecosystem",
+    body: "Deep in Python day to day — from typing and tooling to packaging and the libraries.",
+  },
+  {
+    title: "Reliable Software",
+    body: "Favoring simplicity, strong tests, and thoughtful design so software keeps working long after launch.",
+  },
+];
+
+const stack = [
+  "Python",
+  "Django",
+  "FastAPI",
+  "SQL",
+  "Docker",
+  "TypeScript",
+  "Git",
+];
 ---
 
 <Layout>
-	<Welcome />
+  <section class="intro">
+    <h1>Hi, I'm Nico Bako.</h1>
+    <p class="role">Software Engineer</p>
+    <p>
+      I like to build clean and reliable software. I care about thoughtful
+      design, solid tests, and tools that improve the lives of those who use
+      them.
+    </p>
+  </section>
+
+  <h2>What I focus on</h2>
+  <div class="focus">
+    {
+      focus.map((item) => (
+        <article>
+          <h3>{item.title}</h3>
+          <p>{item.body}</p>
+        </article>
+      ))
+    }
+  </div>
+
+  <h2>Tools I reach for</h2>
+  <ul class="stack">
+    {stack.map((tech) => <li>{tech}</li>)}
+  </ul>
 </Layout>
+
+<style>
+  .intro p {
+    color: var(--muted);
+    max-width: 46ch;
+  }
+
+  .role {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+
+  /* Focus: plain bordered cards, no shadows or motion. */
+  .focus {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1rem;
+  }
+
+  .focus article {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  .focus h3 {
+    margin-top: 0;
+  }
+
+  .focus p {
+    margin-bottom: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  /* Stack: list rendered as inline pills. */
+  .stack {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0;
+  }
+
+  .stack li {
+    margin-top: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.3rem 0.8rem;
+  }
+
+  .game {
+    display: block;
+    color: var(--text);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  .game:hover {
+    border-color: var(--accent);
+  }
+
+  .game strong {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .game span {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+</style>
