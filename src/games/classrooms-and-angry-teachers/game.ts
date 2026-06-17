@@ -53,6 +53,11 @@ const k = kaplay({
   background: [16, 18, 30],
   letterbox: true,
   global: false,
+  // The board (640px wide) is letterboxed into a CSS box that's narrower than
+  // that, so Kaplay would otherwise render its buffer below 1:1 and the 1px grid
+  // lines wash out unevenly across the board. Render at >=2x so thin lines stay
+  // crisp everywhere regardless of the display's own pixel ratio.
+  pixelDensity: Math.max(2, window.devicePixelRatio || 1),
   root: document.getElementById("game-root") ?? undefined,
 });
 
@@ -506,7 +511,11 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
   }
 
   k.onDraw(() => {
-    // board tiles
+    // board tiles — fills first, then the grid as a single overlay pass. Drawing
+    // the lines per-tile (as rect outlines) made each shared edge get half
+    // over-painted by the neighbouring tile drawn next; under Kaplay's letterbox
+    // scaling that washed the lines out unevenly (whole columns vanished on one
+    // side). A dedicated pass on top of every fill keeps the grid uniform.
     for (let y = 0; y < ROWS; y++) {
       for (let x = 0; x < COLS; x++) {
         const t = grid[y][x];
@@ -517,9 +526,16 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
           width: TILE,
           height: TILE,
           color,
-          outline: { color: COL.grid, width: 1 },
         });
       }
+    }
+    for (let x = 0; x <= COLS; x++) {
+      const px = BOARD_X + x * TILE;
+      k.drawLine({ p1: k.vec2(px, BOARD_Y), p2: k.vec2(px, BOARD_BOTTOM), width: 1, color: COL.grid });
+    }
+    for (let y = 0; y <= ROWS; y++) {
+      const py = BOARD_Y + y * TILE;
+      k.drawLine({ p1: k.vec2(BOARD_X, py), p2: k.vec2(BOARD_X + COLS * TILE, py), width: 1, color: COL.grid });
     }
 
     // items

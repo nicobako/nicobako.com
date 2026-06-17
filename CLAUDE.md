@@ -13,9 +13,9 @@ Requires Node `>=22.12.0`.
 - `npm run dev` — local dev server at `localhost:4321` (hot reload)
 - `npm run build` — production build to `./dist/`
 - `npm run preview` — serve the built `./dist/` locally
-- `npm run astro check` — TypeScript / Astro type checking (there is no separate lint or test setup)
+- `npm run check` — TypeScript / Astro type checking via `astro check` (there is no separate lint or test setup)
 
-There is no test framework, linter, or CI configured. Type checking via `astro check` is the only automated correctness gate.
+Type checking is powered by the `@astrojs/check` and `typescript` dev dependencies; `tsconfig.json` extends `astro/tsconfigs/strict`. There is no test framework, linter, or CI configured. Type checking via `npm run check` is the only automated correctness gate.
 
 ## Architecture
 

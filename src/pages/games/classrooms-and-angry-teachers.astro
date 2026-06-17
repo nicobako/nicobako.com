@@ -1,223 +1,141 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import Layout from "../../layouts/Layout.astro";
 
 const controls = [
-	{ keys: 'Arrow keys / WASD', action: 'Move around the school one square at a time.' },
-	{ keys: 'Space / F', action: 'Fight an adjacent teacher — or stun a hall monitor to slip past.' },
-	{ keys: 'R', action: 'Restart after a win or a loss.' },
+  {
+    keys: "Arrow keys / WASD",
+    action: "Move around the school one square at a time.",
+  },
+  {
+    keys: "Space / F",
+    action: "Fight an adjacent teacher — or stun a hall monitor to slip past.",
+  },
+  { keys: "R", action: "Restart after a win or a loss." },
 ];
 
 const tips = [
-	'Walk over the coloured tiles in the classrooms and hallways to pick up tools (rulers, slingshots, paper planes…). Each one adds attack power; the apple heals you.',
-	'Stand next to an angry teacher and attack. You win the fight if your attack power is at least the teacher’s strength — otherwise go find more tools.',
-	'Enemies flash red when they hit you, and each hit costs a heart. Lose all five hearts and it’s detention.',
-	'Clear all three levels: teachers stand still, then roam the halls, then roam alongside purple hall monitors you can only stun, never beat.',
+  "Walk over the coloured tiles in the classrooms and hallways to pick up tools (rulers, slingshots, paper planes…). Each one adds attack power; the apple heals you.",
+  "Stand next to an angry teacher and attack. You win the fight if your attack power is at least the teacher’s strength — otherwise go find more tools.",
+  "Enemies flash red when they hit you, and each hit costs a heart. Lose all five hearts and it’s detention.",
+  "Clear all three levels: teachers stand still, then roam the halls, then roam alongside purple hall monitors you can only stun, never beat.",
 ];
 ---
 
 <Layout
-	title="Classrooms & Angry Teachers — a game by Nico Bako"
-	description="A small 2D browser game built with Kaplay and TypeScript: grab tools, fight angry teachers, and clear the school across three levels."
+  title="Classrooms & Angry Teachers — a game by Nico Bako"
+  description="A small 2D browser game built with Kaplay and TypeScript: grab tools, fight angry teachers, and clear the school across three levels."
 >
-	<main>
-		<a class="back" href="/">
-			<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-				<path
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.8"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					d="M15 5l-7 7 7 7"></path>
-			</svg>
-			Back to home
-		</a>
+  <p class="eyebrow"><small>A little game I built</small></p>
+  <h1>Classrooms &amp; Angry Teachers</h1>
+  <p class="lede">
+    A 2D browser game built with <a
+      href="https://kaplayjs.com/"
+      target="_blank"
+      rel="noopener noreferrer">Kaplay</a
+    >, TypeScript. Grab tools, fight your way past the angry teachers, replenish
+    your strength with apples, and clear the school across three levels. Click
+    the board, then use the keyboard to play.
+  </p>
 
-		<header class="intro">
-			<span class="eyebrow">A little game I built</span>
-			<h1>Classrooms &amp; <span class="gradient">Angry Teachers</span></h1>
-			<p class="lede">
-				A 2D browser game built with <a href="https://kaplayjs.com/" target="_blank" rel="noopener noreferrer">Kaplay</a>,
-				TypeScript, and Vite. Grab tools, fight your way past the angry teachers, and clear the school across
-				three levels. Click the board, then use the keyboard to play.
-			</p>
-		</header>
+  <div class="stage">
+    <div
+      id="game-root"
+      role="application"
+      aria-label="Classrooms and Angry Teachers game board"
+    >
+    </div>
+  </div>
 
-		<div class="stage">
-			<div id="game-root" role="application" aria-label="Classrooms and Angry Teachers game board"></div>
-		</div>
-
-		<section class="guide" aria-label="How to play">
-			<h2>How to play</h2>
-			<ul class="controls">
-				{
-					controls.map((c) => (
-						<li>
-							<kbd>{c.keys}</kbd>
-							<span>{c.action}</span>
-						</li>
-					))
-				}
-			</ul>
-			<ul class="tips">
-				{tips.map((tip) => <li>{tip}</li>)}
-			</ul>
-		</section>
-	</main>
+  <section aria-label="How to play">
+    <h2>How to play</h2>
+    <ul class="controls">
+      {
+        controls.map((c) => (
+          <li>
+            <kbd>{c.keys}</kbd>
+            <span>{c.action}</span>
+          </li>
+        ))
+      }
+    </ul>
+    <ul class="tips">
+      {tips.map((tip) => <li>{tip}</li>)}
+    </ul>
+  </section>
 </Layout>
 
 <script>
-	// Side-effect import: starts Kaplay and mounts the canvas into #game-root.
-	import '../../games/classrooms-and-angry-teachers/game.ts';
+  // Side-effect import: starts Kaplay and mounts the canvas into #game-root.
+  import "../../games/classrooms-and-angry-teachers/game.ts";
 </script>
 
 <style>
-	main {
-		max-width: 760px;
-		margin: 0 auto;
-		padding: 40px 24px 64px;
-	}
+  .eyebrow {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
 
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		font-size: 0.9rem;
-		font-weight: 600;
-		color: var(--text-muted);
-		text-decoration: none;
-		margin-bottom: 28px;
-		transition: color 0.15s ease;
-	}
+  .lede {
+    color: var(--muted);
+  }
 
-	.back:hover {
-		color: var(--accent);
-	}
-
-	.intro {
-		margin-bottom: 28px;
-	}
-
-	.eyebrow {
-		font-size: 0.8rem;
-		font-weight: 600;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--text-muted);
-	}
-
-	h1 {
-		font-size: clamp(1.9rem, 5vw, 2.8rem);
-		line-height: 1.1;
-		font-weight: 800;
-		letter-spacing: -0.025em;
-		margin: 10px 0 12px;
-	}
-
-	.gradient {
-		background: linear-gradient(120deg, var(--accent), var(--accent-2));
-		-webkit-background-clip: text;
-		background-clip: text;
-		color: transparent;
-	}
-
-	.lede {
-		font-size: 1.05rem;
-		color: var(--text-muted);
-		margin: 0;
-	}
-
-	.lede a {
-		color: var(--accent);
-		text-decoration: none;
-		font-weight: 600;
-	}
-
-	.lede a:hover {
-		text-decoration: underline;
-	}
-
-	/* Game board: Kaplay mounts its canvas into #game-root and sizes it to this
+  /* Game board: Kaplay mounts its canvas into #game-root and sizes it to this
 	   element, letterboxing the 640x700 world to fit. The aspect-ratio keeps the
 	   frame matched so there are no black bars. */
-	.stage {
-		display: flex;
-		justify-content: center;
-	}
+  .stage {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+  }
 
-	#game-root {
-		width: 100%;
-		max-width: 560px;
-		aspect-ratio: 640 / 700;
-		border-radius: 18px;
-		overflow: hidden;
-		background: #10121e;
-		border: 1px solid var(--border);
-		box-shadow: var(--shadow);
-	}
+  #game-root {
+    width: 100%;
+    max-width: 560px;
+    aspect-ratio: 640 / 700;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #10121e;
+    border: 1px solid var(--border);
+  }
 
-	#game-root :global(canvas) {
-		display: block;
-		width: 100%;
-		height: 100%;
-	}
+  #game-root :global(canvas) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
 
-	.guide {
-		margin-top: 40px;
-	}
+  .controls {
+    list-style: none;
+    display: grid;
+    gap: 0.6rem;
+    padding: 0;
+    margin-bottom: 1.5rem;
+  }
 
-	.guide h2 {
-		font-size: 1.25rem;
-		font-weight: 700;
-		margin: 0 0 16px;
-	}
+  .controls li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-top: 0;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
 
-	.controls {
-		list-style: none;
-		display: grid;
-		gap: 10px;
-		padding: 0;
-		margin: 0 0 24px;
-	}
+  .controls kbd {
+    flex: none;
+    min-width: 150px;
+  }
 
-	.controls li {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 12px;
-		font-size: 0.95rem;
-		color: var(--text-muted);
-	}
+  .tips {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
 
-	kbd {
-		flex: none;
-		min-width: 150px;
-		font-family: var(--font-sans);
-		font-size: 0.8rem;
-		font-weight: 600;
-		color: var(--text);
-		background: var(--surface-2);
-		border: 1px solid var(--border);
-		border-radius: 8px;
-		padding: 5px 10px;
-	}
-
-	.tips {
-		display: grid;
-		gap: 12px;
-		padding-left: 20px;
-		margin: 0;
-		font-size: 0.95rem;
-		color: var(--text-muted);
-	}
-
-	.tips li {
-		padding-left: 4px;
-	}
-
-	@media (max-width: 560px) {
-		kbd {
-			min-width: 0;
-		}
-	}
+  @media (max-width: 560px) {
+    kbd {
+      min-width: 0;
+    }
+  }
 </style>

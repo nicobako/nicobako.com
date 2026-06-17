@@ -1,0 +1,22 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+	<p>© {year} Nico Bako · Built with <a href="https://astro.build">Astro</a></p>
+</footer>
+
+<style>
+	.site-footer {
+		max-width: var(--measure);
+		margin: 0 auto;
+		padding: 1.5rem 1.25rem 2.5rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.site-footer p {
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--muted);
+	}
+</style>
