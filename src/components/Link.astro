@@ -1,0 +1,24 @@
+---
+// Reusable anchor that handles external-link attributes and the
+// aria-current="page" state for internal links automatically.
+// External links open in a new tab with safe rel attributes; internal
+// links are marked current when the active path matches `href`.
+export interface LinkProps {
+  href: string;
+  external?: boolean;
+}
+
+const { href, external = false } = Astro.props;
+
+const path = Astro.url.pathname;
+const isCurrent =
+  !external && (href === "/" ? path === "/" : path.startsWith(href));
+
+const externalAttrs = external
+  ? { target: "_blank", rel: "noopener noreferrer" }
+  : {};
+---
+
+<a href={href} aria-current={isCurrent ? "page" : undefined} {...externalAttrs}>
+  <slot />
+</a>

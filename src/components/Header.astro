@@ -2,15 +2,13 @@
 // Site-wide header + primary navigation.
 // Layout styles the semantic <nav>/<a> elements; this component owns the
 // header's own layout (the bar, the brand, spacing).
-const links = [
+import SimpleLink, { type SimpleLinkProps } from "./SimpleLink.astro";
+const links: SimpleLinkProps[] = [
   { label: "Home", href: "/" },
   { label: "Games", href: "/games/" },
+  { label: "Music", href: "/music/" },
   { label: "GitHub", href: "https://github.com/nicobako", external: true },
 ];
-
-const path = Astro.url.pathname;
-const isCurrent = (href: string) =>
-  href === "/" ? path === "/" : path.startsWith(href);
 ---
 
 <header class="site-header">
@@ -20,17 +18,11 @@ const isCurrent = (href: string) =>
       {
         links.map((link) => (
           <li>
-            <a
+            <SimpleLink
               href={link.href}
-              aria-current={
-                !link.external && isCurrent(link.href) ? "page" : undefined
-              }
-              {...(link.external
-                ? { target: "_blank", rel: "noopener noreferrer" }
-                : {})}
-            >
-              {link.label}
-            </a>
+              external={link.external}
+              label={link.label}
+            />
           </li>
         ))
       }
