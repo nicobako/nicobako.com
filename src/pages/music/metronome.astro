@@ -1,0 +1,211 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout
+  title="Metronome — Nico Bako"
+  description="A simple browser metronome with adjustable BPM."
+>
+  <h1>Metronome</h1>
+
+  <div class="metronome">
+    <div
+      id="beat-indicator"
+      class="beat-indicator"
+      aria-hidden="true"
+    ></div>
+
+    <div class="bpm-row">
+      <button id="bpm-dec" aria-label="Decrease BPM">−</button>
+      <input
+        id="bpm"
+        type="number"
+        min="20"
+        max="300"
+        value="120"
+        aria-label="BPM"
+      />
+      <button id="bpm-inc" aria-label="Increase BPM">+</button>
+    </div>
+    <p class="bpm-label">BPM</p>
+
+    <div class="skip-row">
+      <label for="skip-percent">Skip</label>
+      <input id="skip-percent" type="range" min="0" max="99" value="0" step="1" />
+      <span id="skip-value">0%</span>
+    </div>
+
+    <button id="play-stop" class="play-stop">Play</button>
+  </div>
+</Layout>
+
+<script>
+  import { Metronome } from "../../music/metronome/metronome.ts";
+
+  const indicator = document.getElementById("beat-indicator")!;
+  const bpmInput = document.getElementById("bpm") as HTMLInputElement;
+  const playStopBtn = document.getElementById("play-stop") as HTMLButtonElement;
+  const decBtn = document.getElementById("bpm-dec") as HTMLButtonElement;
+  const incBtn = document.getElementById("bpm-inc") as HTMLButtonElement;
+  const skipInput = document.getElementById("skip-percent") as HTMLInputElement;
+  const skipValue = document.getElementById("skip-value")!;
+
+  const metronome = new Metronome((event) => {
+    const cls = event.audible ? "active" : "silent";
+    indicator.classList.add(cls);
+    setTimeout(() => indicator.classList.remove(cls), 80);
+  });
+
+  function syncBpm() {
+    metronome.setBpm(Number(bpmInput.value));
+    bpmInput.value = String(metronome.bpm);
+  }
+
+  bpmInput.addEventListener("change", syncBpm);
+  bpmInput.addEventListener("input", syncBpm);
+
+  decBtn.addEventListener("click", () => {
+    bpmInput.value = String(metronome.bpm - 1);
+    syncBpm();
+  });
+
+  incBtn.addEventListener("click", () => {
+    bpmInput.value = String(metronome.bpm + 1);
+    syncBpm();
+  });
+
+  skipInput.addEventListener("input", () => {
+    const pct = Number(skipInput.value);
+    metronome.skipPercent = pct;
+    skipValue.textContent = `${pct}%`;
+  });
+
+  playStopBtn.addEventListener("click", () => {
+    if (metronome.isPlaying) {
+      metronome.stop();
+      playStopBtn.textContent = "Play";
+      playStopBtn.classList.remove("playing");
+    } else {
+      metronome.start();
+      playStopBtn.textContent = "Stop";
+      playStopBtn.classList.add("playing");
+    }
+  });
+</script>
+
+<style>
+  .metronome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+
+  .beat-indicator {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    transition:
+      background 0.05s,
+      border-color 0.05s;
+  }
+
+  .beat-indicator.active {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .beat-indicator.silent {
+    border-color: var(--muted);
+  }
+
+  .bpm-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .bpm-row button {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .bpm-row button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  #bpm {
+    width: 5rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.35rem 0.5rem;
+    -moz-appearance: textfield;
+  }
+
+  #bpm::-webkit-outer-spin-button,
+  #bpm::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+
+  .bpm-label {
+    margin: -1rem 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .skip-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .skip-row label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85rem;
+  }
+
+  #skip-value {
+    min-width: 2.5rem;
+    text-align: right;
+  }
+
+  .play-stop {
+    min-width: 7rem;
+    padding: 0.6rem 1.5rem;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
+
+  .play-stop:hover,
+  .play-stop.playing {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+</style>
