@@ -4,7 +4,7 @@ export interface BeatEvent {
 }
 
 export class Metronome {
-  bpm = 120;
+  bpm = 52;
   skipPercent = 0;
 
   private ctx: AudioContext | null = null;

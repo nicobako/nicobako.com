@@ -16,16 +16,20 @@ import Layout from "../../layouts/Layout.astro";
     ></div>
 
     <div class="bpm-row">
-      <button id="bpm-dec" aria-label="Decrease BPM">−</button>
+      <button data-step="-4" aria-label="Decrease BPM by 4">−4</button>
+      <button data-step="-2" aria-label="Decrease BPM by 2">−2</button>
+      <button data-step="-1" aria-label="Decrease BPM">−</button>
       <input
         id="bpm"
         type="number"
         min="20"
         max="300"
-        value="120"
+        value="52"
         aria-label="BPM"
       />
-      <button id="bpm-inc" aria-label="Increase BPM">+</button>
+      <button data-step="1"  aria-label="Increase BPM">+</button>
+      <button data-step="2"  aria-label="Increase BPM by 2">+2</button>
+      <button data-step="4"  aria-label="Increase BPM by 4">+4</button>
     </div>
     <p class="bpm-label">BPM</p>
 
@@ -45,8 +49,6 @@ import Layout from "../../layouts/Layout.astro";
   const indicator = document.getElementById("beat-indicator")!;
   const bpmInput = document.getElementById("bpm") as HTMLInputElement;
   const playStopBtn = document.getElementById("play-stop") as HTMLButtonElement;
-  const decBtn = document.getElementById("bpm-dec") as HTMLButtonElement;
-  const incBtn = document.getElementById("bpm-inc") as HTMLButtonElement;
   const skipInput = document.getElementById("skip-percent") as HTMLInputElement;
   const skipValue = document.getElementById("skip-value")!;
 
@@ -64,14 +66,11 @@ import Layout from "../../layouts/Layout.astro";
   bpmInput.addEventListener("change", syncBpm);
   bpmInput.addEventListener("input", syncBpm);
 
-  decBtn.addEventListener("click", () => {
-    bpmInput.value = String(metronome.bpm - 1);
-    syncBpm();
-  });
-
-  incBtn.addEventListener("click", () => {
-    bpmInput.value = String(metronome.bpm + 1);
-    syncBpm();
+  document.querySelectorAll<HTMLButtonElement>(".bpm-row button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      bpmInput.value = String(metronome.bpm + Number(btn.dataset.step));
+      syncBpm();
+    });
   });
 
   skipInput.addEventListener("input", () => {
@@ -129,8 +128,9 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .bpm-row button {
-    width: 2.5rem;
     height: 2.5rem;
+    min-width: 2.5rem;
+    padding: 0 0.4rem;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--surface);
@@ -138,6 +138,14 @@ import Layout from "../../layouts/Layout.astro";
     font-size: 1.25rem;
     line-height: 1;
     cursor: pointer;
+  }
+
+  .bpm-row button[data-step="-4"],
+  .bpm-row button[data-step="-2"],
+  .bpm-row button[data-step="2"],
+  .bpm-row button[data-step="4"] {
+    font-size: 0.85rem;
+    color: var(--muted);
   }
 
   .bpm-row button:hover {
