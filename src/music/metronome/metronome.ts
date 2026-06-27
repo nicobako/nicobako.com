@@ -5,6 +5,7 @@ export interface BeatEvent {
 
 export class Metronome {
   bpm = 120;
+  skipPercent = 0;
 
   private ctx: AudioContext | null = null;
   private nextBeatTime = 0;
@@ -51,8 +52,9 @@ export class Metronome {
     const secondsPerBeat = 60 / this.bpm;
 
     while (this.nextBeatTime < ctx.currentTime + this.lookahead) {
-      const event: BeatEvent = { number: this.beatCount, audible: true };
-      this.playClick(this.nextBeatTime);
+      const audible = Math.random() >= this.skipPercent / 100;
+      const event: BeatEvent = { number: this.beatCount, audible };
+      if (audible) this.playClick(this.nextBeatTime);
       this.scheduleVisual(this.nextBeatTime, event);
       this.nextBeatTime += secondsPerBeat;
       this.beatCount++;

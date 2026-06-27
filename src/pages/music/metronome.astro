@@ -29,6 +29,12 @@ import Layout from "../../layouts/Layout.astro";
     </div>
     <p class="bpm-label">BPM</p>
 
+    <div class="skip-row">
+      <label for="skip-percent">Skip</label>
+      <input id="skip-percent" type="range" min="0" max="99" value="0" step="1" />
+      <span id="skip-value">0%</span>
+    </div>
+
     <button id="play-stop" class="play-stop">Play</button>
   </div>
 </Layout>
@@ -41,10 +47,13 @@ import Layout from "../../layouts/Layout.astro";
   const playStopBtn = document.getElementById("play-stop") as HTMLButtonElement;
   const decBtn = document.getElementById("bpm-dec") as HTMLButtonElement;
   const incBtn = document.getElementById("bpm-inc") as HTMLButtonElement;
+  const skipInput = document.getElementById("skip-percent") as HTMLInputElement;
+  const skipValue = document.getElementById("skip-value")!;
 
-  const metronome = new Metronome((_event) => {
-    indicator.classList.add("active");
-    setTimeout(() => indicator.classList.remove("active"), 80);
+  const metronome = new Metronome((event) => {
+    const cls = event.audible ? "active" : "silent";
+    indicator.classList.add(cls);
+    setTimeout(() => indicator.classList.remove(cls), 80);
   });
 
   function syncBpm() {
@@ -63,6 +72,12 @@ import Layout from "../../layouts/Layout.astro";
   incBtn.addEventListener("click", () => {
     bpmInput.value = String(metronome.bpm + 1);
     syncBpm();
+  });
+
+  skipInput.addEventListener("input", () => {
+    const pct = Number(skipInput.value);
+    metronome.skipPercent = pct;
+    skipValue.textContent = `${pct}%`;
   });
 
   playStopBtn.addEventListener("click", () => {
@@ -101,6 +116,10 @@ import Layout from "../../layouts/Layout.astro";
   .beat-indicator.active {
     background: var(--accent);
     border-color: var(--accent);
+  }
+
+  .beat-indicator.silent {
+    border-color: var(--muted);
   }
 
   .bpm-row {
@@ -148,6 +167,25 @@ import Layout from "../../layouts/Layout.astro";
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
+  }
+
+  .skip-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .skip-row label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85rem;
+  }
+
+  #skip-value {
+    min-width: 2.5rem;
+    text-align: right;
   }
 
   .play-stop {
