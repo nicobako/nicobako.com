@@ -51,7 +51,9 @@ export class Drone {
     osc.type = 'sine';
     osc.frequency.value = freq;
     const now = ctx.currentTime;
-    gain.gain.setValueAtTime(0.7, now);
+    // Ramp up from 0 to avoid the click of an abrupt waveform start
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.7, now + 0.015);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
     osc.start(now);
     osc.stop(now + 2.5);
@@ -66,8 +68,10 @@ export class Drone {
     gain.connect(this.out!);
     osc.type = 'sine';
     osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.7, ctx.currentTime);
-    osc.start();
+    const now = ctx.currentTime;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.5, now + 0.015);
+    osc.start(now);
     this.sustained.set(name, { osc, gain });
   }
 
@@ -76,6 +80,8 @@ export class Drone {
     if (!node) return;
     const ctx = this.ctx!;
     const now = ctx.currentTime;
+    // Cancel pending automation before scheduling the release to avoid discontinuities
+    node.gain.gain.cancelScheduledValues(now);
     node.gain.gain.setValueAtTime(node.gain.gain.value, now);
     node.gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
     node.osc.stop(now + 0.1);
