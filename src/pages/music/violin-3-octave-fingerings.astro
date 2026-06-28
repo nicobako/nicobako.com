@@ -1,0 +1,527 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+type StringFingering = {
+  str: "G" | "D" | "A" | "E";
+  fingers: string;
+};
+
+type StartOption = {
+  startFinger: 0 | 1 | 2 | 3;
+  label: string;
+  strings: StringFingering[];
+};
+
+type Scale = {
+  key: string;
+  mode: string;
+  options: StartOption[];
+};
+
+const scales: Scale[] = [
+  {
+    key: "C",
+    mode: "major",
+    options: [
+      {
+        startFinger: 3,
+        label: "3rd finger (1st position)",
+        strings: [
+          { str: "G", fingers: "3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3 4" },
+          { str: "A", fingers: "1 2 3 4 | 1 2 3 4" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 2,
+        label: "2nd finger (2nd position)",
+        strings: [
+          { str: "G", fingers: "2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3" },
+          { str: "A", fingers: "0 1 2 3 4 | 1 2 3" },
+          { str: "E", fingers: "1 2 3 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (3rd position)",
+        strings: [
+          { str: "G", fingers: "1 2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "G",
+    mode: "major",
+    options: [
+      {
+        startFinger: 0,
+        label: "Open string (1st position)",
+        strings: [
+          { str: "G", fingers: "0 1 2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3 4" },
+          { str: "A", fingers: "1 2 3 4 | 1 2 3 4" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 2,
+        label: "2nd finger (5th position)",
+        strings: [
+          { str: "G", fingers: "2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3" },
+          { str: "A", fingers: "0 1 2 3 4 | 1 2 3" },
+          { str: "E", fingers: "1 2 3 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (6th position)",
+        strings: [
+          { str: "G", fingers: "1 2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "D",
+    mode: "major",
+    options: [
+      {
+        startFinger: 0,
+        label: "Open string (D string)",
+        strings: [
+          { str: "D", fingers: "0 1 2 3 4" },
+          { str: "A", fingers: "1 2 3 4 | 1 2 3 4" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 2,
+        label: "2nd finger (2nd position)",
+        strings: [
+          { str: "G", fingers: "4" },
+          { str: "D", fingers: "2 3 4 | 1 2 3" },
+          { str: "A", fingers: "0 1 2 3 4 | 1 2 3" },
+          { str: "E", fingers: "1 2 3 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (3rd position)",
+        strings: [
+          { str: "G", fingers: "4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "A",
+    mode: "major",
+    options: [
+      {
+        startFinger: 0,
+        label: "Open string (A string)",
+        strings: [
+          { str: "A", fingers: "0 1 2 3 4" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 2,
+        label: "2nd finger (2nd position)",
+        strings: [
+          { str: "D", fingers: "4" },
+          { str: "A", fingers: "2 3 4 | 1 2 3" },
+          { str: "E", fingers: "0 1 2 3 | 1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (3rd position)",
+        strings: [
+          { str: "D", fingers: "4" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4 | 1 2" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "E",
+    mode: "major",
+    options: [
+      {
+        startFinger: 0,
+        label: "Open string (E string)",
+        strings: [
+          { str: "E", fingers: "0 1 2 3 4 | 1 2 3 4 | 1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 2,
+        label: "2nd finger (2nd position)",
+        strings: [
+          { str: "A", fingers: "4" },
+          { str: "E", fingers: "2 3 4 | 1 2 3 | 1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (3rd position)",
+        strings: [
+          { str: "A", fingers: "4" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4 | 1 2 3 4 | 1 2" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "B",
+    mode: "major",
+    options: [
+      {
+        startFinger: 2,
+        label: "2nd finger (2nd position)",
+        strings: [
+          { str: "G", fingers: "2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3" },
+          { str: "A", fingers: "0 1 2 3 4 | 1 2 3" },
+          { str: "E", fingers: "1 2 3 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (3rd position)",
+        strings: [
+          { str: "G", fingers: "1 2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "F♯",
+    mode: "major",
+    options: [
+      {
+        startFinger: 2,
+        label: "2nd finger (2nd position)",
+        strings: [
+          { str: "G", fingers: "2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3" },
+          { str: "A", fingers: "0 1 2 3 4 | 1 2 3" },
+          { str: "E", fingers: "1 2 3 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (3rd position)",
+        strings: [
+          { str: "G", fingers: "1 2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "D♭",
+    mode: "major",
+    options: [
+      {
+        startFinger: 2,
+        label: "2nd finger (2nd position)",
+        strings: [
+          { str: "G", fingers: "2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3" },
+          { str: "A", fingers: "0 1 2 3 4 | 1 2 3" },
+          { str: "E", fingers: "1 2 3 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (3rd position)",
+        strings: [
+          { str: "G", fingers: "1 2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "A♭",
+    mode: "major",
+    options: [
+      {
+        startFinger: 2,
+        label: "2nd finger (1st position)",
+        strings: [
+          { str: "G", fingers: "2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3" },
+          { str: "A", fingers: "0 1 2 3 4 | 1 2 3" },
+          { str: "E", fingers: "1 2 3 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (2nd position)",
+        strings: [
+          { str: "G", fingers: "1 2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "E♭",
+    mode: "major",
+    options: [
+      {
+        startFinger: 2,
+        label: "2nd finger (2nd position)",
+        strings: [
+          { str: "G", fingers: "2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3" },
+          { str: "A", fingers: "0 1 2 3 4 | 1 2 3" },
+          { str: "E", fingers: "1 2 3 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (3rd position)",
+        strings: [
+          { str: "G", fingers: "1 2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "B♭",
+    mode: "major",
+    options: [
+      {
+        startFinger: 2,
+        label: "2nd finger (2nd position)",
+        strings: [
+          { str: "G", fingers: "2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3" },
+          { str: "A", fingers: "0 1 2 3 4 | 1 2 3" },
+          { str: "E", fingers: "1 2 3 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (3rd position)",
+        strings: [
+          { str: "G", fingers: "1 2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "F",
+    mode: "major",
+    options: [
+      {
+        startFinger: 2,
+        label: "2nd finger (2nd position)",
+        strings: [
+          { str: "G", fingers: "2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2 3" },
+          { str: "A", fingers: "0 1 2 3 4 | 1 2 3" },
+          { str: "E", fingers: "1 2 3 | 1 2 3 4" },
+        ],
+      },
+      {
+        startFinger: 1,
+        label: "1st finger (3rd position)",
+        strings: [
+          { str: "G", fingers: "1 2 3 4" },
+          { str: "D", fingers: "1 2 3 4 | 1 2" },
+          { str: "A", fingers: "1 2 3 4 | 1 2" },
+          { str: "E", fingers: "1 2 3 4 | 1 2 3 4" },
+        ],
+      },
+    ],
+  },
+];
+
+function parseFingers(fingers: string): { type: "finger" | "shift"; value: string }[] {
+  return fingers.split(" ").map((token) =>
+    token === "|"
+      ? { type: "shift", value: "|" }
+      : { type: "finger", value: token }
+  );
+}
+---
+
+<Layout
+  title="Violin 3-Octave Scale Fingerings — Nico Bako"
+  description="Carl Flesch 3-octave violin scale fingerings for all 12 major keys, with multiple starting-finger options per key."
+>
+  <h1>Violin 3-Octave Scale Fingerings</h1>
+  <p>
+    Carl Flesch fingerings for 3-octave major scales. Each key shows two or
+    three starting options: open string, 1st finger, or 2nd finger start (for
+    C major: 3rd, 2nd, or 1st finger). Fingering numbers are per-string; the
+    <span class="shift-inline">│</span> mark indicates a position shift.
+  </p>
+  <p class="note">
+    Fingering sequences are placeholder values — verify against the Flesch
+    <em>Scale System</em> book before using in practice.
+  </p>
+
+  {
+    scales.map((scale) => (
+      <section class="scale">
+        <h2>
+          {scale.key} <span class="mode">{scale.mode}</span>
+        </h2>
+        {scale.options.map((opt) => (
+          <div class="option">
+            <h3>{opt.label}</h3>
+            <div class="string-grid">
+              {opt.strings.map((sf) => (
+                <div class="string-row">
+                  <span class="str-label">{sf.str}</span>
+                  <div class="fingers">
+                    {parseFingers(sf.fingers).map((token) =>
+                      token.type === "shift" ? (
+                        <span class="shift">│</span>
+                      ) : (
+                        <span class="finger">{token.value}</span>
+                      )
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
+    ))
+  }
+</Layout>
+
+<style>
+  .note {
+    font-size: 0.875rem;
+    color: var(--muted);
+    border-left: 3px solid var(--border);
+    padding-left: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .shift-inline {
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+
+  .scale {
+    border-top: 1px solid var(--border);
+    padding-top: 0.5rem;
+  }
+
+  .scale h2 {
+    margin-top: 2rem;
+    margin-bottom: 0;
+  }
+
+  .mode {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 0.25rem;
+  }
+
+  .option {
+    margin-top: 1rem;
+  }
+
+  .option h3 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .string-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    overflow-x: auto;
+  }
+
+  .string-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: max-content;
+  }
+
+  .str-label {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    width: 1.25rem;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .fingers {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  .finger {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    width: 1.6rem;
+    height: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .shift {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--muted);
+    padding: 0 0.1rem;
+    flex-shrink: 0;
+  }
+</style>
