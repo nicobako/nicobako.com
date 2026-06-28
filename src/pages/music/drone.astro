@@ -1,0 +1,215 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { NOTES } from "../../music/drone/drone.ts";
+
+// Piano layout constants (rem)
+const WW   = 3.25;  // white key width = height (square)
+const BW   = 2.0;   // black key width = height (square)
+const GAP  = 0.25;  // gap between white keys
+const SLOT = WW + GAP; // 3.5rem per white-key slot
+
+let wi = 0;
+const keys = NOTES.map((note) => {
+  if (!note.isBlack) {
+    const left = wi * SLOT;
+    wi++;
+    return { ...note, left, size: WW };
+  }
+  // Center black key in the gap between the previous and next white key slots
+  const prevEnd   = (wi - 1) * SLOT + WW;
+  const nextStart = wi * SLOT;
+  const left      = (prevEnd + nextStart) / 2 - BW / 2;
+  return { ...note, left, size: BW };
+});
+
+const containerW = (wi - 1) * SLOT + WW; // 27.75rem
+---
+
+<Layout
+  title="Drone — Nico Bako"
+  description="A browser drone: click notes to hear them or enable sustain to hold chords. A4 = 440 Hz."
+>
+  <h1>Drone</h1>
+  <p>
+    Click a note to hear it. Enable <strong>Sustain</strong> to hold notes
+    indefinitely — click multiple buttons to build a chord.
+  </p>
+
+  <div class="drone">
+    <div class="keyboard-wrap">
+      <div
+        class="keyboard"
+        style={`width: ${containerW}rem; height: ${WW}rem;`}
+        aria-label="Piano keyboard"
+      >
+        {keys.map((note) => (
+          <button
+            class={`key ${note.isBlack ? 'key-black' : 'key-white'}`}
+            data-name={note.name}
+            data-freq={String(note.freq)}
+            style={`left: ${note.left}rem; width: ${note.size}rem; height: ${note.size}rem;`}
+            aria-label={`${note.label} (${note.freq.toFixed(1)} Hz)`}
+          >
+            {note.label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <button id="sustain-btn" class="sustain-btn">Sustain</button>
+  </div>
+</Layout>
+
+<script>
+  import { Drone } from "../../music/drone/drone.ts";
+
+  const drone = new Drone();
+  let sustainMode = false;
+
+  const sustainBtn = document.getElementById("sustain-btn") as HTMLButtonElement;
+
+  document.querySelectorAll<HTMLButtonElement>(".key").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const name = btn.dataset.name!;
+      const freq = parseFloat(btn.dataset.freq!);
+
+      if (!sustainMode) {
+        drone.pluck(freq);
+        return;
+      }
+
+      if (btn.classList.contains("active")) {
+        btn.classList.remove("active");
+        drone.stopNote(name);
+      } else {
+        btn.classList.add("active");
+        drone.startNote(name, freq);
+      }
+    });
+  });
+
+  sustainBtn.addEventListener("click", () => {
+    sustainMode = !sustainMode;
+    if (sustainMode) {
+      sustainBtn.classList.add("active");
+      sustainBtn.textContent = "Sustain: On";
+    } else {
+      sustainBtn.classList.remove("active");
+      sustainBtn.textContent = "Sustain";
+      drone.stopAll();
+      document.querySelectorAll<HTMLButtonElement>(".key.active").forEach((b) => {
+        b.classList.remove("active");
+      });
+    }
+  });
+</script>
+
+<style>
+  .drone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    margin-top: 2.5rem;
+  }
+
+  .keyboard-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+    /* small padding so box-shadow / focus rings aren't clipped */
+    padding: 0.4rem;
+  }
+
+  .keyboard {
+    position: relative;
+    user-select: none;
+  }
+
+  .key {
+    position: absolute;
+    top: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 0.3rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    line-height: 1;
+    transition:
+      background 0.08s,
+      border-color 0.08s,
+      color 0.08s;
+  }
+
+  .key-white {
+    background: #f5f4f0;
+    border: 1px solid #aaa;
+    color: #333;
+    font-size: 0.7rem;
+    z-index: 0;
+  }
+
+  .key-black {
+    background: #1c1c1e;
+    border: 1px solid #111;
+    color: #ccc;
+    font-size: 0.6rem;
+    z-index: 1;
+  }
+
+  .key-white:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .key-black:hover {
+    background: #303035;
+  }
+
+  .key-white.active,
+  .key-black.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .key-white {
+      background: #3a3a42;
+      border-color: #555;
+      color: #ddd;
+    }
+
+    .key-black {
+      background: #0a0a0d;
+      border-color: #000;
+      color: #aaa;
+    }
+
+    .key-black:hover {
+      background: #1e1e24;
+    }
+  }
+
+  .sustain-btn {
+    min-width: 8rem;
+    padding: 0.6rem 1.5rem;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
+
+  .sustain-btn:hover,
+  .sustain-btn.active {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+</style>
