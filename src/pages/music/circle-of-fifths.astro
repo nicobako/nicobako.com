@@ -1,0 +1,280 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+const SHARPS = ['F♯', 'C♯', 'G♯', 'D♯', 'A♯', 'E♯', 'B♯'];
+const FLATS  = ['B♭', 'E♭', 'A♭', 'D♭', 'G♭', 'C♭', 'F♭'];
+
+type KeyData = { major: string; minor: string; sharps: number; flats: number };
+
+const KEYS: KeyData[] = [
+  { major: 'C',   minor: 'Am',   sharps: 0, flats: 0 },
+  { major: 'G',   minor: 'Em',   sharps: 1, flats: 0 },
+  { major: 'D',   minor: 'Bm',   sharps: 2, flats: 0 },
+  { major: 'A',   minor: 'F♯m',  sharps: 3, flats: 0 },
+  { major: 'E',   minor: 'C♯m',  sharps: 4, flats: 0 },
+  { major: 'B',   minor: 'G♯m',  sharps: 5, flats: 0 },
+  { major: 'F♯',  minor: 'D♯m',  sharps: 6, flats: 0 },
+  { major: 'D♭',  minor: 'B♭m',  sharps: 0, flats: 5 },
+  { major: 'A♭',  minor: 'Fm',   sharps: 0, flats: 4 },
+  { major: 'E♭',  minor: 'Cm',   sharps: 0, flats: 3 },
+  { major: 'B♭',  minor: 'Gm',   sharps: 0, flats: 2 },
+  { major: 'F',   minor: 'Dm',   sharps: 0, flats: 1 },
+];
+
+const KEY_INFO = KEYS.map((k) => ({
+  major: k.major,
+  minor: k.minor,
+  accidentals:
+    k.sharps > 0
+      ? `${k.sharps} sharp${k.sharps !== 1 ? 's' : ''}: ${SHARPS.slice(0, k.sharps).join(', ')}`
+      : k.flats > 0
+      ? `${k.flats} flat${k.flats !== 1 ? 's' : ''}: ${FLATS.slice(0, k.flats).join(', ')}`
+      : 'No accidentals',
+  accLabel: k.sharps > 0 ? `${k.sharps}♯` : k.flats > 0 ? `${k.flats}♭` : '♮',
+}));
+
+const CX = 220;
+const CY = 220;
+const R_OUTER = 215;
+const R_MID1  = 148;
+const R_MID2  = 92;
+const R_INNER = 50;
+
+function toRad(d: number) { return (d * Math.PI) / 180; }
+
+function wedge(r1: number, r2: number, a1Deg: number, a2Deg: number): string {
+  const a1 = toRad(a1Deg), a2 = toRad(a2Deg);
+  const x1 = CX + r1 * Math.cos(a1), y1 = CY + r1 * Math.sin(a1);
+  const x2 = CX + r1 * Math.cos(a2), y2 = CY + r1 * Math.sin(a2);
+  const x3 = CX + r2 * Math.cos(a2), y3 = CY + r2 * Math.sin(a2);
+  const x4 = CX + r2 * Math.cos(a1), y4 = CY + r2 * Math.sin(a1);
+  return `M ${x1} ${y1} A ${r1} ${r1} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${r2} ${r2} 0 0 0 ${x4} ${y4} Z`;
+}
+
+function lp(radius: number, deg: number) {
+  const rad = toRad(deg);
+  return { x: CX + radius * Math.cos(rad), y: CY + radius * Math.sin(rad) };
+}
+
+const segments = KEYS.map((_k, i) => {
+  const a1 = i * 30 - 90;
+  const a2 = a1 + 30;
+  const am = a1 + 15;
+  return {
+    index:     i,
+    outerPath: wedge(R_OUTER, R_MID1, a1, a2),
+    midPath:   wedge(R_MID1,  R_MID2, a1, a2),
+    innerPath: wedge(R_MID2,  R_INNER, a1, a2),
+    majorPos:  lp((R_OUTER + R_MID1) / 2, am),
+    minorPos:  lp((R_MID1  + R_MID2) / 2, am),
+    accPos:    lp((R_MID2  + R_INNER) / 2, am),
+    info:      KEY_INFO[i],
+  };
+});
+---
+
+<Layout
+  title="Circle of Fifths — Nico Bako"
+  description="An interactive circle of fifths showing major keys, relative minors, and key signatures."
+>
+  <h1>Circle of Fifths</h1>
+  <p>
+    Click any key to see its key signature. Outer ring: major keys. Middle
+    ring: relative minors. Inner ring: accidentals.
+  </p>
+
+  <div class="cof-wrap">
+    <svg
+      viewBox="0 0 440 440"
+      class="cof-svg"
+      aria-label="Circle of fifths"
+    >
+      {segments.map((seg) => (
+        <g
+          class="key-group"
+          data-index={String(seg.index)}
+          role="button"
+          tabindex="0"
+          aria-label={`${seg.info.major} major`}
+        >
+          <path class="seg-outer" d={seg.outerPath} />
+          <path class="seg-mid"   d={seg.midPath} />
+          <path class="seg-inner" d={seg.innerPath} />
+          <text class="lbl-major" x={seg.majorPos.x} y={seg.majorPos.y}>{seg.info.major}</text>
+          <text class="lbl-minor" x={seg.minorPos.x} y={seg.minorPos.y}>{seg.info.minor}</text>
+          <text class="lbl-acc"   x={seg.accPos.x}   y={seg.accPos.y}>{seg.info.accLabel}</text>
+        </g>
+      ))}
+      <circle cx={CX} cy={CY} r={R_OUTER} class="ring-outline" />
+      <circle cx={CX} cy={CY} r={R_MID1}  class="ring-outline" />
+      <circle cx={CX} cy={CY} r={R_MID2}  class="ring-outline" />
+      <circle cx={CX} cy={CY} r={R_INNER} class="center-fill" />
+    </svg>
+  </div>
+
+  <div class="key-detail">
+    <p class="detail-hint">Click a key to see its details.</p>
+    <div class="detail-content" hidden>
+      <p class="detail-name">
+        <strong><span class="detail-major"></span> major</strong>
+        <span class="detail-sep"> / </span>
+        <span class="detail-minor"></span>
+      </p>
+      <p class="detail-sig"></p>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline define:vars={{ keyInfo: KEY_INFO }}>
+  let selectedIndex = -1;
+
+  const groups    = document.querySelectorAll('.key-group');
+  const hintEl    = document.querySelector('.detail-hint');
+  const contentEl = document.querySelector('.detail-content');
+  const majorEl   = document.querySelector('.detail-major');
+  const minorEl   = document.querySelector('.detail-minor');
+  const sigEl     = document.querySelector('.detail-sig');
+
+  function selectKey(i) {
+    groups.forEach(function (g) { g.classList.remove('selected'); });
+    if (selectedIndex === i) {
+      selectedIndex = -1;
+      hintEl.hidden = false;
+      contentEl.hidden = true;
+    } else {
+      selectedIndex = i;
+      groups[i].classList.add('selected');
+      hintEl.hidden = true;
+      contentEl.hidden = false;
+      majorEl.textContent = keyInfo[i].major;
+      minorEl.textContent = keyInfo[i].minor;
+      sigEl.textContent = 'Key signature: ' + keyInfo[i].accidentals;
+    }
+  }
+
+  groups.forEach(function (g, i) {
+    g.addEventListener('click', function () { selectKey(i); });
+    g.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectKey(i);
+      }
+    });
+  });
+</script>
+
+<style>
+  .cof-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0;
+  }
+
+  .cof-svg {
+    width: 100%;
+    max-width: 26rem;
+    height: auto;
+  }
+
+  .key-group {
+    cursor: pointer;
+    outline: none;
+  }
+
+  .seg-outer,
+  .seg-mid,
+  .seg-inner {
+    stroke: var(--border);
+    stroke-width: 1;
+    transition: fill 0.12s;
+  }
+
+  .seg-outer { fill: var(--surface); }
+  .seg-mid   { fill: var(--bg); }
+  .seg-inner { fill: var(--surface); }
+
+  .key-group:hover .seg-outer,
+  .key-group:hover .seg-mid,
+  .key-group:hover .seg-inner {
+    fill: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  }
+
+  .key-group:focus-visible .seg-outer,
+  .key-group:focus-visible .seg-mid,
+  .key-group:focus-visible .seg-inner {
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+
+  .key-group.selected .seg-outer {
+    fill: var(--accent);
+    stroke: var(--accent);
+  }
+  .key-group.selected .seg-mid {
+    fill: color-mix(in srgb, var(--accent) 25%, var(--bg));
+    stroke: var(--accent);
+  }
+  .key-group.selected .seg-inner {
+    fill: color-mix(in srgb, var(--accent) 20%, var(--surface));
+    stroke: var(--accent);
+  }
+
+  .lbl-major,
+  .lbl-minor,
+  .lbl-acc {
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+    font-family: var(--font-sans);
+  }
+
+  .lbl-major { fill: var(--text);  font-size: 15px; font-weight: 600; }
+  .lbl-minor { fill: var(--muted); font-size: 11px; }
+  .lbl-acc   { fill: var(--muted); font-size: 10px; }
+
+  .key-group.selected .lbl-major { fill: var(--accent-text); }
+
+  .ring-outline {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 1;
+    pointer-events: none;
+  }
+
+  .center-fill {
+    fill: var(--bg);
+    stroke: var(--border);
+    stroke-width: 1;
+    pointer-events: none;
+  }
+
+  .key-detail {
+    border-top: 1px solid var(--border);
+    padding-top: 1.25rem;
+    margin-top: 0.5rem;
+    min-height: 4.5rem;
+    text-align: center;
+  }
+
+  .detail-hint {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 0;
+  }
+
+  .detail-name {
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .detail-sep,
+  .detail-minor {
+    color: var(--muted);
+  }
+
+  .detail-sig {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 0;
+  }
+</style>
