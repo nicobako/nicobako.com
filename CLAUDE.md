@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`nicobako.com` — a personal portfolio site for Nico Bako (software engineer, Python focus), built with **Astro 6** as a static site. No backend, no client-side framework, no database. The site has multiple pages: a home page, a games index, individual game pages, and a music placeholder.
+`nicobako.com` — a personal portfolio site for Nico Bako (software engineer, Python focus), built with **Astro 6** as a static site. No backend, no client-side framework, no database. The site has a home page, a games section with a playable browser game, and a music section with interactive tools (metronome, drone, violin scale fingerings).
 
 ## Commands
 
@@ -33,6 +33,9 @@ Requires Node `>=22.12.0`.
 | `/games/` | `src/pages/games/index.astro` |
 | `/games/classrooms-and-angry-teachers` | `src/pages/games/classrooms-and-angry-teachers.astro` |
 | `/music/` | `src/pages/music/index.astro` |
+| `/music/metronome` | `src/pages/music/metronome.astro` |
+| `/music/drone` | `src/pages/music/drone.astro` |
+| `/music/violin-3-octave-fingerings` | `src/pages/music/violin-3-octave-fingerings.astro` |
 
 ### Game subsystem
 
@@ -40,6 +43,13 @@ Requires Node `>=22.12.0`.
 
 - `level.ts` — pure data: grid constants, tile types, spawn positions, item definitions.
 - `game.ts` — Kaplay initialisation and all game logic (immediate-mode rendering, per-frame update loop, input handling). Mounted into the `#game-root` div on the game page via a `<script>` import; Kaplay runs with `global: false` so it doesn't pollute the surrounding site.
+
+### Music subsystem
+
+`src/music/` mirrors the game subsystem pattern — pure TypeScript logic modules imported by their Astro pages via `<script>`:
+
+- `src/music/metronome/metronome.ts` — `Metronome` class using the Web Audio API scheduler (look-ahead scheduling with `setInterval`). Accepts a `skipPercent` to randomly drop beats. Mounted by `metronome.astro`.
+- `src/music/drone/drone.ts` — `Drone` class and `NOTES` array (one octave C4–C5). Supports one-shot `pluck()` and sustained `startNote`/`stopNote`. Mounted by `drone.astro`, which also computes piano key layout in its frontmatter. The piano key colours are hardcoded (not CSS tokens) because the visual realism requires fixed white/black key colours regardless of theme.
 
 ### Theming conventions
 
