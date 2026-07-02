@@ -3,11 +3,13 @@
 // Layout styles the semantic <nav>/<a> elements; this component owns the
 // header's own layout (the bar, the brand, spacing).
 import SimpleLink, { type SimpleLinkProps } from "./SimpleLink.astro";
-const links: SimpleLinkProps[] = [
+const pageLinks: SimpleLinkProps[] = [
   { label: "Home", href: "/" },
   { label: "Games", href: "/games/" },
   { label: "Music", href: "/music/" },
   { label: "Printables", href: "/printables/" },
+];
+const externalLinks: SimpleLinkProps[] = [
   { label: "GitHub", href: "https://github.com/nicobako", external: true },
 ];
 ---
@@ -16,8 +18,22 @@ const links: SimpleLinkProps[] = [
   <a class="brand" href="/">Nico Bako</a>
   <nav aria-label="Primary">
     <ul>
+      <li>
+        <details class="menu">
+          <summary>Pages</summary>
+          <ul class="menu-list">
+            {
+              pageLinks.map((link) => (
+                <li>
+                  <SimpleLink href={link.href} label={link.label} />
+                </li>
+              ))
+            }
+          </ul>
+        </details>
+      </li>
       {
-        links.map((link) => (
+        externalLinks.map((link) => (
           <li>
             <SimpleLink
               href={link.href}
@@ -30,6 +46,24 @@ const links: SimpleLinkProps[] = [
     </ul>
   </nav>
 </header>
+
+<script>
+  // Close a <details class="menu"> when a link inside it is clicked, or
+  // when the user clicks anywhere outside of it.
+  document.querySelectorAll<HTMLDetailsElement>(".menu").forEach((menu) => {
+    menu.addEventListener("click", (event) => {
+      if (event.target instanceof Element && event.target.closest("a")) {
+        menu.open = false;
+      }
+    });
+
+    document.addEventListener("click", (event) => {
+      if (menu.open && !menu.contains(event.target as Node)) {
+        menu.open = false;
+      }
+    });
+  });
+</script>
 
 <style>
   .site-header {
@@ -58,13 +92,75 @@ const links: SimpleLinkProps[] = [
   .site-header nav ul {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 1.25rem;
   }
 
-  /* The active link reads as plain emphasised text rather than a link. */
-  .site-header nav a[aria-current="page"] {
+  /* The active link reads as plain emphasised text rather than a link.
+     `:global()` is required because the <a> itself is rendered by the
+     Link component, so it never carries this file's scoping attribute. */
+  .site-header nav :global(a[aria-current="page"]) {
     color: var(--text);
     text-decoration: none;
     font-weight: 600;
+  }
+
+  .menu {
+    position: relative;
+  }
+
+  .menu > summary {
+    cursor: pointer;
+    list-style: none;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .menu > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .menu > summary::after {
+    content: "▾";
+    margin-left: 0.35em;
+    font-size: 0.75em;
+    color: var(--muted);
+  }
+
+  .menu[open] > summary::after {
+    content: "▴";
+  }
+
+  .menu-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-top: 0.6rem;
+    padding: 0.5rem;
+    min-width: 9rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .menu-list :global(a) {
+    display: block;
+    padding: 0.35rem 0.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+  }
+
+  .menu-list :global(a):hover {
+    background: var(--surface);
+    text-decoration: none;
+  }
+
+  .menu-list :global(a[aria-current="page"]) {
+    background: var(--surface);
   }
 </style>
