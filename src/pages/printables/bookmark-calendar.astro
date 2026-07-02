@@ -3,6 +3,22 @@ import Layout from "../../layouts/Layout.astro";
 import { renderBookmarkTableHTML } from "../../printables/calendar/calendar.ts";
 
 const defaultYear = new Date().getFullYear();
+const defaultCopies = 4;
+
+// A print-only strip of identical bookmarks, laid out side by side in landscape.
+const printSheet = Array.from({ length: defaultCopies }, () =>
+  renderBookmarkTableHTML(defaultYear),
+).join("");
+
+const bookmarksPerPageOptions: {
+  value: number;
+  label: string;
+  selected: boolean;
+}[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => ({
+  value,
+  label: String(value),
+  selected: value === defaultCopies,
+}));
 ---
 
 <Layout title="Bookmark Calendar — Nico Bako">
@@ -10,40 +26,79 @@ const defaultYear = new Date().getFullYear();
     <h1>Bookmark Calendar</h1>
     <div class="year-picker">
       <button type="button" id="prev" aria-label="Previous year">&larr;</button>
-      <input type="number" id="year" value={defaultYear} step="1" aria-label="Year" />
+      <input
+        type="number"
+        id="year"
+        value={defaultYear}
+        step="1"
+        aria-label="Year"
+      />
       <button type="button" id="next" aria-label="Next year">&rarr;</button>
+      <label class="copies-field">
+        Per page
+        <select id="copies" aria-label="Bookmarks per page">
+          {
+            bookmarksPerPageOptions.map((option) => (
+              <option value={option.value} selected={option.selected}>
+                {option.label}
+              </option>
+            ))
+          }
+        </select>
+      </label>
       <button type="button" id="print">Print</button>
     </div>
     <p>
       One row per ISO week: week number, the day-of-month under each weekday
-      (Mon&ndash;Sun), and the month of that week&rsquo;s Thursday. Sized to fit a bookmark.
+      (Mon&ndash;Sun), and the month of that week&rsquo;s Sunday. Sized to fit a
+      bookmark; printing lays several copies across a landscape page to cut
+      apart.
     </p>
   </div>
 
-  <div id="calendar" class="bookmark-calendar" set:html={renderBookmarkTableHTML(defaultYear)}></div>
+  <div
+    id="calendar"
+    class="bookmark-calendar"
+    set:html={renderBookmarkTableHTML(defaultYear)}
+  />
+  <div
+    id="print-sheet"
+    class="print-sheet bookmark-calendar"
+    set:html={printSheet}
+  />
 </Layout>
 
 <script>
   import { renderBookmarkTableHTML } from "../../printables/calendar/calendar.ts";
 
   const yearInput = document.getElementById("year") as HTMLInputElement;
+  const copiesInput = document.getElementById("copies") as HTMLSelectElement;
   const calendar = document.getElementById("calendar") as HTMLDivElement;
+  const printSheet = document.getElementById("print-sheet") as HTMLDivElement;
 
   function render() {
     const year = parseInt(yearInput.value, 10);
     if (!Number.isFinite(year)) return;
-    calendar.innerHTML = renderBookmarkTableHTML(year);
+    const table = renderBookmarkTableHTML(year);
+    calendar.innerHTML = table;
+    const copies = parseInt(copiesInput.value, 10) || 1;
+    printSheet.innerHTML = table.repeat(copies);
   }
 
   function step(delta: number) {
-    yearInput.value = String((parseInt(yearInput.value, 10) || new Date().getFullYear()) + delta);
+    yearInput.value = String(
+      (parseInt(yearInput.value, 10) || new Date().getFullYear()) + delta,
+    );
     render();
   }
 
   document.getElementById("prev")!.addEventListener("click", () => step(-1));
   document.getElementById("next")!.addEventListener("click", () => step(1));
   yearInput.addEventListener("change", render);
-  document.getElementById("print")!.addEventListener("click", () => window.print());
+  copiesInput.addEventListener("change", render);
+  document
+    .getElementById("print")!
+    .addEventListener("click", () => window.print());
 </script>
 
 <style>
@@ -81,6 +136,26 @@ const defaultYear = new Date().getFullYear();
     color: var(--text);
     border-radius: 6px;
     text-align: center;
+  }
+
+  .copies-field {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--muted);
+  }
+
+  .copies-field select {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 6px;
+  }
+
+  /* The multi-copy strip is print-only; on screen the single preview above suffices. */
+  .print-sheet {
+    display: none;
   }
 
   .bookmark-calendar :global(.bookmark) {
@@ -134,9 +209,24 @@ const defaultYear = new Date().getFullYear();
     .bookmark-calendar :global(.bookmark td) {
       padding: 0.5pt 2pt;
     }
+
+    /* Print the strip of copies, not the single interactive preview. */
+    #calendar {
+      display: none;
+    }
+    .print-sheet {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      gap: 0.5cm;
+    }
+    .print-sheet :global(.bookmark) {
+      break-inside: avoid;
+    }
   }
 
   @page {
+    size: A4 landscape;
     margin: 0.5cm;
   }
 </style>

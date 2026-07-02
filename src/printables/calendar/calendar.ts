@@ -10,12 +10,22 @@
 // contains the year's first Thursday (equivalently, the week containing Jan 4).
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ] as const;
 
 // Monday-first weekday abbreviations (ISO weekday 1..7 = Mon..Sun).
-const WEEKDAY_ABBR = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] as const;
+const WEEKDAY_ABBR = ["M", "T", "W", "R", "F", "S", "K"] as const;
 
 const MS_PER_DAY = 86_400_000;
 
@@ -36,7 +46,9 @@ function daysInMonth(year: number, month: number): number {
 
 /** ISO week number (1..53) for the given UTC date. */
 export function isoWeek(date: Date): number {
-  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const d = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
   // Shift to the Thursday of this week, then count weeks from Jan 1 of that year.
   d.setUTCDate(d.getUTCDate() + 4 - isoWeekday(d));
   const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1);
@@ -45,7 +57,9 @@ export function isoWeek(date: Date): number {
 
 /** The ISO week-numbering year a date belongs to (may differ from the calendar year). */
 export function isoWeekYear(date: Date): number {
-  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const d = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
   d.setUTCDate(d.getUTCDate() + 4 - isoWeekday(d));
   return d.getUTCFullYear();
 }
@@ -170,7 +184,7 @@ export function renderBookmarkTableHTML(year: number): string {
   const head =
     `<th scope="col">Wk</th>` +
     WEEKDAY_ABBR.map((d) => `<th scope="col">${d}</th>`).join("") +
-    `<th scope="col">Month</th>`;
+    `<th scope="col">Mt</th>`;
 
   const parity = (m: number) => (m % 2 === 0 ? "month-even" : "month-odd");
 
@@ -179,7 +193,9 @@ export function renderBookmarkTableHTML(year: number): string {
       (r) =>
         `<tr><th scope="row">${pad2(r.week)}</th>${r.days
           .map((d) => `<td class="${parity(d.month)}">${pad2(d.day)}</td>`)
-          .join("")}<td class="month ${parity(r.month)}">${pad2(r.month)}</td></tr>`,
+          .join(
+            "",
+          )}<td class="month ${parity(r.month)}">${pad2(r.month)}</td></tr>`,
     )
     .join("");
 

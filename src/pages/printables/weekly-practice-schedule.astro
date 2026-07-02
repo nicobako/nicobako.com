@@ -1,0 +1,152 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+// Static, write-in schedule: no inputs, no JS. Blank rows to fill by hand.
+const DAY_COUNT = 7;
+const ROW_COUNT = 10;
+
+const days = Array.from({ length: DAY_COUNT }, (_, i) => `Day ${i + 1}`);
+const rows = Array.from({ length: ROW_COUNT });
+---
+
+<Layout title="Weekly Practice Schedule — Nico Bako">
+  <h1 class="no-print">Weekly Practice Schedule</h1>
+  <p class="no-print">A blank weekly grid to print and fill in by hand.</p>
+
+  <div class="sheet">
+    <div class="sheet-head">
+      Weekly Practice Schedule<span class="week-of">Week of</span>
+    </div>
+
+    <table class="schedule">
+      <thead>
+        <tr>
+          <th class="item" scope="col">Item</th>
+          <th class="goal" scope="col">Goal</th>
+          {
+            days.map((d) => (
+              <th class="day" scope="col">
+                {d}
+              </th>
+            ))
+          }
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.map(() => (
+            <tr>
+              <td class="item" />
+              <td class="goal" />
+              {days.map(() => (
+                <td class="cell" />
+              ))}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+
+    <div class="daily-notes">
+      <div class="focus">Focus this week</div>
+      <div class="notes">
+        <span class="notes-label">Notes</span>
+        <div class="notes-lines">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .sheet-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .sheet-head .week-of {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 12rem;
+  }
+
+  .schedule {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .schedule th,
+  .schedule td {
+    border: 1px solid var(--border);
+  }
+
+  .schedule thead th {
+    padding: 0.4rem 0.4rem;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .schedule thead th.item {
+    text-align: left;
+  }
+
+  .schedule .item {
+    min-width: 9rem;
+  }
+
+  .schedule .goal {
+    width: 4.5rem;
+  }
+
+  /* Empty write-in cells with a comfortable hand-writing height. */
+  .schedule tbody td {
+    height: 2.2rem;
+  }
+
+  .daily-notes {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .daily-notes .focus {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+  }
+
+  .notes-label {
+    display: block;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+  }
+
+  .notes-lines span {
+    display: block;
+    height: 1.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  @media print {
+    .schedule th,
+    .schedule td,
+    .sheet-head .week-of,
+    .daily-notes .focus,
+    .notes-lines span {
+      border-color: #000;
+    }
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+</style>
