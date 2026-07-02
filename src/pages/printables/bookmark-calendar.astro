@@ -115,6 +115,17 @@ const defaultYear = new Date().getFullYear();
     white-space: nowrap;
   }
 
+  /* Alternating months, per cell: even months get a subtle fill, odd stay clear. */
+  .bookmark-calendar :global(.bookmark td.month-even) {
+    background: var(--surface);
+  }
+
+  /* Keep bands visible on paper (browsers drop backgrounds unless asked). */
+  .bookmark-calendar :global(.bookmark) {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   @media print {
     .bookmark-calendar :global(.bookmark) {
       font-size: 7pt;

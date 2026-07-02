@@ -103,11 +103,18 @@ export function buildYearGrid(year: number): MonthGrid[] {
   });
 }
 
+export interface BookmarkDay {
+  /** Day-of-month (1..31). */
+  day: number;
+  /** ISO month number (1..12) this day falls in. */
+  month: number;
+}
+
 export interface BookmarkRow {
   week: number;
-  /** Day-of-month for Mon..Sun of this ISO week. */
-  days: number[];
-  /** ISO month number (1..12) of this week's Thursday. */
+  /** Mon..Sun of this ISO week. */
+  days: BookmarkDay[];
+  /** ISO month number (1..12) of this week's Sunday. */
   month: number;
 }
 
@@ -121,17 +128,15 @@ export function buildBookmarkRows(year: number): BookmarkRow[] {
     const monday = new Date(firstMonday);
     monday.setUTCDate(firstMonday.getUTCDate() + (week - 1) * 7);
 
-    const days: number[] = [];
+    const days: BookmarkDay[] = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday);
       d.setUTCDate(monday.getUTCDate() + i);
-      days.push(d.getUTCDate());
+      days.push({ day: d.getUTCDate(), month: d.getUTCMonth() + 1 });
     }
 
-    const thursday = new Date(monday);
-    thursday.setUTCDate(monday.getUTCDate() + 3);
-
-    rows.push({ week, days, month: thursday.getUTCMonth() + 1 });
+    // Right column tracks the month of this week's Sunday (the last day).
+    rows.push({ week, days, month: days[6].month });
   }
 
   return rows;
@@ -167,12 +172,14 @@ export function renderBookmarkTableHTML(year: number): string {
     WEEKDAY_ABBR.map((d) => `<th scope="col">${d}</th>`).join("") +
     `<th scope="col">Month</th>`;
 
+  const parity = (m: number) => (m % 2 === 0 ? "month-even" : "month-odd");
+
   const body = buildBookmarkRows(year)
     .map(
       (r) =>
         `<tr><th scope="row">${pad2(r.week)}</th>${r.days
-          .map((d) => `<td>${pad2(d)}</td>`)
-          .join("")}<td class="month">${pad2(r.month)}</td></tr>`,
+          .map((d) => `<td class="${parity(d.month)}">${pad2(d.day)}</td>`)
+          .join("")}<td class="month ${parity(r.month)}">${pad2(r.month)}</td></tr>`,
     )
     .join("");
 
