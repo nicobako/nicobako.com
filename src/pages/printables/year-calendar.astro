@@ -1,0 +1,146 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { renderYearGridHTML } from "../../printables/calendar/calendar.ts";
+
+const defaultYear = new Date().getFullYear();
+---
+
+<Layout title="Year Calendar — Nico Bako">
+  <div class="controls no-print">
+    <h1>Year Calendar</h1>
+    <div class="year-picker">
+      <button type="button" id="prev" aria-label="Previous year">&larr;</button>
+      <input type="number" id="year" value={defaultYear} step="1" aria-label="Year" />
+      <button type="button" id="next" aria-label="Next year">&rarr;</button>
+      <button type="button" id="print">Print</button>
+    </div>
+    <p>Monday-first, twelve-month grid. Fits one landscape page.</p>
+  </div>
+
+  <div id="calendar" class="year-calendar" set:html={renderYearGridHTML(defaultYear)}></div>
+</Layout>
+
+<script>
+  import { renderYearGridHTML } from "../../printables/calendar/calendar.ts";
+
+  const yearInput = document.getElementById("year") as HTMLInputElement;
+  const calendar = document.getElementById("calendar") as HTMLDivElement;
+
+  function render() {
+    const year = parseInt(yearInput.value, 10);
+    if (!Number.isFinite(year)) return;
+    calendar.innerHTML = renderYearGridHTML(year);
+  }
+
+  function step(delta: number) {
+    yearInput.value = String((parseInt(yearInput.value, 10) || new Date().getFullYear()) + delta);
+    render();
+  }
+
+  document.getElementById("prev")!.addEventListener("click", () => step(-1));
+  document.getElementById("next")!.addEventListener("click", () => step(1));
+  yearInput.addEventListener("change", render);
+  document.getElementById("print")!.addEventListener("click", () => window.print());
+</script>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .year-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .year-picker button {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .year-picker button:hover {
+    border-color: var(--accent);
+  }
+
+  .year-picker input {
+    width: 6rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 6px;
+    text-align: center;
+  }
+
+  .year-calendar :global(.cal-year) {
+    text-align: center;
+    margin: 0 0 1rem;
+  }
+
+  .year-calendar :global(.months) {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .year-calendar :global(.month) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  .year-calendar :global(.month caption) {
+    font-weight: 600;
+    text-align: left;
+    padding-bottom: 0.25rem;
+  }
+
+  .year-calendar :global(.month th) {
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  .year-calendar :global(.month th),
+  .year-calendar :global(.month td) {
+    text-align: center;
+    padding: 0.15rem 0;
+    border: 1px solid var(--border);
+  }
+
+  /* The week-number column reads as quiet meta and hugs its content. */
+  .year-calendar :global(.month .wk) {
+    color: var(--muted);
+    font-weight: 500;
+    border-right-width: 2px;
+    padding: 0.15rem 0.25rem;
+  }
+
+  @media (max-width: 46rem) {
+    .year-calendar :global(.months) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media print {
+    .year-calendar :global(.months) {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+    .year-calendar :global(.month) {
+      font-size: 0.7rem;
+    }
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 1cm;
+  }
+</style>

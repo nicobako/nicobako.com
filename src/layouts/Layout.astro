@@ -251,4 +251,22 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : As
 		outline-offset: 2px;
 		border-radius: 2px;
 	}
+
+	/* ------------------------------------------------------------------ *
+	 * Print — hide site chrome so printable pages fill the sheet.
+	 * Elements opt out of printing with the `.no-print` class.
+	 * ------------------------------------------------------------------ */
+	@media print {
+		.site-header,
+		footer,
+		.no-print {
+			display: none !important;
+		}
+
+		main {
+			max-width: none;
+			margin: 0;
+			padding: 0;
+		}
+	}
 </style>

@@ -1,0 +1,131 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { renderBookmarkTableHTML } from "../../printables/calendar/calendar.ts";
+
+const defaultYear = new Date().getFullYear();
+---
+
+<Layout title="Bookmark Calendar — Nico Bako">
+  <div class="controls no-print">
+    <h1>Bookmark Calendar</h1>
+    <div class="year-picker">
+      <button type="button" id="prev" aria-label="Previous year">&larr;</button>
+      <input type="number" id="year" value={defaultYear} step="1" aria-label="Year" />
+      <button type="button" id="next" aria-label="Next year">&rarr;</button>
+      <button type="button" id="print">Print</button>
+    </div>
+    <p>
+      One row per ISO week: week number, the day-of-month under each weekday
+      (Mon&ndash;Sun), and the month of that week&rsquo;s Thursday. Sized to fit a bookmark.
+    </p>
+  </div>
+
+  <div id="calendar" class="bookmark-calendar" set:html={renderBookmarkTableHTML(defaultYear)}></div>
+</Layout>
+
+<script>
+  import { renderBookmarkTableHTML } from "../../printables/calendar/calendar.ts";
+
+  const yearInput = document.getElementById("year") as HTMLInputElement;
+  const calendar = document.getElementById("calendar") as HTMLDivElement;
+
+  function render() {
+    const year = parseInt(yearInput.value, 10);
+    if (!Number.isFinite(year)) return;
+    calendar.innerHTML = renderBookmarkTableHTML(year);
+  }
+
+  function step(delta: number) {
+    yearInput.value = String((parseInt(yearInput.value, 10) || new Date().getFullYear()) + delta);
+    render();
+  }
+
+  document.getElementById("prev")!.addEventListener("click", () => step(-1));
+  document.getElementById("next")!.addEventListener("click", () => step(1));
+  yearInput.addEventListener("change", render);
+  document.getElementById("print")!.addEventListener("click", () => window.print());
+</script>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .year-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .year-picker button {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .year-picker button:hover {
+    border-color: var(--accent);
+  }
+
+  .year-picker input {
+    width: 6rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 6px;
+    text-align: center;
+  }
+
+  .bookmark-calendar :global(.bookmark) {
+    border-collapse: collapse;
+    width: auto;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+    line-height: 1.2;
+  }
+
+  .bookmark-calendar :global(.bookmark caption) {
+    font-weight: 700;
+    font-size: 1rem;
+    padding-bottom: 0.35rem;
+  }
+
+  .bookmark-calendar :global(.bookmark th),
+  .bookmark-calendar :global(.bookmark td) {
+    border: 1px solid var(--border);
+    padding: 0.1rem 0.35rem;
+    text-align: center;
+  }
+
+  .bookmark-calendar :global(.bookmark thead th) {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .bookmark-calendar :global(.bookmark .month) {
+    text-align: left;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  @media print {
+    .bookmark-calendar :global(.bookmark) {
+      font-size: 7pt;
+    }
+    .bookmark-calendar :global(.bookmark th),
+    .bookmark-calendar :global(.bookmark td) {
+      padding: 0.5pt 2pt;
+    }
+  }
+
+  @page {
+    margin: 0.5cm;
+  }
+</style>
