@@ -25,6 +25,15 @@ C C G G | A A G2 | F F E E | D D C2 |]
   </p>
 
   <div class="abc-editor">
+    <div class="abc-tunes no-print">
+      <label for="tune-select">Tune</label>
+      <select id="tune-select" aria-label="Select tune to edit"></select>
+      <button id="new-tune-btn" type="button">New</button>
+      <button id="rename-tune-btn" type="button">Rename</button>
+      <button id="duplicate-tune-btn" type="button">Duplicate</button>
+      <button id="delete-tune-btn" type="button">Delete</button>
+    </div>
+
     <textarea
       id="abc-input"
       class="abc-input no-print"
@@ -55,23 +64,87 @@ C C G G | A A G2 | F F E E | D D C2 |]
 
 <script>
   import { AbcEditor } from "../../music/abc-editor/abc-editor.ts";
-  import { loadSavedAbc, saveAbc } from "../../music/abc-editor/persistence.ts";
+  import {
+    loadStore,
+    saveStore,
+    getActive,
+    createTune,
+    duplicateTune,
+    renameTune,
+    deleteTune,
+    setActive,
+  } from "../../music/abc-editor/persistence.ts";
 
   const input = document.getElementById("abc-input") as HTMLTextAreaElement;
   const notation = document.getElementById("abc-notation")!;
   const warnings = document.getElementById("abc-warnings")!;
   const audio = document.getElementById("abc-audio")!;
   const downloadStatus = document.getElementById("download-status")!;
+  const tuneSelect = document.getElementById("tune-select") as HTMLSelectElement;
 
-  const saved = loadSavedAbc();
-  if (saved) input.value = saved;
+  // The textarea's initial value is the Twinkle default from the frontmatter; it
+  // seeds the store on first visit and every freshly created tune.
+  const seedAbc = input.value;
+  let store = loadStore(seedAbc);
 
   const editor = new AbcEditor({ notation, audio, warnings });
-  editor.render(input.value);
+
+  function renderTuneSelect(): void {
+    tuneSelect.innerHTML = "";
+    for (const tune of store.tunes) {
+      const option = document.createElement("option");
+      option.value = tune.id;
+      option.textContent = tune.name;
+      if (tune.id === store.activeId) option.selected = true;
+      tuneSelect.appendChild(option);
+    }
+  }
+
+  function loadActiveIntoEditor(): void {
+    input.value = getActive(store).abc;
+    editor.render(input.value);
+    renderTuneSelect();
+  }
+
+  loadActiveIntoEditor();
 
   input.addEventListener("input", () => {
+    getActive(store).abc = input.value;
     editor.render(input.value);
-    saveAbc(input.value);
+    saveStore(store);
+  });
+
+  tuneSelect.addEventListener("change", () => {
+    setActive(store, tuneSelect.value);
+    saveStore(store);
+    loadActiveIntoEditor();
+  });
+
+  document.getElementById("new-tune-btn")!.addEventListener("click", () => {
+    createTune(store, "New tune", seedAbc);
+    saveStore(store);
+    loadActiveIntoEditor();
+  });
+
+  document.getElementById("duplicate-tune-btn")!.addEventListener("click", () => {
+    duplicateTune(store);
+    saveStore(store);
+    loadActiveIntoEditor();
+  });
+
+  document.getElementById("rename-tune-btn")!.addEventListener("click", () => {
+    const name = window.prompt("Tune name", getActive(store).name)?.trim();
+    if (!name) return;
+    renameTune(store, name);
+    saveStore(store);
+    renderTuneSelect();
+  });
+
+  document.getElementById("delete-tune-btn")!.addEventListener("click", () => {
+    if (!window.confirm(`Delete "${getActive(store).name}"?`)) return;
+    deleteTune(store, seedAbc);
+    saveStore(store);
+    loadActiveIntoEditor();
   });
 
   const uploadInput = document.getElementById("upload-abc-input") as HTMLInputElement;
@@ -88,8 +161,9 @@ C C G G | A A G2 | F F E E | D D C2 |]
       .text()
       .then((text) => {
         input.value = text;
+        getActive(store).abc = text;
         editor.render(text);
-        saveAbc(text);
+        saveStore(store);
         downloadStatus.textContent = "";
       })
       .catch(() => {
@@ -184,12 +258,35 @@ C C G G | A A G2 | F F E E | D D C2 |]
     font-size: 0.9rem;
   }
 
+  .abc-tunes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .abc-tunes label {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .abc-tunes select {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
   .abc-controls {
     display: flex;
     flex-wrap: wrap;
     gap: 0.6rem;
   }
 
+  .abc-tunes button,
   .abc-controls button {
     padding: 0.5rem 1rem;
     border: 1px solid var(--border);
@@ -200,6 +297,7 @@ C C G G | A A G2 | F F E E | D D C2 |]
     cursor: pointer;
   }
 
+  .abc-tunes button:hover,
   .abc-controls button:hover {
     border-color: var(--accent);
     color: var(--accent);
