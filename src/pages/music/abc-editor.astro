@@ -1,0 +1,113 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+const defaultTune = `X:1
+T:Twinkle, Twinkle, Little Star
+M:4/4
+L:1/4
+K:C
+C C G G | A A G2 | F F E E | D D C2 |
+G G F F | E E D2 | G G F F | E E D2 |
+C C G G | A A G2 | F F E E | D D C2 |]
+`;
+---
+
+<Layout
+  title="ABC Editor — Nico Bako"
+  description="Write ABC music notation and see it rendered live, with playback."
+>
+  <h1>ABC Editor</h1>
+  <p>
+    Write tunes in <a href="https://abcnotation.com/wiki/abc:standard:v2.1" target="_blank" rel="noopener">ABC notation</a>.
+    The sheet music below updates as you type, and the player renders audio for
+    whatever is currently valid.
+  </p>
+
+  <div class="abc-editor">
+    <textarea
+      id="abc-input"
+      class="abc-input"
+      spellcheck="false"
+      aria-label="ABC notation source"
+    >{defaultTune}</textarea>
+
+    <div id="abc-warnings" class="abc-warnings" aria-live="polite"></div>
+
+    <div class="abc-notation-wrap">
+      <div id="abc-notation" class="abc-notation"></div>
+    </div>
+
+    <div id="abc-audio" class="abc-audio"></div>
+  </div>
+</Layout>
+
+<script>
+  import { AbcEditor } from "../../music/abc-editor/abc-editor.ts";
+
+  const input = document.getElementById("abc-input") as HTMLTextAreaElement;
+  const notation = document.getElementById("abc-notation")!;
+  const warnings = document.getElementById("abc-warnings")!;
+  const audio = document.getElementById("abc-audio")!;
+
+  const editor = new AbcEditor({ notation, audio, warnings });
+  editor.render(input.value);
+
+  input.addEventListener("input", () => {
+    editor.render(input.value);
+  });
+</script>
+
+<style>
+  .abc-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .abc-input {
+    width: 100%;
+    min-height: 14rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  .abc-warnings {
+    min-height: 1.2em;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #c0392b;
+    white-space: pre-wrap;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .abc-warnings {
+      color: #ff8a80;
+    }
+  }
+
+  .abc-notation-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    padding: 0.5rem 0.75rem;
+  }
+
+  .abc-notation {
+    color: var(--text);
+    min-width: max-content;
+  }
+
+  .abc-audio {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+</style>
