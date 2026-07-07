@@ -25,32 +25,6 @@ function fileBaseName(tune: TuneObject | null): string {
   return slug || "tune";
 }
 
-/**
- * Split an ABC document into one source string per tune. A new tune starts at
- * each `X:` header once the current block already has one, so multiple tunes
- * separated by blank lines (or not) each become their own block.
- */
-export function splitTunes(abc: string): string[] {
-  const lines = abc.split(/\r?\n/);
-  const blocks: string[] = [];
-  let current: string[] = [];
-  let currentHasX = false;
-
-  for (const line of lines) {
-    const isHeader = /^X:/.test(line);
-    if (isHeader && currentHasX) {
-      blocks.push(current.join("\n"));
-      current = [];
-      currentHasX = false;
-    }
-    current.push(line);
-    if (isHeader) currentHasX = true;
-  }
-  if (current.some((l) => l.trim() !== "")) blocks.push(current.join("\n"));
-
-  return blocks.length ? blocks : [abc];
-}
-
 /** One rendered tune: its own notation, warnings, playback, and downloads. */
 class Track {
   readonly root: HTMLElement;
@@ -60,12 +34,16 @@ class Track {
   private synthControl: SynthObjectController | null = null;
   private tune: TuneObject | null = null;
   private source = "";
+  private transposeValue: HTMLElement;
+  /** Visual/playback transpose in semitones; the `.abc` source is left as-is. */
+  private transpose = 0;
 
   constructor(root: HTMLElement) {
     this.root = root;
     this.notation = root.querySelector("[data-notation]")!;
     this.warnings = root.querySelector("[data-warnings]")!;
     this.status = root.querySelector("[data-status]")!;
+    this.transposeValue = root.querySelector("[data-transpose-value]")!;
     const audio = root.querySelector<HTMLElement>("[data-audio]")!;
 
     if (abcjs.synth.supportsAudio()) {
@@ -102,11 +80,40 @@ class Track {
         this.status.textContent = "Couldn't generate a MIDI file.";
       }
     });
+
+    root.querySelector("[data-transpose-down]")!.addEventListener("click", () => {
+      this.setTranspose(this.transpose - 1);
+    });
+    root.querySelector("[data-transpose-up]")!.addEventListener("click", () => {
+      this.setTranspose(this.transpose + 1);
+    });
   }
 
+  /** Point the track at a new source (one tune, as split out by abcjs) and draw it. */
   update(source: string): void {
     this.source = source;
-    const tunes = abcjs.renderAbc(this.notation, source, { responsive: "resize" });
+    this.draw();
+  }
+
+  private setTranspose(semitones: number): void {
+    const clamped = Math.max(-24, Math.min(24, semitones));
+    if (clamped === this.transpose) return;
+    this.transpose = clamped;
+    this.transposeValue.textContent = clamped > 0 ? `+${clamped}` : `${clamped}`;
+    this.draw();
+  }
+
+  /**
+   * Render this track's source into its notation element, applying the current
+   * transpose, and re-prime playback. `visualTranspose` shifts both the notation
+   * and the tune object feeding the synth, so notation, playback, WAV and MIDI
+   * all follow the transpose; only the `.abc` download keeps the original source.
+   */
+  private draw(): void {
+    const tunes = abcjs.renderAbc(this.notation, this.source, {
+      responsive: "resize",
+      visualTranspose: this.transpose,
+    });
     const tune = tunes[0] ?? null;
     this.tune = tune;
 
@@ -164,19 +171,24 @@ export class AbcEditor {
   }
 
   render(abc: string): void {
-    const blocks = splitTunes(abc);
+    // Let abcjs split the document into tunes rather than doing it by hand: a
+    // TuneBook parses the source exactly the way renderAbc does internally, so
+    // each tune's source string below is what abcjs would render on its own.
+    const tunes = new abcjs.TuneBook(abc).tunes;
 
     // Reconcile the track sections with the number of tunes in the source,
     // reusing existing tracks so playback state isn't torn down on every keystroke.
-    while (this.tracks.length > blocks.length) {
+    while (this.tracks.length > tunes.length) {
       this.tracks.pop()!.dispose();
     }
-    while (this.tracks.length < blocks.length) {
+    while (this.tracks.length < tunes.length) {
       const root = this.template.content.firstElementChild!.cloneNode(true) as HTMLElement;
       this.container.appendChild(root);
       this.tracks.push(new Track(root));
     }
 
-    blocks.forEach((block, i) => this.tracks[i].update(block));
+    // Each track renders its own tune: they carry independent transpose amounts,
+    // and renderAbc's params (visualTranspose) apply per call, not per tune.
+    this.tracks.forEach((track, i) => track.update(tunes[i].abc));
   }
 }

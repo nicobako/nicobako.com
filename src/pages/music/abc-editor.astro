@@ -59,6 +59,13 @@ C C G G | A A G2 | F F E E | D D C2 |]
         <div class="abc-notation" data-notation></div>
       </div>
       <div class="abc-warnings no-print" data-warnings aria-live="polite"></div>
+      <div class="abc-transpose no-print">
+        <span class="abc-transpose-label">Transpose</span>
+        <button type="button" data-transpose-down aria-label="Transpose down a semitone">&minus;</button>
+        <span class="abc-transpose-value" data-transpose-value aria-live="polite" aria-label="Semitones">0</span>
+        <button type="button" data-transpose-up aria-label="Transpose up a semitone">+</button>
+        <span class="abc-transpose-hint">semitones</span>
+      </div>
       <div class="abc-audio no-print" data-audio></div>
       <div class="abc-controls no-print">
         <button type="button" data-download-abc>Download .abc</button>
@@ -283,6 +290,47 @@ C C G G | A A G2 | F F E E | D D C2 |]
     display: flex;
     flex-wrap: wrap;
     gap: 0.6rem;
+  }
+
+  .abc-transpose {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .abc-transpose button {
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .abc-transpose button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .abc-transpose-value {
+    min-width: 2ch;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  .abc-transpose-hint {
+    color: var(--muted);
   }
 
   .abc-tunes button,
