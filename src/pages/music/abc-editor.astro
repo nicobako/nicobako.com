@@ -1,0 +1,194 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+const defaultTune = `X:1
+T:Twinkle, Twinkle, Little Star
+M:4/4
+L:1/4
+K:C
+C C G G | A A G2 | F F E E | D D C2 |
+G G F F | E E D2 | G G F F | E E D2 |
+C C G G | A A G2 | F F E E | D D C2 |]
+`;
+---
+
+<Layout
+  title="ABC Editor — Nico Bako"
+  description="Write ABC music notation and see it rendered live, with playback."
+>
+  <h1 class="no-print">ABC Editor</h1>
+  <p class="no-print">
+    Write tunes in <a href="https://abcnotation.com/wiki/abc:standard:v2.1" target="_blank" rel="noopener">ABC notation</a>.
+    The sheet music below updates as you type, and the player renders audio for
+    whatever is currently valid. This page's URL updates as you type too — copy
+    it to share or bookmark the current tune.
+  </p>
+
+  <div class="abc-editor">
+    <textarea
+      id="abc-input"
+      class="abc-input no-print"
+      spellcheck="false"
+      aria-label="ABC notation source"
+    >{defaultTune}</textarea>
+
+    <div id="abc-warnings" class="abc-warnings no-print" aria-live="polite"></div>
+
+    <div class="abc-notation-wrap">
+      <div id="abc-notation" class="abc-notation"></div>
+    </div>
+
+    <div id="abc-audio" class="abc-audio no-print"></div>
+
+    <div class="abc-controls no-print">
+      <button id="print-btn" type="button">Print</button>
+      <button id="download-abc-btn" type="button">Download .abc</button>
+      <button id="download-wav-btn" type="button">Download WAV</button>
+      <button id="download-midi-btn" type="button">Download MIDI</button>
+    </div>
+
+    <p id="download-status" class="abc-download-status no-print" aria-live="polite"></p>
+  </div>
+</Layout>
+
+<script>
+  import { AbcEditor } from "../../music/abc-editor/abc-editor.ts";
+  import { loadSavedAbc, saveAbc } from "../../music/abc-editor/persistence.ts";
+
+  const input = document.getElementById("abc-input") as HTMLTextAreaElement;
+  const notation = document.getElementById("abc-notation")!;
+  const warnings = document.getElementById("abc-warnings")!;
+  const audio = document.getElementById("abc-audio")!;
+  const downloadStatus = document.getElementById("download-status")!;
+
+  const saved = loadSavedAbc();
+  if (saved) input.value = saved;
+
+  const editor = new AbcEditor({ notation, audio, warnings });
+  editor.render(input.value);
+
+  input.addEventListener("input", () => {
+    editor.render(input.value);
+    saveAbc(input.value);
+  });
+
+  document.getElementById("print-btn")!.addEventListener("click", () => {
+    window.print();
+  });
+
+  document.getElementById("download-abc-btn")!.addEventListener("click", () => {
+    editor.downloadAbcText(input.value);
+  });
+
+  document.getElementById("download-wav-btn")!.addEventListener("click", () => {
+    downloadStatus.textContent = "Rendering audio…";
+    editor
+      .downloadWav()
+      .then(() => {
+        downloadStatus.textContent = "";
+      })
+      .catch(() => {
+        downloadStatus.textContent = "Couldn't render audio for download.";
+      });
+  });
+
+  document.getElementById("download-midi-btn")!.addEventListener("click", () => {
+    try {
+      editor.downloadMidi();
+      downloadStatus.textContent = "";
+    } catch {
+      downloadStatus.textContent = "Couldn't generate a MIDI file.";
+    }
+  });
+</script>
+
+<style>
+  .abc-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .abc-input {
+    width: 100%;
+    min-height: 14rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  .abc-warnings {
+    min-height: 1.2em;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #c0392b;
+    white-space: pre-wrap;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .abc-warnings {
+      color: #ff8a80;
+    }
+  }
+
+  .abc-notation-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    padding: 0.5rem 0.75rem;
+  }
+
+  .abc-notation {
+    color: var(--text);
+    min-width: max-content;
+  }
+
+  .abc-audio {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .abc-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .abc-controls button {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .abc-controls button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .abc-download-status {
+    min-height: 1.2em;
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  @media print {
+    .abc-notation-wrap {
+      border: none;
+      padding: 0;
+      overflow: visible;
+    }
+  }
+</style>
