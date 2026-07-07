@@ -59,6 +59,15 @@ export class AbcEditor {
 
     if (this.synthControl && tune) {
       void this.synthControl.setTune(tune, false, {});
+      // abcjs's SynthController only primes audio for a tune the first time
+      // Play is pressed: setTune() never clears the isLoaded/isLoading flags
+      // it sets during that first priming, so without this, editing after
+      // playing once would keep playing (or, if a note ever failed to load,
+      // get permanently stuck "loading") the stale tune. Reset both so the
+      // next Play re-primes against the tune we just rendered.
+      const internal = this.synthControl as unknown as { isLoaded: boolean; isLoading: boolean };
+      internal.isLoaded = false;
+      internal.isLoading = false;
     }
   }
 
