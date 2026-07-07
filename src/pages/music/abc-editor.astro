@@ -41,6 +41,8 @@ C C G G | A A G2 | F F E E | D D C2 |]
     <div id="abc-audio" class="abc-audio no-print"></div>
 
     <div class="abc-controls no-print">
+      <button id="upload-abc-btn" type="button">Upload .abc</button>
+      <input id="upload-abc-input" class="visually-hidden" type="file" accept=".abc,text/plain" />
       <button id="print-btn" type="button">Print</button>
       <button id="download-abc-btn" type="button">Download .abc</button>
       <button id="download-wav-btn" type="button">Download WAV</button>
@@ -70,6 +72,32 @@ C C G G | A A G2 | F F E E | D D C2 |]
   input.addEventListener("input", () => {
     editor.render(input.value);
     saveAbc(input.value);
+  });
+
+  const uploadInput = document.getElementById("upload-abc-input") as HTMLInputElement;
+
+  document.getElementById("upload-abc-btn")!.addEventListener("click", () => {
+    uploadInput.click();
+  });
+
+  uploadInput.addEventListener("change", () => {
+    const file = uploadInput.files?.[0];
+    if (!file) return;
+
+    file
+      .text()
+      .then((text) => {
+        input.value = text;
+        editor.render(text);
+        saveAbc(text);
+        downloadStatus.textContent = "";
+      })
+      .catch(() => {
+        downloadStatus.textContent = "Couldn't read that file.";
+      })
+      .finally(() => {
+        uploadInput.value = "";
+      });
   });
 
   document.getElementById("print-btn")!.addEventListener("click", () => {
@@ -175,6 +203,18 @@ C C G G | A A G2 | F F E E | D D C2 |]
   .abc-controls button:hover {
     border-color: var(--accent);
     color: var(--accent);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .abc-download-status {
