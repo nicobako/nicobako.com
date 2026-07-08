@@ -1,0 +1,175 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout
+  title="Stopwatch — Nico Bako"
+  description="A browser stopwatch with lap tracking."
+>
+  <h1>Stopwatch</h1>
+
+  <div class="stopwatch">
+    <div id="display" class="display" aria-live="polite">00:00.00</div>
+
+    <div class="controls">
+      <button id="start-pause" class="primary">Start</button>
+      <button id="lap" disabled>Lap</button>
+      <button id="reset" disabled>Reset</button>
+    </div>
+
+    <ol id="laps" class="laps" aria-label="Laps"></ol>
+  </div>
+</Layout>
+
+<script>
+  import { Stopwatch, formatStopwatch } from "../../timers/stopwatch/stopwatch.ts";
+
+  const display = document.getElementById("display")!;
+  const startPauseBtn = document.getElementById("start-pause") as HTMLButtonElement;
+  const lapBtn = document.getElementById("lap") as HTMLButtonElement;
+  const resetBtn = document.getElementById("reset") as HTMLButtonElement;
+  const lapsList = document.getElementById("laps")!;
+
+  const stopwatch = new Stopwatch((elapsedMs) => {
+    display.textContent = formatStopwatch(elapsedMs);
+  });
+
+  function renderLaps(): void {
+    lapsList.innerHTML = "";
+    for (const entry of [...stopwatch.laps].reverse()) {
+      const li = document.createElement("li");
+
+      const number = document.createElement("span");
+      number.className = "lap-number";
+      number.textContent = `Lap ${entry.number}`;
+
+      const split = document.createElement("span");
+      split.className = "lap-split";
+      split.textContent = formatStopwatch(entry.splitMs);
+
+      const total = document.createElement("span");
+      total.className = "lap-total";
+      total.textContent = formatStopwatch(entry.totalMs);
+
+      li.append(number, split, total);
+      lapsList.appendChild(li);
+    }
+  }
+
+  startPauseBtn.addEventListener("click", () => {
+    if (stopwatch.isRunning) {
+      stopwatch.pause();
+      startPauseBtn.textContent = "Resume";
+      lapBtn.disabled = true;
+    } else {
+      stopwatch.start();
+      startPauseBtn.textContent = "Pause";
+      lapBtn.disabled = false;
+      resetBtn.disabled = false;
+    }
+  });
+
+  lapBtn.addEventListener("click", () => {
+    if (!stopwatch.isRunning) return;
+    stopwatch.lap();
+    renderLaps();
+  });
+
+  resetBtn.addEventListener("click", () => {
+    stopwatch.reset();
+    display.textContent = formatStopwatch(0);
+    startPauseBtn.textContent = "Start";
+    lapBtn.disabled = true;
+    resetBtn.disabled = true;
+    renderLaps();
+  });
+</script>
+
+<style>
+  .stopwatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+
+  .display {
+    font-family: var(--font-mono);
+    font-size: clamp(2.75rem, 11vw, 4.5rem);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .controls button {
+    min-width: 6rem;
+    padding: 0.6rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .controls button.primary {
+    border-color: var(--accent);
+    background: transparent;
+    color: var(--accent);
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
+
+  .controls button.primary:hover {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .laps {
+    width: 100%;
+    max-width: 22rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .laps li {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1rem;
+    padding: 0.5rem 0.25rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+
+  .laps li + li {
+    margin-top: 0;
+  }
+
+  .lap-number {
+    font-family: var(--font-sans);
+    color: var(--muted);
+  }
+
+  .lap-split {
+    color: var(--text);
+  }
+
+  .lap-total {
+    color: var(--muted);
+  }
+</style>

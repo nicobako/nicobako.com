@@ -1,0 +1,274 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout
+  title="Meditation Timer — Nico Bako"
+  description="A quiet meditation timer with optional start, interval, and end bells."
+>
+  <h1>Meditation Timer</h1>
+
+  <div class="meditation">
+    <div id="circle" class="circle">
+      <div id="display" class="display" aria-live="polite">10:00</div>
+    </div>
+
+    <div id="config" class="config">
+      <label>
+        <span>Duration (min)</span>
+        <input id="duration-min" type="number" min="1" max="180" value="10" />
+      </label>
+      <label>
+        <span>Bell every (min, 0 = off)</span>
+        <input id="interval-min" type="number" min="0" max="60" value="0" />
+      </label>
+    </div>
+
+    <div class="bell-toggles">
+      <label>
+        <input id="start-bell" type="checkbox" checked />
+        Start bell
+      </label>
+      <label>
+        <input id="end-bell" type="checkbox" checked />
+        End bell
+      </label>
+    </div>
+
+    <div class="controls">
+      <button id="start-pause" class="primary">Begin</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <p id="status" class="status" role="status"></p>
+  </div>
+</Layout>
+
+<script>
+  import { Countdown, formatClock } from "../../timers/shared/countdown.ts";
+  import { playChime } from "../../timers/shared/audio.ts";
+  import { BellTracker } from "../../timers/meditation/meditation.ts";
+
+  type State = "idle" | "running" | "paused" | "done";
+
+  const circle = document.getElementById("circle")!;
+  const display = document.getElementById("display")!;
+  const config = document.getElementById("config")!;
+  const durationInput = document.getElementById("duration-min") as HTMLInputElement;
+  const intervalInput = document.getElementById("interval-min") as HTMLInputElement;
+  const startBellInput = document.getElementById("start-bell") as HTMLInputElement;
+  const endBellInput = document.getElementById("end-bell") as HTMLInputElement;
+  const startPauseBtn = document.getElementById("start-pause") as HTMLButtonElement;
+  const resetBtn = document.getElementById("reset") as HTMLButtonElement;
+  const statusEl = document.getElementById("status")!;
+
+  let state: State = "idle";
+  let bellTracker: BellTracker | null = null;
+
+  function durationMs(): number {
+    return Math.max(1, Number(durationInput.value) || 10) * 60_000;
+  }
+
+  function intervalMs(): number {
+    return Math.max(0, Number(intervalInput.value) || 0) * 60_000;
+  }
+
+  function syncIdleDisplay(): void {
+    if (state === "idle") {
+      display.textContent = formatClock(durationMs());
+    }
+  }
+
+  function setState(next: State): void {
+    state = next;
+    circle.classList.toggle("running", next === "running");
+    circle.classList.toggle("done", next === "done");
+
+    const locked = next === "running" || next === "paused";
+    durationInput.disabled = locked;
+    intervalInput.disabled = locked;
+    config.classList.toggle("disabled", locked);
+
+    startPauseBtn.textContent = next === "running" ? "Pause" : next === "paused" ? "Resume" : "Begin";
+    statusEl.textContent = next === "done" ? "Session complete." : "";
+  }
+
+  const countdown = new Countdown(
+    ({ remainingMs }) => {
+      display.textContent = formatClock(remainingMs);
+      if (bellTracker?.checkBell(remainingMs)) playChime();
+    },
+    () => {
+      display.textContent = "00:00";
+      if (endBellInput.checked) playChime();
+      setState("done");
+    },
+  );
+
+  syncIdleDisplay();
+  durationInput.addEventListener("input", syncIdleDisplay);
+
+  startPauseBtn.addEventListener("click", () => {
+    if (state === "running") {
+      countdown.pause();
+      setState("paused");
+      return;
+    }
+    if (state === "paused") {
+      countdown.resume();
+      setState("running");
+      return;
+    }
+    const total = durationMs();
+    bellTracker = new BellTracker(total, intervalMs());
+    if (startBellInput.checked) playChime();
+    countdown.start(total);
+    setState("running");
+  });
+
+  resetBtn.addEventListener("click", () => {
+    countdown.reset();
+    bellTracker = null;
+    setState("idle");
+    syncIdleDisplay();
+  });
+</script>
+
+<style>
+  .meditation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.75rem;
+    margin-top: 2.5rem;
+  }
+
+  .circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14rem;
+    height: 14rem;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition:
+      border-color 0.4s,
+      box-shadow 0.4s;
+  }
+
+  .circle.running {
+    border-color: var(--accent);
+    animation: breathe 6s ease-in-out infinite;
+  }
+
+  .circle.done {
+    border-color: var(--accent);
+  }
+
+  @keyframes breathe {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 25%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 1rem color-mix(in srgb, var(--accent) 8%, transparent);
+    }
+  }
+
+  .display {
+    font-family: var(--font-mono);
+    font-size: 2.75rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .config {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  .config.disabled {
+    opacity: 0.5;
+  }
+
+  .config label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .config input {
+    width: 6rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.35rem 0.5rem;
+    -moz-appearance: textfield;
+  }
+
+  .config input::-webkit-outer-spin-button,
+  .config input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+
+  .bell-toggles {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .bell-toggles label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .controls button {
+    min-width: 7rem;
+    padding: 0.6rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .controls button.primary {
+    border-color: var(--accent);
+    background: transparent;
+    color: var(--accent);
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
+
+  .controls button.primary:hover {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .status {
+    min-height: 1.4em;
+    font-weight: 600;
+    color: var(--accent);
+  }
+</style>
