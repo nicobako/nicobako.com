@@ -1,0 +1,447 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout
+  title="Interval Timer — Nico Bako"
+  description="A configurable multi-interval timer for workouts and circuits, with any number of named intervals and rounds."
+>
+  <h1>Interval Timer</h1>
+
+  <div class="interval-timer">
+    <p id="phase-name" class="phase-name">Ready</p>
+    <div id="display" class="display" aria-live="polite">00:30</div>
+    <p id="progress" class="progress"></p>
+    <p id="up-next" class="up-next"></p>
+
+    <div id="steps-editor" class="steps-editor">
+      <div id="steps-list" class="steps-list">
+        <div class="step-row">
+          <input type="text" class="step-name" value="Work" aria-label="Interval name" />
+          <input type="number" class="step-seconds" min="1" max="3600" value="30" aria-label="Seconds" />
+          <span class="unit">sec</span>
+          <button type="button" class="remove-step" aria-label="Remove interval">✕</button>
+        </div>
+        <div class="step-row">
+          <input type="text" class="step-name" value="Rest" aria-label="Interval name" />
+          <input type="number" class="step-seconds" min="1" max="3600" value="15" aria-label="Seconds" />
+          <span class="unit">sec</span>
+          <button type="button" class="remove-step" aria-label="Remove interval">✕</button>
+        </div>
+      </div>
+
+      <button id="add-step" type="button" class="add-step">+ Add interval</button>
+
+      <label class="rounds-row">
+        <span>Rounds</span>
+        <input id="rounds" type="number" min="1" max="99" value="4" />
+      </label>
+    </div>
+
+    <div class="controls">
+      <button id="start-pause" class="primary">Start</button>
+      <button id="skip">Skip</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <p id="status" class="status" role="status"></p>
+  </div>
+</Layout>
+
+<script>
+  import { Countdown, formatClock } from "../../timers/shared/countdown.ts";
+  import { playAlarm, playChime } from "../../timers/shared/audio.ts";
+  import { IntervalPlan, type IntervalStep, type IntervalPosition } from "../../timers/interval/interval.ts";
+
+  type State = "idle" | "running" | "paused" | "complete";
+
+  const phaseNameEl = document.getElementById("phase-name")!;
+  const display = document.getElementById("display")!;
+  const progressEl = document.getElementById("progress")!;
+  const upNextEl = document.getElementById("up-next")!;
+  const stepsEditor = document.getElementById("steps-editor")!;
+  const stepsList = document.getElementById("steps-list")!;
+  const addStepBtn = document.getElementById("add-step") as HTMLButtonElement;
+  const roundsInput = document.getElementById("rounds") as HTMLInputElement;
+  const startPauseBtn = document.getElementById("start-pause") as HTMLButtonElement;
+  const skipBtn = document.getElementById("skip") as HTMLButtonElement;
+  const resetBtn = document.getElementById("reset") as HTMLButtonElement;
+  const statusEl = document.getElementById("status")!;
+
+  let state: State = "idle";
+  let plan: IntervalPlan | null = null;
+  let position: IntervalPosition = { stepIndex: 0, round: 1 };
+
+  function readSteps(): IntervalStep[] {
+    return Array.from(stepsList.querySelectorAll<HTMLDivElement>(".step-row")).map((row) => {
+      const name = row.querySelector<HTMLInputElement>(".step-name")!.value.trim() || "Interval";
+      const seconds = Math.max(1, Number(row.querySelector<HTMLInputElement>(".step-seconds")!.value) || 1);
+      return { name, seconds };
+    });
+  }
+
+  function readRounds(): number {
+    return Math.max(1, Number(roundsInput.value) || 1);
+  }
+
+  function refreshRemoveButtons(): void {
+    const buttons = stepsList.querySelectorAll<HTMLButtonElement>(".remove-step");
+    const locked = state === "running" || state === "paused";
+    buttons.forEach((btn) => (btn.disabled = locked || buttons.length <= 1));
+  }
+
+  function bindRemoveButton(btn: HTMLButtonElement, row: HTMLDivElement): void {
+    btn.addEventListener("click", () => {
+      if (stepsList.querySelectorAll(".step-row").length <= 1) return;
+      row.remove();
+      refreshRemoveButtons();
+      syncIdleDisplay();
+    });
+  }
+
+  function createStepRow(name = "Interval", seconds = 30): HTMLDivElement {
+    const row = document.createElement("div");
+    row.className = "step-row";
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "step-name";
+    nameInput.value = name;
+    nameInput.setAttribute("aria-label", "Interval name");
+
+    const secondsInput = document.createElement("input");
+    secondsInput.type = "number";
+    secondsInput.className = "step-seconds";
+    secondsInput.min = "1";
+    secondsInput.max = "3600";
+    secondsInput.value = String(seconds);
+    secondsInput.setAttribute("aria-label", "Seconds");
+
+    const unit = document.createElement("span");
+    unit.className = "unit";
+    unit.textContent = "sec";
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "remove-step";
+    removeBtn.setAttribute("aria-label", "Remove interval");
+    removeBtn.textContent = "✕";
+    bindRemoveButton(removeBtn, row);
+
+    row.append(nameInput, secondsInput, unit, removeBtn);
+    return row;
+  }
+
+  function updatePhaseUI(step: IntervalStep, pos: IntervalPosition, totalRounds: number, totalSteps: number): void {
+    phaseNameEl.textContent = step.name;
+    progressEl.textContent =
+      totalRounds > 1
+        ? `Round ${pos.round} of ${totalRounds} · Interval ${pos.stepIndex + 1} of ${totalSteps}`
+        : `Interval ${pos.stepIndex + 1} of ${totalSteps}`;
+  }
+
+  function updateUpNext(nextStep: IntervalStep | null): void {
+    upNextEl.textContent = nextStep ? `Up next: ${nextStep.name}` : "Final interval";
+  }
+
+  function syncIdleDisplay(): void {
+    if (state !== "idle") return;
+    const steps = readSteps();
+    if (steps.length === 0) return;
+    const rounds = readRounds();
+    display.textContent = formatClock(steps[0].seconds * 1000);
+    updatePhaseUI(steps[0], { stepIndex: 0, round: 1 }, rounds, steps.length);
+    const next = steps.length > 1 ? steps[1] : rounds > 1 ? steps[0] : null;
+    updateUpNext(next);
+  }
+
+  function setState(next: State): void {
+    state = next;
+    const locked = next === "running" || next === "paused";
+
+    stepsList.querySelectorAll<HTMLInputElement>("input").forEach((el) => (el.disabled = locked));
+    refreshRemoveButtons();
+    addStepBtn.disabled = locked;
+    roundsInput.disabled = locked;
+    stepsEditor.classList.toggle("disabled", locked);
+
+    skipBtn.disabled = next === "idle" || next === "complete";
+    startPauseBtn.textContent = next === "running" ? "Pause" : next === "paused" ? "Resume" : "Start";
+    statusEl.textContent = next === "complete" ? "All intervals complete!" : "";
+  }
+
+  const countdown = new Countdown(
+    ({ remainingMs }) => {
+      display.textContent = formatClock(remainingMs);
+    },
+    () => advance(),
+  );
+
+  function startStep(): void {
+    if (!plan) return;
+    const step = plan.stepAt(position);
+    if (!step) return;
+    updatePhaseUI(step, position, plan.config.rounds, plan.config.steps.length);
+    const nextPos = plan.next(position);
+    updateUpNext(nextPos ? plan.stepAt(nextPos) : null);
+    countdown.start(step.seconds * 1000);
+  }
+
+  function advance(): void {
+    if (!plan) return;
+    const nextPos = plan.next(position);
+    if (!nextPos) {
+      playAlarm();
+      setState("complete");
+      return;
+    }
+    playChime();
+    position = nextPos;
+    startStep();
+  }
+
+  refreshRemoveButtons();
+  syncIdleDisplay();
+  stepsList.querySelectorAll<HTMLDivElement>(".step-row").forEach((row) => {
+    bindRemoveButton(row.querySelector<HTMLButtonElement>(".remove-step")!, row);
+  });
+
+  stepsList.addEventListener("input", syncIdleDisplay);
+  roundsInput.addEventListener("input", syncIdleDisplay);
+
+  addStepBtn.addEventListener("click", () => {
+    stepsList.appendChild(createStepRow());
+    refreshRemoveButtons();
+    syncIdleDisplay();
+  });
+
+  startPauseBtn.addEventListener("click", () => {
+    if (state === "running") {
+      countdown.pause();
+      setState("paused");
+      return;
+    }
+    if (state === "paused") {
+      countdown.resume();
+      setState("running");
+      return;
+    }
+    const steps = readSteps();
+    if (steps.length === 0) return;
+    plan = new IntervalPlan({ steps, rounds: readRounds() });
+    position = { stepIndex: 0, round: 1 };
+    setState("running");
+    startStep();
+  });
+
+  skipBtn.addEventListener("click", () => {
+    if (!plan) return;
+    countdown.reset();
+    advance();
+  });
+
+  resetBtn.addEventListener("click", () => {
+    countdown.reset();
+    plan = null;
+    position = { stepIndex: 0, round: 1 };
+    setState("idle");
+    syncIdleDisplay();
+  });
+</script>
+
+<style>
+  .interval-timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2.5rem;
+  }
+
+  .phase-name {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .display {
+    font-family: var(--font-mono);
+    font-size: clamp(3rem, 12vw, 5rem);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--text);
+    margin-top: 0.25rem;
+  }
+
+  .progress {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .up-next {
+    margin: 0 0 1rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .steps-editor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 24rem;
+  }
+
+  .steps-editor.disabled {
+    opacity: 0.5;
+  }
+
+  .steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 1fr 4.5rem auto auto;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .step-row input,
+  .step-row .unit {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.35rem 0.5rem;
+  }
+
+  .step-row .step-seconds {
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+
+  .step-row .step-seconds::-webkit-outer-spin-button,
+  .step-row .step-seconds::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+
+  .step-row .unit {
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .remove-step {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--muted);
+    width: 2.25rem;
+    height: 2.25rem;
+    cursor: pointer;
+  }
+
+  .remove-step:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .remove-step:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .add-step {
+    align-self: flex-start;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    background: none;
+    color: var(--muted);
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .add-step:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .rounds-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .rounds-row input {
+    width: 4.5rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.35rem 0.5rem;
+    -moz-appearance: textfield;
+  }
+
+  .rounds-row input::-webkit-outer-spin-button,
+  .rounds-row input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .controls button {
+    min-width: 6rem;
+    padding: 0.6rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .controls button.primary {
+    border-color: var(--accent);
+    background: transparent;
+    color: var(--accent);
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
+
+  .controls button.primary:hover {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .status {
+    min-height: 1.4em;
+    font-weight: 600;
+    color: var(--accent);
+  }
+</style>

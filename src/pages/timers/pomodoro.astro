@@ -1,0 +1,293 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout
+  title="Pomodoro Timer — Nico Bako"
+  description="A configurable Pomodoro timer with focus sessions and short/long breaks."
+>
+  <h1>Pomodoro Timer</h1>
+
+  <div class="pomodoro">
+    <p id="phase" class="phase" data-phase="work">Focus</p>
+    <div id="display" class="display" aria-live="polite">25:00</div>
+    <p id="sessions" class="sessions">Completed: 0</p>
+
+    <div id="config" class="config">
+      <label>
+        <span>Focus (min)</span>
+        <input id="work-min" type="number" min="1" max="120" value="25" />
+      </label>
+      <label>
+        <span>Short break (min)</span>
+        <input id="short-break-min" type="number" min="1" max="60" value="5" />
+      </label>
+      <label>
+        <span>Long break (min)</span>
+        <input id="long-break-min" type="number" min="1" max="60" value="15" />
+      </label>
+      <label>
+        <span>Long break every</span>
+        <input id="long-break-every" type="number" min="1" max="12" value="4" />
+      </label>
+    </div>
+
+    <label class="auto-advance">
+      <input id="auto-advance" type="checkbox" checked />
+      Auto-start next phase
+    </label>
+
+    <div class="controls">
+      <button id="start-pause" class="primary">Start</button>
+      <button id="skip">Skip</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <p id="status" class="status" role="status"></p>
+  </div>
+</Layout>
+
+<script>
+  import { Countdown, formatClock } from "../../timers/shared/countdown.ts";
+  import { playChime } from "../../timers/shared/audio.ts";
+  import { PomodoroCycle, PHASE_LABEL, type PomodoroConfig } from "../../timers/pomodoro/pomodoro.ts";
+
+  type RunState = "idle" | "running" | "paused";
+
+  const phaseEl = document.getElementById("phase")!;
+  const display = document.getElementById("display")!;
+  const sessionsEl = document.getElementById("sessions")!;
+  const config = document.getElementById("config")!;
+  const workInput = document.getElementById("work-min") as HTMLInputElement;
+  const shortBreakInput = document.getElementById("short-break-min") as HTMLInputElement;
+  const longBreakInput = document.getElementById("long-break-min") as HTMLInputElement;
+  const longBreakEveryInput = document.getElementById("long-break-every") as HTMLInputElement;
+  const autoAdvanceInput = document.getElementById("auto-advance") as HTMLInputElement;
+  const startPauseBtn = document.getElementById("start-pause") as HTMLButtonElement;
+  const skipBtn = document.getElementById("skip") as HTMLButtonElement;
+  const resetBtn = document.getElementById("reset") as HTMLButtonElement;
+  const statusEl = document.getElementById("status")!;
+  const configInputs = [workInput, shortBreakInput, longBreakInput, longBreakEveryInput];
+
+  function readConfig(): PomodoroConfig {
+    return {
+      workMin: Math.max(1, Number(workInput.value) || 25),
+      shortBreakMin: Math.max(1, Number(shortBreakInput.value) || 5),
+      longBreakMin: Math.max(1, Number(longBreakInput.value) || 15),
+      longBreakEvery: Math.max(1, Number(longBreakEveryInput.value) || 4),
+    };
+  }
+
+  let cycle = new PomodoroCycle(readConfig());
+  let runState: RunState = "idle";
+
+  function updatePhaseDisplay(): void {
+    phaseEl.textContent = PHASE_LABEL[cycle.phase];
+    phaseEl.dataset.phase = cycle.phase;
+    sessionsEl.textContent = `Completed: ${cycle.completedWorkSessions}`;
+  }
+
+  function syncIdleDisplay(): void {
+    if (runState === "idle") {
+      display.textContent = formatClock(cycle.durationMs());
+    }
+  }
+
+  function setRunState(next: RunState): void {
+    runState = next;
+    const locked = next !== "idle";
+    configInputs.forEach((input) => (input.disabled = locked));
+    config.classList.toggle("disabled", locked);
+    startPauseBtn.textContent = next === "running" ? "Pause" : next === "paused" ? "Resume" : "Start";
+    skipBtn.disabled = next === "idle";
+  }
+
+  const countdown = new Countdown(
+    ({ remainingMs }) => {
+      display.textContent = formatClock(remainingMs);
+    },
+    () => advancePhase(),
+  );
+
+  function advancePhase(): void {
+    playChime();
+    const next = cycle.advance();
+    updatePhaseDisplay();
+    statusEl.textContent = next === "work" ? "Back to focus." : "Time for a break.";
+    if (autoAdvanceInput.checked) {
+      countdown.start(cycle.durationMs());
+      setRunState("running");
+    } else {
+      display.textContent = formatClock(cycle.durationMs());
+      setRunState("idle");
+    }
+  }
+
+  updatePhaseDisplay();
+  syncIdleDisplay();
+  configInputs.forEach((input) => input.addEventListener("input", () => {
+    cycle.config = readConfig();
+    syncIdleDisplay();
+  }));
+
+  startPauseBtn.addEventListener("click", () => {
+    statusEl.textContent = "";
+    if (runState === "running") {
+      countdown.pause();
+      setRunState("paused");
+      return;
+    }
+    if (runState === "paused") {
+      countdown.resume();
+      setRunState("running");
+      return;
+    }
+    countdown.start(cycle.durationMs());
+    setRunState("running");
+  });
+
+  skipBtn.addEventListener("click", () => {
+    countdown.reset();
+    advancePhase();
+  });
+
+  resetBtn.addEventListener("click", () => {
+    countdown.reset();
+    cycle.reset();
+    updatePhaseDisplay();
+    setRunState("idle");
+    syncIdleDisplay();
+    statusEl.textContent = "";
+  });
+</script>
+
+<style>
+  .pomodoro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2.5rem;
+  }
+
+  .phase {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+  }
+
+  .phase[data-phase="work"] {
+    color: var(--accent);
+  }
+
+  .phase[data-phase="shortBreak"],
+  .phase[data-phase="longBreak"] {
+    color: var(--muted);
+  }
+
+  .display {
+    font-family: var(--font-mono);
+    font-size: clamp(3rem, 12vw, 5rem);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .sessions {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .config {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .config.disabled {
+    opacity: 0.5;
+  }
+
+  .config label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .config input {
+    width: 4.5rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.35rem 0.5rem;
+    -moz-appearance: textfield;
+  }
+
+  .config input::-webkit-outer-spin-button,
+  .config input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+
+  .auto-advance {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .controls button {
+    min-width: 6rem;
+    padding: 0.6rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .controls button.primary {
+    border-color: var(--accent);
+    background: transparent;
+    color: var(--accent);
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
+
+  .controls button.primary:hover {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .status {
+    min-height: 1.4em;
+    font-weight: 600;
+    color: var(--accent);
+  }
+</style>
