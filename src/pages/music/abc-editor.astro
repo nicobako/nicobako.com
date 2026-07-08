@@ -55,10 +55,6 @@ C C G G | A A G2 | F F E E | D D C2 |]
 
   <template id="track-template">
     <section class="abc-track">
-      <div class="abc-notation-wrap">
-        <div class="abc-notation" data-notation></div>
-      </div>
-      <div class="abc-warnings no-print" data-warnings aria-live="polite"></div>
       <div class="abc-transpose no-print">
         <span class="abc-transpose-label">Transpose</span>
         <button type="button" data-transpose-down aria-label="Transpose down a semitone">&minus;</button>
@@ -66,6 +62,10 @@ C C G G | A A G2 | F F E E | D D C2 |]
         <button type="button" data-transpose-up aria-label="Transpose up a semitone">+</button>
         <span class="abc-transpose-hint">semitones</span>
       </div>
+      <div class="abc-notation-wrap">
+        <div class="abc-notation" data-notation></div>
+      </div>
+      <div class="abc-warnings no-print" data-warnings aria-live="polite"></div>
       <div class="abc-audio no-print" data-audio></div>
       <div class="abc-controls no-print">
         <button type="button" data-download-abc>Download .abc</button>
@@ -233,6 +233,15 @@ C C G G | A A G2 | F F E E | D D C2 |]
     display: flex;
     flex-direction: column;
     gap: 2rem;
+    margin-top: 1rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--border);
+  }
+
+  .abc-tracks:empty {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
   }
 
   .abc-track {
@@ -370,6 +379,12 @@ C C G G | A A G2 | F F E E | D D C2 |]
   }
 
   @media print {
+    .abc-tracks {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+
     .abc-notation-wrap {
       border: none;
       padding: 0;

@@ -122,7 +122,11 @@ class Track {
       : "";
 
     if (this.synthControl && tune) {
-      void this.synthControl.setTune(tune, false, {});
+      // visualTranspose only shifts the notation: abcjs treats it as a
+      // transposing-instrument offset and subtracts it back out of the MIDI so
+      // the sound stays at concert pitch. Pass a matching midiTranspose so
+      // playback follows the notation. (see abc_midi_sequencer.js)
+      void this.synthControl.setTune(tune, false, { midiTranspose: this.transpose });
       // abcjs's SynthController only primes audio for a tune the first time
       // Play is pressed: setTune() never clears the isLoaded/isLoading flags
       // it sets during that first priming, so without this, editing after
@@ -147,14 +151,14 @@ class Track {
   private async downloadWav(): Promise<void> {
     if (!this.tune) return;
     const midiBuffer = new abcjs.synth.CreateSynth();
-    await midiBuffer.init({ visualObj: this.tune });
+    await midiBuffer.init({ visualObj: this.tune, options: { midiTranspose: this.transpose } });
     await midiBuffer.prime();
     triggerDownload(midiBuffer.download(), `${fileBaseName(this.tune)}.wav`);
   }
 
   private downloadMidi(): void {
     if (!this.tune) return;
-    const bytes = abcjs.synth.getMidiFile(this.tune, { midiOutputType: "binary" }) as Uint8Array<ArrayBuffer>;
+    const bytes = abcjs.synth.getMidiFile(this.tune, { midiOutputType: "binary", midiTranspose: this.transpose }) as Uint8Array<ArrayBuffer>;
     const blob = new Blob([bytes], { type: "audio/midi" });
     triggerDownload(URL.createObjectURL(blob), `${fileBaseName(this.tune)}.midi`);
   }
