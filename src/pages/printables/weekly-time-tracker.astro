@@ -1,0 +1,360 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+// Static, write-in weekly hour grid: no inputs, no JS. Blank cells to fill by hand.
+const HOURS = Array.from({ length: 18 }, (_, i) => {
+  const hour24 = i + 6; // 6am through 11pm
+  return hour24 % 12 === 0 ? 12 : hour24 % 12;
+});
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const CATEGORIES = [
+  { name: "Work", swatch: "work", meaning: "obligated output" },
+  { name: "Study", swatch: "study", meaning: "new material" },
+  {
+    name: "Practice",
+    swatch: "practice",
+    meaning: "reinforcing toward a goal",
+  },
+  { name: "Play", swatch: "play", meaning: "unstructured" },
+];
+---
+
+<Layout
+  title="Weekly Time Tracker — Nico Bako"
+  description="A printable weekly grid for tracking hours spent on work, study, practice, and play."
+>
+  <h1 class="no-print">Weekly Time Tracker</h1>
+  <p class="no-print">
+    A blank weekly hour grid to print and fill in by hand — work, study,
+    practice, and play.
+  </p>
+
+  <div class="sheet">
+    <div class="sheet-head">
+      Weekly Time Tracker<span class="week-of">Week of</span>
+    </div>
+
+    <div class="legend">
+      {
+        CATEGORIES.map((cat) => (
+          <span class="legend-item">
+            <span class={`swatch swatch-${cat.swatch}`} />
+            {cat.name}
+          </span>
+        ))
+      }
+    </div>
+
+    <h2 class="section-title">Daily Hour Blocks</h2>
+    <table class="grid">
+      <thead>
+        <tr>
+          <th class="daycol" scope="col">
+            Day
+          </th>
+          {
+            HOURS.map((h) => (
+              <th class="hourcol" scope="col">
+                {h}
+              </th>
+            ))
+          }
+        </tr>
+      </thead>
+      <tbody>
+        {
+          DAYS.map((day) => (
+            <tr>
+              <td class="daylabel">{day}</td>
+              {HOURS.map(() => (
+                <td class="hourcell" />
+              ))}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+    <p class="grid-note">
+      Fill each hour cell with a mark matching the legend above. Hours shown:
+      6am&ndash;11pm.
+    </p>
+
+    <h2 class="section-title">Weekly Totals</h2>
+    <table class="totals">
+      <thead>
+        <tr>
+          <th class="catcol" scope="col">
+            Category
+          </th>
+          {
+            DAYS.map((day) => (
+              <th scope="col">{day}</th>
+            ))
+          }
+          <th scope="col">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          CATEGORIES.map((cat) => (
+            <tr>
+              <td class="catlabel">{cat.name}</td>
+              {DAYS.map(() => (
+                <td class="tallybox" />
+              ))}
+              <td class="tallybox" />
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+
+    <div class="notes">
+      <span class="notes-label">Notes</span>
+      <div class="notes-lines">
+        <span /><span />
+      </div>
+    </div>
+
+    <div class="legend-footnote">
+      {
+        CATEGORIES.map((cat, i) => (
+          <span class="footnote-item">
+            {i > 0 && <span class="sep">&bull;</span>}
+            <b>{cat.name}</b> &middot; {cat.meaning}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .sheet-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .sheet-head .week-of {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 12rem;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .swatch {
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 1px solid var(--border);
+    display: inline-block;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .swatch-work {
+    background-color: var(--surface);
+    background-image: repeating-linear-gradient(
+      45deg,
+      var(--text) 0 1px,
+      transparent 1px 6px
+    );
+  }
+
+  .swatch-study {
+    background: var(--muted);
+  }
+
+  .swatch-practice {
+    background-color: var(--surface);
+    background-image: repeating-linear-gradient(
+      0deg,
+      var(--text) 0 1px,
+      transparent 1px 6px
+    );
+  }
+
+  .swatch-play {
+    background: var(--bg);
+  }
+
+  .section-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.3rem;
+    margin: 1.5rem 0 0.75rem;
+  }
+
+  table.grid,
+  table.totals {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  table.grid th,
+  table.grid td,
+  table.totals th,
+  table.totals td {
+    border: 1px solid var(--border);
+    text-align: center;
+    padding: 0;
+  }
+
+  table.grid {
+    font-size: 0.68rem;
+  }
+
+  table.grid th {
+    background: var(--surface);
+    font-weight: 600;
+    padding: 0.3rem 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  table.grid .hourcell {
+    height: 1.4rem;
+  }
+
+  table.grid .daylabel {
+    background: var(--surface);
+    font-weight: 600;
+    text-align: left;
+    padding-left: 0.4rem;
+    font-size: 0.75rem;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  table.grid .daycol {
+    width: 4rem;
+  }
+
+  .grid-note {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin: 0.5rem 0 1.25rem;
+  }
+
+  table.totals {
+    font-size: 0.8rem;
+    margin-bottom: 1.25rem;
+  }
+
+  table.totals th,
+  table.totals td {
+    padding: 0.4rem;
+  }
+
+  table.totals th {
+    background: var(--surface);
+    font-weight: 600;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  table.totals .catcol {
+    text-align: left;
+    width: 7rem;
+  }
+
+  table.totals .catlabel {
+    text-align: left;
+    font-weight: 600;
+    background: var(--surface);
+    padding-left: 0.5rem;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  table.totals .tallybox {
+    height: 2rem;
+  }
+
+  .notes {
+    margin: 1.25rem 0;
+  }
+
+  .notes-label {
+    display: block;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+  }
+
+  .notes-lines span {
+    display: block;
+    height: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .legend-footnote {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 0.6rem;
+  }
+
+  .legend-footnote .sep {
+    color: var(--border);
+    margin-right: 0.35rem;
+  }
+
+  @media print {
+    .sheet-head .week-of,
+    table.grid th,
+    table.grid td,
+    table.totals th,
+    table.totals td,
+    .notes-lines span,
+    .legend-footnote {
+      border-color: #000;
+    }
+
+    .swatch-work {
+      background-image: repeating-linear-gradient(
+        45deg,
+        #000 0 1px,
+        transparent 1px 6px
+      );
+    }
+
+    .swatch-practice {
+      background-image: repeating-linear-gradient(
+        0deg,
+        #000 0 1px,
+        transparent 1px 6px
+      );
+    }
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+</style>
