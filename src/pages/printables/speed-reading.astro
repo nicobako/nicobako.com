@@ -119,7 +119,6 @@ const pxPerMm = 96 / 25.4;
 
 <script>
   import {
-    DEFAULT_OPTIONS,
     describeSheet,
     renderSheetHTML,
     type Flow,
@@ -150,7 +149,10 @@ const pxPerMm = 96 / 25.4;
     spacing: document.getElementById("spacing-out")!,
   };
 
-  let seed = DEFAULT_OPTIONS.seed;
+  // DEFAULT_OPTIONS.seed is fixed so the server render is deterministic; if the browser
+  // kept it, every visit would open on the same words. Re-seed on load, and let the
+  // re-roll button take it from there.
+  let seed = Math.floor(Math.random() * 1_000_000) + 1;
 
   // `@page` lives outside the cascade, so the paper size cannot be driven by a CSS
   // custom property or a scoped rule - the only way to change it is to rewrite the
