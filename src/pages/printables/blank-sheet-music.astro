@@ -1,0 +1,225 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import {
+  DEFAULT_OPTIONS,
+  describeSheet,
+  renderStaffPaperHTML,
+} from "../../printables/staff-paper/staff-paper.ts";
+---
+
+<Layout
+  title="Blank Sheet Music — Nico Bako"
+  description="Printable blank staff paper with configurable margins, staff spacing, and page count."
+>
+  <div class="controls no-print">
+    <h1>Blank Sheet Music</h1>
+    <p>Blank staff paper, sized to A4. Set the margins and spacing, then print.</p>
+
+    <div class="grid">
+      <label>
+        <span>Left margin <output id="left-out">{DEFAULT_OPTIONS.leftMarginMm}mm</output></span>
+        <input id="left-margin" type="range" min="0" max="40" step="1" value={DEFAULT_OPTIONS.leftMarginMm} />
+      </label>
+
+      <label>
+        <span>Right margin <output id="right-out">{DEFAULT_OPTIONS.rightMarginMm}mm</output></span>
+        <input id="right-margin" type="range" min="0" max="40" step="1" value={DEFAULT_OPTIONS.rightMarginMm} />
+      </label>
+
+      <label>
+        <span>Space between lines <output id="spacing-out">{DEFAULT_OPTIONS.lineSpacingMm}mm</output></span>
+        <input id="line-spacing" type="range" min="4" max="30" step="1" value={DEFAULT_OPTIONS.lineSpacingMm} />
+      </label>
+
+      <label>
+        <span>Pages</span>
+        <input id="pages" type="number" min="1" max="50" step="1" value={DEFAULT_OPTIONS.pages} />
+      </label>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="print">Print</button>
+    </div>
+
+    <p class="summary" id="summary">{describeSheet(DEFAULT_OPTIONS)}</p>
+  </div>
+
+  <div class="sheet-wrap">
+    <div id="sheet" set:html={renderStaffPaperHTML(DEFAULT_OPTIONS)} />
+  </div>
+</Layout>
+
+<script>
+  import {
+    describeSheet,
+    renderStaffPaperHTML,
+    type StaffPaperOptions,
+  } from "../../printables/staff-paper/staff-paper.ts";
+
+  const sheet = document.getElementById("sheet") as HTMLDivElement;
+  const summary = document.getElementById("summary") as HTMLParagraphElement;
+
+  const leftMargin = document.getElementById("left-margin") as HTMLInputElement;
+  const rightMargin = document.getElementById("right-margin") as HTMLInputElement;
+  const lineSpacing = document.getElementById("line-spacing") as HTMLInputElement;
+  const pages = document.getElementById("pages") as HTMLInputElement;
+
+  const out = {
+    left: document.getElementById("left-out")!,
+    right: document.getElementById("right-out")!,
+    spacing: document.getElementById("spacing-out")!,
+  };
+
+  function readOptions(): StaffPaperOptions {
+    const pageCount = Math.min(50, Math.max(1, Math.round(Number(pages.value)) || 1));
+    return {
+      leftMarginMm: Number(leftMargin.value),
+      rightMarginMm: Number(rightMargin.value),
+      lineSpacingMm: Number(lineSpacing.value),
+      pages: pageCount,
+    };
+  }
+
+  function render() {
+    const options = readOptions();
+    sheet.innerHTML = renderStaffPaperHTML(options);
+    summary.textContent = describeSheet(options);
+
+    out.left.textContent = `${options.leftMarginMm}mm`;
+    out.right.textContent = `${options.rightMarginMm}mm`;
+    out.spacing.textContent = `${options.lineSpacingMm}mm`;
+  }
+
+  for (const control of [leftMargin, rightMargin, lineSpacing]) {
+    control.addEventListener("input", render);
+  }
+  pages.addEventListener("change", render);
+
+  document.getElementById("print")!.addEventListener("click", () => window.print());
+</script>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0.9rem 1.25rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  label > span {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  output {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type="range"] {
+    accent-color: var(--accent);
+  }
+
+  input[type="number"] {
+    width: 6rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 6px;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  button {
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .summary {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  /* The sheet is rendered at true A4 physical size (mm) so screen preview and print
+     output match exactly; on narrow viewports it scrolls rather than shrinks, since
+     shrinking would misrepresent the margins being configured. */
+  .sheet-wrap {
+    overflow-x: auto;
+  }
+
+  .sheet-wrap :global(.sp-page) {
+    position: relative;
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto 1.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    box-sizing: border-box;
+  }
+
+  .sheet-wrap :global(.sp-staff) {
+    position: relative;
+  }
+
+  .sheet-wrap :global(.sp-line) {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--text);
+  }
+
+  @media print {
+    .sheet-wrap {
+      overflow: visible;
+    }
+
+    .sheet-wrap :global(.sp-page) {
+      margin: 0;
+      border: none;
+      break-after: page;
+    }
+
+    .sheet-wrap :global(.sp-page:last-child) {
+      break-after: auto;
+    }
+
+    .sheet-wrap :global(.sp-line) {
+      background: #000;
+    }
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+</style>
