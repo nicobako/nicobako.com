@@ -26,6 +26,18 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : As
 		<meta name="theme-color" content="#fdfdfc" media="(prefers-color-scheme: light)" />
 		<link rel="canonical" href={canonical} />
 
+		<!-- Installable web app -->
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+		<meta name="application-name" content="Nico Bako" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-title" content="Nico Bako" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<script>
+			import '../pwa/register.ts';
+		</script>
+
 		<!-- Open Graph / social -->
 		<meta property="og:type" content="website" />
 		<meta property="og:title" content={title} />

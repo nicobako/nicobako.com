@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+    <!-- Maskable icon: full-bleed background, glyph kept inside the 80% safe
+         zone so platform masks (circle, squircle, …) never clip it. -->
+    <rect width="512" height="512" fill="#2a5db0" />
+    <text x="256" y="264" text-anchor="middle" dominant-baseline="central" textLength="268" lengthAdjust="spacingAndGlyphs"
+        font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace"
+        font-weight="700" font-size="78" fill="#ffffff">&lt;nb/&gt;</text>
+</svg>

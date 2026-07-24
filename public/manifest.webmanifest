@@ -1,0 +1,74 @@
+{
+	"id": "/",
+	"name": "Nico Bako",
+	"short_name": "Nico Bako",
+	"description": "Nico Bako's personal site — browser games, music tools, timers, and printables.",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"display_override": ["standalone", "minimal-ui", "browser"],
+	"orientation": "any",
+	"background_color": "#fdfdfc",
+	"theme_color": "#fdfdfc",
+	"lang": "en",
+	"dir": "ltr",
+	"categories": ["utilities", "music", "games"],
+	"icons": [
+		{
+			"src": "/icons/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/icon-maskable-192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "maskable"
+		},
+		{
+			"src": "/icons/icon-maskable-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		},
+		{
+			"src": "/icon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		}
+	],
+	"shortcuts": [
+		{
+			"name": "Metronome",
+			"short_name": "Metronome",
+			"url": "/music/metronome",
+			"icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+		},
+		{
+			"name": "Drone",
+			"short_name": "Drone",
+			"url": "/music/drone",
+			"icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+		},
+		{
+			"name": "Timers",
+			"short_name": "Timers",
+			"url": "/timers/",
+			"icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+		},
+		{
+			"name": "Printables",
+			"short_name": "Printables",
+			"url": "/printables/",
+			"icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+		}
+	]
+}
