@@ -1,0 +1,17 @@
+---
+// Shown by the service worker when a page is requested that has never been
+// cached and the network is unavailable.
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+	title="Offline — Nico Bako"
+	description="This page is not available offline."
+>
+	<h1>You're offline</h1>
+	<p>
+		This page hasn't been downloaded yet, and there's no connection available to
+		fetch it. Pages you've already visited still work offline.
+	</p>
+	<p><a href="/">Go to the home page</a></p>
+</Layout>

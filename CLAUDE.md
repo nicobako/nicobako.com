@@ -51,6 +51,35 @@ Requires Node `>=22.12.0`.
 - `src/music/metronome/metronome.ts` — `Metronome` class using the Web Audio API scheduler (look-ahead scheduling with `setInterval`). Accepts a `skipPercent` to randomly drop beats. Mounted by `metronome.astro`.
 - `src/music/drone/drone.ts` — `Drone` class and `NOTES` array (one octave C4–C5). Supports one-shot `pluck()` and sustained `startNote`/`stopNote`. Mounted by `drone.astro`, which also computes piano key layout in its frontmatter. The piano key colours are hardcoded (not CSS tokens) because the visual realism requires fixed white/black key colours regardless of theme.
 
+### PWA subsystem
+
+The site is an installable, offline-capable PWA. No PWA library is used —
+`@vite-pwa/astro` only supports Astro ≤ 5 — so the three pieces are hand-rolled:
+
+- `public/manifest.webmanifest` — name, colours, icons, and app shortcuts. Its
+  `theme_color`/`background_color` must be the **light** theme values, since a
+  manifest can only carry one of each (the per-scheme `<meta name="theme-color">`
+  tags in `Layout.astro` still handle the browser UI).
+- `src/pwa/service-worker.js` — the service worker source. It is *not* bundled by
+  Astro; `__CACHE_NAME__` and `__PRECACHE_MANIFEST__` are placeholders.
+- `src/pwa/integration.mjs` — an Astro integration (registered in
+  `astro.config.mjs`) that runs on `astro:build:done`, walks `dist/`, fills in
+  those two placeholders, and writes `dist/sw.js`. The cache name is a hash of
+  every built file, so each build installs a fresh cache and the `activate`
+  handler deletes the previous one.
+- `src/pwa/register.ts` — registration, imported by `Layout.astro`. Guarded by
+  `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
+  with `npm run build && npm run preview`, never with `npm run dev`.
+
+The whole site (~1.4 MB) is precached, so every page works offline after the
+first visit. Caching is network-first for navigations, cache-first for hashed
+`/_astro/` assets, and stale-while-revalidate for everything else same-origin.
+A navigation to a page that was never cached falls back to `src/pages/offline.astro`.
+
+Icons in `public/icons/` are PNG renders of `public/icon.svg` (rounded, for
+`purpose: any`) and `public/icon-maskable.svg` (full-bleed, glyph inside the 80%
+safe zone). Edit the SVG sources and re-render the PNGs if the mark changes.
+
 ### Theming conventions
 
 - All colours are CSS custom properties defined in `Layout.astro` (e.g. `--bg`, `--text`, `--muted`, `--border`, `--surface`, `--accent`, `--accent-text`), with `prefers-color-scheme: dark` overrides. Never hardcode colours in page or component files — consume the tokens.
