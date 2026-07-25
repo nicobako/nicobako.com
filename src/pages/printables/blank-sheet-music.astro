@@ -190,12 +190,17 @@ import {
     position: relative;
   }
 
+  /* Staff lines are drawn as borders, not backgrounds. Browsers print with
+     "background graphics" off by default, which repaints every background —
+     including a 1px-tall line box — as white, so a background-drawn staff
+     prints as a completely blank page. Borders are foreground paint and always
+     print. */
   .sheet-wrap :global(.sp-line) {
     position: absolute;
     left: 0;
     right: 0;
-    height: 1px;
-    background: var(--text);
+    height: 0;
+    border-top: 1px solid var(--text);
   }
 
   @media print {
@@ -206,6 +211,9 @@ import {
     .sheet-wrap :global(.sp-page) {
       margin: 0;
       border: none;
+      /* Never paint the page fill — with background graphics enabled, the dark
+         theme's --bg would print as a solid black sheet. */
+      background: none;
       break-after: page;
     }
 
@@ -214,7 +222,7 @@ import {
     }
 
     .sheet-wrap :global(.sp-line) {
-      background: #000;
+      border-top-color: #000;
     }
   }
 

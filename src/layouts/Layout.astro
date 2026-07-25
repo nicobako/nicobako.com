@@ -269,6 +269,26 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : As
 	 * Elements opt out of printing with the `.no-print` class.
 	 * ------------------------------------------------------------------ */
 	@media print {
+		/* Paper is white, so always print the light palette. Printing while the
+		   dark theme is active would otherwise put light-grey ink on a white
+		   sheet, and paint the page background solid black wherever the user has
+		   "background graphics" enabled. */
+		:root {
+			color-scheme: light;
+
+			--bg: #fdfdfc;
+			--text: #1f1f1f;
+			--muted: #5e5e5e;
+			--border: #e3e2dd;
+			--surface: #f4f3ef;
+			--accent: #2a5db0;
+			--accent-text: #ffffff;
+		}
+
+		body {
+			background: #fff;
+		}
+
 		.site-header,
 		footer,
 		.no-print {
