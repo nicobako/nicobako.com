@@ -3,6 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import {
   DEFAULT_OPTIONS,
   describeSheet,
+  formatMm,
   renderStaffPaperHTML,
 } from "../../printables/staff-paper/staff-paper.ts";
 ---
@@ -27,14 +28,37 @@ import {
       </label>
 
       <label>
-        <span>Space between lines <output id="spacing-out">{DEFAULT_OPTIONS.lineSpacingMm}mm</output></span>
-        <input id="line-spacing" type="range" min="4" max="30" step="1" value={DEFAULT_OPTIONS.lineSpacingMm} />
+        <span>Space between lines <output id="spacing-out">{formatMm(DEFAULT_OPTIONS.lineSpacingMm)}</output></span>
+        <input id="line-spacing" type="range" min="1" max="8" step="0.25" value={DEFAULT_OPTIONS.lineSpacingMm} />
       </label>
 
       <label>
-        <span>Pages</span>
-        <input id="pages" type="number" min="1" max="50" step="1" value={DEFAULT_OPTIONS.pages} />
+        <span>Space between staves <output id="staff-spacing-out">{formatMm(DEFAULT_OPTIONS.staffSpacingMm)}</output></span>
+        <input id="staff-spacing" type="range" min="4" max="40" step="1" value={DEFAULT_OPTIONS.staffSpacingMm} />
       </label>
+
+      <label>
+        <span>Line thickness <output id="thickness-out">{formatMm(DEFAULT_OPTIONS.lineThicknessMm)}</output></span>
+        <input id="line-thickness" type="range" min="0.1" max="1" step="0.05" value={DEFAULT_OPTIONS.lineThicknessMm} />
+      </label>
+
+      <div class="field">
+        <span id="pages-label">Pages</span>
+        <div class="stepper">
+          <button type="button" id="pages-down" aria-label="One page fewer">−</button>
+          <input
+            id="pages"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="50"
+            step="1"
+            value={DEFAULT_OPTIONS.pages}
+            aria-labelledby="pages-label"
+          />
+          <button type="button" id="pages-up" aria-label="One page more">+</button>
+        </div>
+      </div>
     </div>
 
     <div class="actions">
@@ -52,9 +76,13 @@ import {
 <script>
   import {
     describeSheet,
+    formatMm,
     renderStaffPaperHTML,
     type StaffPaperOptions,
   } from "../../printables/staff-paper/staff-paper.ts";
+
+  const MIN_PAGES = 1;
+  const MAX_PAGES = 50;
 
   const sheet = document.getElementById("sheet") as HTMLDivElement;
   const summary = document.getElementById("summary") as HTMLParagraphElement;
@@ -62,21 +90,32 @@ import {
   const leftMargin = document.getElementById("left-margin") as HTMLInputElement;
   const rightMargin = document.getElementById("right-margin") as HTMLInputElement;
   const lineSpacing = document.getElementById("line-spacing") as HTMLInputElement;
+  const staffSpacing = document.getElementById("staff-spacing") as HTMLInputElement;
+  const lineThickness = document.getElementById("line-thickness") as HTMLInputElement;
   const pages = document.getElementById("pages") as HTMLInputElement;
+  const pagesDown = document.getElementById("pages-down") as HTMLButtonElement;
+  const pagesUp = document.getElementById("pages-up") as HTMLButtonElement;
 
   const out = {
     left: document.getElementById("left-out")!,
     right: document.getElementById("right-out")!,
     spacing: document.getElementById("spacing-out")!,
+    staffSpacing: document.getElementById("staff-spacing-out")!,
+    thickness: document.getElementById("thickness-out")!,
   };
 
+  function clampPages(value: number): number {
+    return Math.min(MAX_PAGES, Math.max(MIN_PAGES, Math.round(value) || MIN_PAGES));
+  }
+
   function readOptions(): StaffPaperOptions {
-    const pageCount = Math.min(50, Math.max(1, Math.round(Number(pages.value)) || 1));
     return {
+      pages: clampPages(Number(pages.value)),
       leftMarginMm: Number(leftMargin.value),
       rightMarginMm: Number(rightMargin.value),
       lineSpacingMm: Number(lineSpacing.value),
-      pages: pageCount,
+      staffSpacingMm: Number(staffSpacing.value),
+      lineThicknessMm: Number(lineThickness.value),
     };
   }
 
@@ -85,17 +124,47 @@ import {
     sheet.innerHTML = renderStaffPaperHTML(options);
     summary.textContent = describeSheet(options);
 
-    out.left.textContent = `${options.leftMarginMm}mm`;
-    out.right.textContent = `${options.rightMarginMm}mm`;
-    out.spacing.textContent = `${options.lineSpacingMm}mm`;
+    out.left.textContent = formatMm(options.leftMarginMm);
+    out.right.textContent = formatMm(options.rightMarginMm);
+    out.spacing.textContent = formatMm(options.lineSpacingMm);
+    out.staffSpacing.textContent = formatMm(options.staffSpacingMm);
+    out.thickness.textContent = formatMm(options.lineThicknessMm);
+
+    pagesDown.disabled = options.pages <= MIN_PAGES;
+    pagesUp.disabled = options.pages >= MAX_PAGES;
   }
 
-  for (const control of [leftMargin, rightMargin, lineSpacing]) {
-    control.addEventListener("input", render);
+  // A tight staff spacing across 50 pages is several thousand elements, so coalesce
+  // the re-render into one frame rather than rebuilding on every slider tick.
+  let queued = 0;
+  function scheduleRender() {
+    if (queued) return;
+    queued = requestAnimationFrame(() => {
+      queued = 0;
+      render();
+    });
   }
-  pages.addEventListener("change", render);
+
+  for (const control of [leftMargin, rightMargin, lineSpacing, staffSpacing, lineThickness]) {
+    control.addEventListener("input", scheduleRender);
+  }
+
+  function stepPages(delta: number) {
+    pages.value = String(clampPages(Number(pages.value) + delta));
+    scheduleRender();
+  }
+
+  pagesDown.addEventListener("click", () => stepPages(-1));
+  pagesUp.addEventListener("click", () => stepPages(1));
+
+  // Typed input renders against the clamped value but leaves the field alone, so a
+  // half-typed number isn't rewritten under the cursor; blur/commit normalises it.
+  pages.addEventListener("input", scheduleRender);
+  pages.addEventListener("change", () => stepPages(0));
 
   document.getElementById("print")!.addEventListener("click", () => window.print());
+
+  render();
 </script>
 
 <style>
@@ -112,13 +181,20 @@ import {
     gap: 0.9rem 1.25rem;
   }
 
-  label {
+  /* `.field` is the non-<label> variant, used by the pages stepper: its caption
+     labels a group of controls rather than a single one, so it can't be a <label>. */
+  label,
+  .field {
     display: flex;
     flex-direction: column;
+    /* Bottom-anchored so controls stay on one line across a grid row even when a
+       longer caption ("Space between staves") wraps to two lines. */
+    justify-content: flex-end;
     gap: 0.3rem;
   }
 
-  label > span {
+  label > span,
+  .field > span {
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -141,6 +217,50 @@ import {
     background: var(--bg);
     color: var(--text);
     border-radius: 6px;
+  }
+
+  /* Segmented − / value / + control: the three parts butt together into one
+     rounded box, so only the outer corners are rounded and inner borders collapse. */
+  .stepper {
+    display: flex;
+    align-items: stretch;
+    width: max-content;
+  }
+
+  .stepper input[type="number"] {
+    width: 3.5rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    border-radius: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    /* The native spinner is redundant next to the buttons, and in most browsers
+       stays invisible until hover. */
+    appearance: textfield;
+  }
+
+  .stepper input[type="number"]::-webkit-outer-spin-button,
+  .stepper input[type="number"]::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+
+  .stepper button {
+    width: 2.25rem;
+    padding: 0;
+    font-size: 1.1rem;
+    line-height: 1;
+    border-radius: 6px 0 0 6px;
+  }
+
+  .stepper button + input + button {
+    border-radius: 0 6px 6px 0;
+  }
+
+  .stepper button:disabled {
+    color: var(--muted);
+    border-color: var(--border);
+    cursor: not-allowed;
   }
 
   .actions {
@@ -200,7 +320,8 @@ import {
     left: 0;
     right: 0;
     height: 0;
-    border-top: 1px solid var(--text);
+    /* Width is set inline per line, from the thickness control. */
+    border-top: 0 solid var(--text);
   }
 
   @media print {
