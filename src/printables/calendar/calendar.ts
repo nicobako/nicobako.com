@@ -1,10 +1,9 @@
 // Pure calendar logic shared by the Printables calendar pages.
 //
-// This module is the single source of truth for both the server render (imported
-// in an .astro frontmatter block and emitted via `set:html`) and the live client
-// updates (imported inside a page `<script>`). It has no DOM dependencies — the
-// render functions simply return HTML strings, and every value they interpolate is
-// derived from a numeric `year`, so there is no injection surface.
+// This module returns data, never markup: the tables themselves are written as ordinary
+// Astro templates in `components/YearGrid.astro` and `components/BookmarkTable.astro`,
+// which map over the structures below. Each year is a separate statically generated
+// page, so none of this runs in the browser.
 //
 // All week math is ISO-8601: weeks start on Monday, and week 1 is the week that
 // contains the year's first Thursday (equivalently, the week containing Jan 4).
@@ -25,7 +24,7 @@ const MONTH_NAMES = [
 ] as const;
 
 // Monday-first weekday abbreviations (ISO weekday 1..7 = Mon..Sun).
-const WEEKDAY_ABBR = ["M", "T", "W", "R", "F", "S", "K"] as const;
+export const WEEKDAY_ABBR = ["M", "T", "W", "R", "F", "S", "K"] as const;
 
 const MS_PER_DAY = 86_400_000;
 
@@ -35,7 +34,7 @@ function isoWeekday(date: Date): number {
 }
 
 /** Zero-pad a number to two digits (ISO style): 1 -> "01", 12 -> "12". */
-function pad2(n: number): string {
+export function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
@@ -156,48 +155,7 @@ export function buildBookmarkRows(year: number): BookmarkRow[] {
   return rows;
 }
 
-/** HTML for the standard 12-month year grid. */
-export function renderYearGridHTML(year: number): string {
-  const head =
-    `<th scope="col" class="wk">Wk</th>` +
-    WEEKDAY_ABBR.map((d) => `<th scope="col">${d}</th>`).join("");
-
-  const months = buildYearGrid(year)
-    .map((m) => {
-      const body = m.weeks
-        .map(
-          (wk) =>
-            `<tr><th scope="row" class="wk">${pad2(wk.week)}</th>${wk.days
-              .map((d) => (d === null ? "<td></td>" : `<td>${pad2(d)}</td>`))
-              .join("")}</tr>`,
-        )
-        .join("");
-      return `<table class="month"><caption>${m.name}</caption><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
-    })
-    .join("");
-
-  return `<h2 class="cal-year">${year}</h2><div class="months">${months}</div>`;
-}
-
-/** HTML for the bookmark ISO-week table. */
-export function renderBookmarkTableHTML(year: number): string {
-  const head =
-    `<th scope="col">Wk</th>` +
-    WEEKDAY_ABBR.map((d) => `<th scope="col">${d}</th>`).join("") +
-    `<th scope="col">Mt</th>`;
-
-  const parity = (m: number) => (m % 2 === 0 ? "month-even" : "month-odd");
-
-  const body = buildBookmarkRows(year)
-    .map(
-      (r) =>
-        `<tr><th scope="row">${pad2(r.week)}</th>${r.days
-          .map((d) => `<td class="${parity(d.month)}">${pad2(d.day)}</td>`)
-          .join(
-            "",
-          )}<td class="month ${parity(r.month)}">${pad2(r.month)}</td></tr>`,
-    )
-    .join("");
-
-  return `<table class="bookmark"><caption>${year}</caption><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+/** Alternating month shading class, so adjacent months stay visually separable. */
+export function monthParityClass(month: number): string {
+  return month % 2 === 0 ? "month-even" : "month-odd";
 }

@@ -1,0 +1,93 @@
+---
+import {
+  WEEKDAY_ABBR,
+  buildBookmarkRows,
+  monthParityClass,
+  pad2,
+} from "../printables/calendar/calendar.ts";
+
+interface Props {
+  year: number;
+}
+
+const { year } = Astro.props;
+const rows = buildBookmarkRows(year);
+---
+
+<table class="bookmark">
+  <caption>{year}</caption>
+  <thead>
+    <tr>
+      <th scope="col">Wk</th>
+      {WEEKDAY_ABBR.map((day) => <th scope="col">{day}</th>)}
+      <th scope="col">Mt</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      rows.map((row) => (
+        <tr>
+          <th scope="row">{pad2(row.week)}</th>
+          {row.days.map((day) => (
+            <td class={monthParityClass(day.month)}>{pad2(day.day)}</td>
+          ))}
+          <td class={`month ${monthParityClass(row.month)}`}>{pad2(row.month)}</td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .bookmark {
+    border-collapse: collapse;
+    width: auto;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    /* Keep the month bands visible on paper (browsers drop backgrounds unless asked). */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .bookmark caption {
+    font-weight: 700;
+    font-size: 1rem;
+    padding-bottom: 0.35rem;
+  }
+
+  .bookmark th,
+  .bookmark td {
+    border: 1px solid var(--border);
+    padding: 0.1rem 0.35rem;
+    text-align: center;
+  }
+
+  .bookmark thead th {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .bookmark .month {
+    text-align: left;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* Alternating months, per cell: even months get a subtle fill, odd stay clear. */
+  .bookmark td.month-even {
+    background: var(--surface);
+  }
+
+  @media print {
+    .bookmark {
+      font-size: 7pt;
+      break-inside: avoid;
+    }
+
+    .bookmark th,
+    .bookmark td {
+      padding: 0.5pt 2pt;
+    }
+  }
+</style>

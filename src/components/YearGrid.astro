@@ -1,0 +1,105 @@
+---
+import { WEEKDAY_ABBR, buildYearGrid, pad2 } from "../printables/calendar/calendar.ts";
+
+interface Props {
+  year: number;
+}
+
+const { year } = Astro.props;
+const months = buildYearGrid(year);
+---
+
+<h2 class="cal-year">{year}</h2>
+<div class="months">
+  {
+    months.map((month) => (
+      <table class="month">
+        <caption>{month.name}</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="wk">
+              Wk
+            </th>
+            {WEEKDAY_ABBR.map((day) => (
+              <th scope="col">{day}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {month.weeks.map((week) => (
+            <tr>
+              <th scope="row" class="wk">
+                {pad2(week.week)}
+              </th>
+              {week.days.map((day) => (
+                <td>{day === null ? "" : pad2(day)}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    ))
+  }
+</div>
+
+<style>
+  .cal-year {
+    text-align: center;
+    margin: 0 0 1rem;
+  }
+
+  .months {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .month {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  .month caption {
+    font-weight: 600;
+    text-align: left;
+    padding-bottom: 0.25rem;
+  }
+
+  .month th {
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  .month th,
+  .month td {
+    text-align: center;
+    padding: 0.15rem 0;
+    border: 1px solid var(--border);
+  }
+
+  /* The week-number column reads as quiet meta and hugs its content. */
+  .month .wk {
+    color: var(--muted);
+    font-weight: 500;
+    border-right-width: 2px;
+    padding: 0.15rem 0.25rem;
+  }
+
+  @media (max-width: 46rem) {
+    .months {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media print {
+    .months {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+
+    .month {
+      font-size: 0.7rem;
+    }
+  }
+</style>

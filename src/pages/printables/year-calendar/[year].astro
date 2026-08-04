@@ -1,0 +1,39 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import YearGrid from "../../../components/YearGrid.astro";
+import YearPicker from "../../../components/YearPicker.astro";
+import { subPageYears } from "../../../printables/calendar/years.ts";
+
+// One statically generated page per year in the range, minus the build year, which
+// lives at the bare `/printables/year-calendar` path.
+export function getStaticPaths() {
+  return subPageYears().map((year) => ({ params: { year: String(year) } }));
+}
+
+const year = Number(Astro.params.year);
+const basePath = "/printables/year-calendar";
+---
+
+<Layout title={`Year Calendar ${year} — Nico Bako`}>
+  <div class="controls no-print">
+    <h1>Year Calendar</h1>
+    <YearPicker year={year} basePath={basePath} />
+    <p>Monday-first, twelve-month grid. Fits one landscape page.</p>
+  </div>
+
+  <YearGrid year={year} />
+</Layout>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 1cm;
+  }
+</style>

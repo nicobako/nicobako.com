@@ -25,17 +25,46 @@ Requires Node `>=22.12.0`.
 - `src/pages/*.astro` — each file is a route. Pages import `Layout` and pass content into its slot. Data-driven sections (e.g., focus cards, stack tags on the home page) are defined as arrays in the page's frontmatter `---` block and mapped to markup — edit the arrays to change content rather than duplicating markup.
 - `src/components/` — shared UI pieces. `Header.astro` drives the primary navigation (nav links are an array in its frontmatter). `Footer.astro` renders the copyright line. `SimpleLink.astro` and `Link.astro` are small link primitives.
 
+### How pages are built
+
+This is a static site: nothing runs on a server, and a `---` block runs once, at build
+time. Three rules keep pages declarative — they are the house style, and reversing any
+of them should be a deliberate decision:
+
+1. **Markup is written as markup.** Never build HTML by concatenating strings and
+   injecting it with `set:html` or `innerHTML`. Logic modules under `src/` return
+   *data* (arrays, records); `.astro` templates map that data to elements. Where the
+   browser genuinely has to re-render, it builds nodes with `document.createElement`,
+   as `speed-reading.astro` does.
+2. **Variation that is purely visual belongs in CSS.** Prefer setting a CSS custom
+   property over rebuilding DOM. `blank-sheet-music.astro` renders the maximum number
+   of staves once and lets six custom properties resize and clip them, so dragging a
+   slider restyles rather than re-renders.
+3. **Variation that changes content belongs in a route.** A control that picks between
+   a known, finite set of contents should be links to pre-rendered pages, not client
+   rendering. The calendars use `[year].astro` + `getStaticPaths()`, which is why they
+   ship no rendering code at all.
+
+Client `<script>` is for what only the browser can do: audio, timing, persistence,
+font measurement, `window.print()`. Selection state that CSS can express — the circle
+of fifths uses `:target` — should not become JavaScript.
+
 ### Pages
 
 | Route | File |
 |---|---|
 | `/` | `src/pages/index.astro` |
-| `/games/` | `src/pages/games/index.astro` |
-| `/games/classrooms-and-angry-teachers` | `src/pages/games/classrooms-and-angry-teachers.astro` |
-| `/music/` | `src/pages/music/index.astro` |
-| `/music/metronome` | `src/pages/music/metronome.astro` |
-| `/music/drone` | `src/pages/music/drone.astro` |
-| `/music/violin-3-octave-fingerings` | `src/pages/music/violin-3-octave-fingerings.astro` |
+| `/games/`, `/games/classrooms-and-angry-teachers` | `src/pages/games/` |
+| `/music/`, `/music/metronome`, `/music/drone`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
+| `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
+| `/printables/`, and the sheets listed below | `src/pages/printables/` |
+| `/offline` | `src/pages/offline.astro` |
+
+Printables: `blank-sheet-music`, `speed-reading`, `scribal-abbreviations`,
+`weekly-time-tracker`, `daily-practice-schedule`, `weekly-practice-schedule`, plus
+`year-calendar` and `bookmark-calendar`, which each also generate a page per year
+(`year-calendar/[year].astro`). `src/printables/calendar/years.ts` sets that range —
+widening it multiplies real, precached pages, so keep it small.
 
 ### Game subsystem
 
@@ -50,6 +79,16 @@ Requires Node `>=22.12.0`.
 
 - `src/music/metronome/metronome.ts` — `Metronome` class using the Web Audio API scheduler (look-ahead scheduling with `setInterval`). Accepts a `skipPercent` to randomly drop beats. Mounted by `metronome.astro`.
 - `src/music/drone/drone.ts` — `Drone` class and `NOTES` array (one octave C4–C5). Supports one-shot `pluck()` and sustained `startNote`/`stopNote`. Mounted by `drone.astro`, which also computes piano key layout in its frontmatter. The piano key colours are hardcoded (not CSS tokens) because the visual realism requires fixed white/black key colours regardless of theme.
+- `src/music/violin/scales.ts` — the Carl Flesch fingering tables. Reference data only; `violin-3-octave-fingerings.astro` is a pure template over it.
+- `src/music/circle-of-fifths/circle.ts` — the twelve keys plus the wheel's SVG geometry, all resolved at build time into `SEGMENTS`. The page maps that to static SVG and ships **no** JavaScript: each wedge is an `<a href="#key-N">` and the matching panel is revealed by `:target`.
+
+### Printables subsystem
+
+`src/printables/` holds the same kind of DOM-free logic modules, returning data rather than markup:
+
+- `staff-paper/staff-paper.ts` — staff geometry maths and the control ranges (`CONTROLS`) that both the template and the client script read, so bounds are declared once.
+- `calendar/calendar.ts` — ISO-8601 week maths and the grid/row builders; `calendar/years.ts` decides which years get pages. Rendered by `components/YearGrid.astro` and `components/BookmarkTable.astro`.
+- `speed-reading/speed-reading.ts` — line wrapping and column dealing. The one page that must re-render in the browser: where a line breaks depends on the reader's actual font metrics, so the build uses `estimateWidth` for first paint and the browser re-runs the layout with canvas measurements.
 
 ### PWA subsystem
 
@@ -71,7 +110,7 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site (~1.4 MB) is precached, so every page works offline after the
+The whole site (~1.8 MB) is precached, so every page works offline after the
 first visit. Caching is network-first for navigations, cache-first for hashed
 `/_astro/` assets, and stale-while-revalidate for everything else same-origin.
 A navigation to a page that was never cached falls back to `src/pages/offline.astro`.
