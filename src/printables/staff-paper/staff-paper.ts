@@ -1,8 +1,8 @@
-// Pure staff-paper layout logic shared by the Printables blank sheet music page.
+// Pure staff-paper layout maths for the Printables blank sheet music page.
 //
-// Every value this module interpolates is a plain number, so render functions simply
-// return HTML strings with no injection surface — safe to use both for the server
-// render (via `set:html`) and for live client re-renders.
+// This module holds numbers only — no markup. The staves are written declaratively
+// in `blank-sheet-music.astro` and every dimension is applied through CSS custom
+// properties, so changing a control restyles the existing DOM instead of rebuilding it.
 
 export interface StaffPaperOptions {
   /** Number of pages to generate. */
@@ -19,6 +19,20 @@ export interface StaffPaperOptions {
   lineThicknessMm: number;
 }
 
+/**
+ * Range of every control on the page. The `.astro` template spreads these onto the
+ * `<input>` elements and the client script clamps against them, so the bounds are
+ * declared exactly once.
+ */
+export const CONTROLS = {
+  pages: { min: 1, max: 50, step: 1 },
+  leftMarginMm: { min: 0, max: 40, step: 1 },
+  rightMarginMm: { min: 0, max: 40, step: 1 },
+  lineSpacingMm: { min: 1, max: 8, step: 0.25 },
+  staffSpacingMm: { min: 4, max: 40, step: 1 },
+  lineThicknessMm: { min: 0.1, max: 1, step: 0.05 },
+} as const;
+
 export const DEFAULT_OPTIONS: StaffPaperOptions = {
   pages: 1,
   leftMarginMm: 15,
@@ -34,11 +48,11 @@ export const DEFAULT_OPTIONS: StaffPaperOptions = {
 export const PAGE_WIDTH_MM = 210;
 export const PAGE_HEIGHT_MM = 297;
 
-// Top/bottom margin is fixed rather than user-configurable, matching the task's scope
+// Top/bottom margin is fixed rather than user-configurable, matching the page's scope
 // (left/right margin, spacing, thickness, and page count only).
-const PAGE_MARGIN_MM = 15;
+export const PAGE_MARGIN_MM = 15;
 
-const LINES_PER_STAFF = 5;
+export const LINES_PER_STAFF = 5;
 
 /**
  * Height of one staff, top edge of the first line to bottom edge of the last —
@@ -56,35 +70,22 @@ export function stavesPerPage(options: StaffPaperOptions): number {
   return Math.max(1, Math.floor((contentHeightMm + options.staffSpacingMm) / strideMm));
 }
 
+/**
+ * The most staves that can ever fit on one page — reached at the tightest setting
+ * every control allows. Each page carries exactly this many staves in the markup;
+ * CSS then clips the page's content box to a whole number of staves, so the ones
+ * that do not fit at the current spacing are hidden without any DOM being rebuilt.
+ */
+export const MAX_STAVES_PER_PAGE = stavesPerPage({
+  ...DEFAULT_OPTIONS,
+  lineSpacingMm: CONTROLS.lineSpacingMm.min,
+  staffSpacingMm: CONTROLS.staffSpacingMm.min,
+  lineThicknessMm: CONTROLS.lineThicknessMm.min,
+});
+
 /** Formats a millimetre measurement for the on-screen controls (10mm, 1.75mm, 0.25mm). */
 export function formatMm(valueMm: number): string {
   return `${Number(valueMm.toFixed(2))}mm`;
-}
-
-function renderStaffHTML(options: StaffPaperOptions, marginBottomMm: number): string {
-  // Lines are drawn as borders rather than backgrounds so they survive printing
-  // with "background graphics" disabled — see the print rules in the page's CSS.
-  const lines = Array.from(
-    { length: LINES_PER_STAFF },
-    (_, i) =>
-      `<span class="sp-line" style="top:${(i * options.lineSpacingMm).toFixed(3)}mm;border-top-width:${options.lineThicknessMm}mm"></span>`,
-  ).join("");
-  const height = staffHeightMm(options).toFixed(3);
-  return `<div class="sp-staff" style="height:${height}mm;margin-bottom:${marginBottomMm}mm">${lines}</div>`;
-}
-
-function renderStaffPaperPageHTML(options: StaffPaperOptions, count: number): string {
-  const staves = Array.from({ length: count }, (_, i) =>
-    renderStaffHTML(options, i === count - 1 ? 0 : options.staffSpacingMm),
-  ).join("");
-  const padding = `${PAGE_MARGIN_MM}mm ${options.rightMarginMm}mm ${PAGE_MARGIN_MM}mm ${options.leftMarginMm}mm`;
-  return `<div class="sp-page" style="padding:${padding}">${staves}</div>`;
-}
-
-/** Renders `options.pages` full pages of blank staves as a single HTML string. */
-export function renderStaffPaperHTML(options: StaffPaperOptions): string {
-  const count = stavesPerPage(options);
-  return Array.from({ length: options.pages }, () => renderStaffPaperPageHTML(options, count)).join("");
 }
 
 /** Human-readable summary of what will print, for the on-screen controls. */

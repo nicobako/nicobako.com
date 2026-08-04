@@ -1,11 +1,28 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import {
+  CONTROLS,
   DEFAULT_OPTIONS,
+  LINES_PER_STAFF,
+  MAX_STAVES_PER_PAGE,
   describeSheet,
   formatMm,
-  renderStaffPaperHTML,
+  stavesPerPage,
 } from "../../printables/staff-paper/staff-paper.ts";
+
+// Every dimension reaches the DOM as a CSS custom property, so the controls only ever
+// reassign a variable — the staves themselves are static markup rendered once, here.
+const sheetVars = [
+  `--left-margin:${DEFAULT_OPTIONS.leftMarginMm}mm`,
+  `--right-margin:${DEFAULT_OPTIONS.rightMarginMm}mm`,
+  `--line-spacing:${DEFAULT_OPTIONS.lineSpacingMm}mm`,
+  `--staff-spacing:${DEFAULT_OPTIONS.staffSpacingMm}mm`,
+  `--line-thickness:${DEFAULT_OPTIONS.lineThicknessMm}mm`,
+  `--staves-per-page:${stavesPerPage(DEFAULT_OPTIONS)}`,
+].join(";");
+
+const staves = Array.from({ length: MAX_STAVES_PER_PAGE }, (_, i) => i);
+const lines = Array.from({ length: LINES_PER_STAFF }, (_, i) => i);
 ---
 
 <Layout
@@ -18,41 +35,76 @@ import {
 
     <div class="grid">
       <label>
-        <span>Left margin <output id="left-out">{DEFAULT_OPTIONS.leftMarginMm}mm</output></span>
-        <input id="left-margin" type="range" min="0" max="40" step="1" value={DEFAULT_OPTIONS.leftMarginMm} />
+        <span>Left margin <output id="left-out">{formatMm(DEFAULT_OPTIONS.leftMarginMm)}</output></span>
+        <input
+          id="left-margin"
+          type="range"
+          min={CONTROLS.leftMarginMm.min}
+          max={CONTROLS.leftMarginMm.max}
+          step={CONTROLS.leftMarginMm.step}
+          value={DEFAULT_OPTIONS.leftMarginMm}
+        />
       </label>
 
       <label>
-        <span>Right margin <output id="right-out">{DEFAULT_OPTIONS.rightMarginMm}mm</output></span>
-        <input id="right-margin" type="range" min="0" max="40" step="1" value={DEFAULT_OPTIONS.rightMarginMm} />
+        <span>Right margin <output id="right-out">{formatMm(DEFAULT_OPTIONS.rightMarginMm)}</output></span>
+        <input
+          id="right-margin"
+          type="range"
+          min={CONTROLS.rightMarginMm.min}
+          max={CONTROLS.rightMarginMm.max}
+          step={CONTROLS.rightMarginMm.step}
+          value={DEFAULT_OPTIONS.rightMarginMm}
+        />
       </label>
 
       <label>
         <span>Space between lines <output id="spacing-out">{formatMm(DEFAULT_OPTIONS.lineSpacingMm)}</output></span>
-        <input id="line-spacing" type="range" min="1" max="8" step="0.25" value={DEFAULT_OPTIONS.lineSpacingMm} />
+        <input
+          id="line-spacing"
+          type="range"
+          min={CONTROLS.lineSpacingMm.min}
+          max={CONTROLS.lineSpacingMm.max}
+          step={CONTROLS.lineSpacingMm.step}
+          value={DEFAULT_OPTIONS.lineSpacingMm}
+        />
       </label>
 
       <label>
         <span>Space between staves <output id="staff-spacing-out">{formatMm(DEFAULT_OPTIONS.staffSpacingMm)}</output></span>
-        <input id="staff-spacing" type="range" min="4" max="40" step="1" value={DEFAULT_OPTIONS.staffSpacingMm} />
+        <input
+          id="staff-spacing"
+          type="range"
+          min={CONTROLS.staffSpacingMm.min}
+          max={CONTROLS.staffSpacingMm.max}
+          step={CONTROLS.staffSpacingMm.step}
+          value={DEFAULT_OPTIONS.staffSpacingMm}
+        />
       </label>
 
       <label>
         <span>Line thickness <output id="thickness-out">{formatMm(DEFAULT_OPTIONS.lineThicknessMm)}</output></span>
-        <input id="line-thickness" type="range" min="0.1" max="1" step="0.05" value={DEFAULT_OPTIONS.lineThicknessMm} />
+        <input
+          id="line-thickness"
+          type="range"
+          min={CONTROLS.lineThicknessMm.min}
+          max={CONTROLS.lineThicknessMm.max}
+          step={CONTROLS.lineThicknessMm.step}
+          value={DEFAULT_OPTIONS.lineThicknessMm}
+        />
       </label>
 
       <div class="field">
         <span id="pages-label">Pages</span>
         <div class="stepper">
-          <button type="button" id="pages-down" aria-label="One page fewer">−</button>
+          <button type="button" id="pages-down" aria-label="One page fewer" disabled>−</button>
           <input
             id="pages"
             type="number"
             inputmode="numeric"
-            min="1"
-            max="50"
-            step="1"
+            min={CONTROLS.pages.min}
+            max={CONTROLS.pages.max}
+            step={CONTROLS.pages.step}
             value={DEFAULT_OPTIONS.pages}
             aria-labelledby="pages-label"
           />
@@ -69,20 +121,33 @@ import {
   </div>
 
   <div class="sheet-wrap">
-    <div id="sheet" set:html={renderStaffPaperHTML(DEFAULT_OPTIONS)} />
+    <div id="sheet" style={sheetVars}>
+      {/* Extra pages are cloned from this one, so the markup lives in exactly one place. */}
+      <div class="sp-page">
+        <div class="sp-content">
+          {
+            staves.map(() => (
+              <div class="sp-staff">
+                {lines.map((i) => (
+                  <span class="sp-line" style={`--line-index:${i}`} />
+                ))}
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
   </div>
 </Layout>
 
 <script>
   import {
+    CONTROLS,
     describeSheet,
     formatMm,
-    renderStaffPaperHTML,
+    stavesPerPage,
     type StaffPaperOptions,
   } from "../../printables/staff-paper/staff-paper.ts";
-
-  const MIN_PAGES = 1;
-  const MAX_PAGES = 50;
 
   const sheet = document.getElementById("sheet") as HTMLDivElement;
   const summary = document.getElementById("summary") as HTMLParagraphElement;
@@ -105,7 +170,10 @@ import {
   };
 
   function clampPages(value: number): number {
-    return Math.min(MAX_PAGES, Math.max(MIN_PAGES, Math.round(value) || MIN_PAGES));
+    return Math.min(
+      CONTROLS.pages.max,
+      Math.max(CONTROLS.pages.min, Math.round(value) || CONTROLS.pages.min),
+    );
   }
 
   function readOptions(): StaffPaperOptions {
@@ -119,52 +187,59 @@ import {
     };
   }
 
-  function render() {
-    const options = readOptions();
-    sheet.innerHTML = renderStaffPaperHTML(options);
-    summary.textContent = describeSheet(options);
+  /**
+   * Adds or removes whole page nodes to match the requested count. Pages are cloned
+   * from the one Astro rendered, so no markup is written in JavaScript.
+   */
+  function syncPageCount(count: number) {
+    const template = sheet.firstElementChild as HTMLElement;
+    while (sheet.childElementCount > count) sheet.lastElementChild!.remove();
+    while (sheet.childElementCount < count) sheet.append(template.cloneNode(true));
+  }
 
+  function apply() {
+    const options = readOptions();
+    const perPage = stavesPerPage(options);
+
+    // Restyling only: the staves are already in the DOM and simply re-lay out.
+    sheet.style.setProperty("--left-margin", `${options.leftMarginMm}mm`);
+    sheet.style.setProperty("--right-margin", `${options.rightMarginMm}mm`);
+    sheet.style.setProperty("--line-spacing", `${options.lineSpacingMm}mm`);
+    sheet.style.setProperty("--staff-spacing", `${options.staffSpacingMm}mm`);
+    sheet.style.setProperty("--line-thickness", `${options.lineThicknessMm}mm`);
+    sheet.style.setProperty("--staves-per-page", String(perPage));
+
+    syncPageCount(options.pages);
+
+    summary.textContent = describeSheet(options);
     out.left.textContent = formatMm(options.leftMarginMm);
     out.right.textContent = formatMm(options.rightMarginMm);
     out.spacing.textContent = formatMm(options.lineSpacingMm);
     out.staffSpacing.textContent = formatMm(options.staffSpacingMm);
     out.thickness.textContent = formatMm(options.lineThicknessMm);
 
-    pagesDown.disabled = options.pages <= MIN_PAGES;
-    pagesUp.disabled = options.pages >= MAX_PAGES;
-  }
-
-  // A tight staff spacing across 50 pages is several thousand elements, so coalesce
-  // the re-render into one frame rather than rebuilding on every slider tick.
-  let queued = 0;
-  function scheduleRender() {
-    if (queued) return;
-    queued = requestAnimationFrame(() => {
-      queued = 0;
-      render();
-    });
+    pagesDown.disabled = options.pages <= CONTROLS.pages.min;
+    pagesUp.disabled = options.pages >= CONTROLS.pages.max;
   }
 
   for (const control of [leftMargin, rightMargin, lineSpacing, staffSpacing, lineThickness]) {
-    control.addEventListener("input", scheduleRender);
+    control.addEventListener("input", apply);
   }
 
   function stepPages(delta: number) {
     pages.value = String(clampPages(Number(pages.value) + delta));
-    scheduleRender();
+    apply();
   }
 
   pagesDown.addEventListener("click", () => stepPages(-1));
   pagesUp.addEventListener("click", () => stepPages(1));
 
-  // Typed input renders against the clamped value but leaves the field alone, so a
-  // half-typed number isn't rewritten under the cursor; blur/commit normalises it.
-  pages.addEventListener("input", scheduleRender);
+  // Typed input applies the clamped value but leaves the field alone, so a half-typed
+  // number isn't rewritten under the cursor; blur/commit normalises it.
+  pages.addEventListener("input", apply);
   pages.addEventListener("change", () => stepPages(0));
 
   document.getElementById("print")!.addEventListener("click", () => window.print());
-
-  render();
 </script>
 
 <style>
@@ -296,18 +371,37 @@ import {
     overflow-x: auto;
   }
 
-  .sheet-wrap :global(.sp-page) {
-    position: relative;
+  /* Derived dimensions. The six inputs above are set as custom properties on #sheet;
+     everything below is computed from them by the browser, which is why changing a
+     control needs no re-render. */
+  #sheet {
+    --staff-height: calc(4 * var(--line-spacing) + var(--line-thickness));
+    --stride: calc(var(--staff-height) + var(--staff-spacing));
+  }
+
+  .sp-page {
     width: 210mm;
     height: 297mm;
     margin: 0 auto 1.5rem;
+    padding: 15mm var(--right-margin) 15mm var(--left-margin);
     background: var(--bg);
     border: 1px solid var(--border);
     box-sizing: border-box;
   }
 
-  .sheet-wrap :global(.sp-staff) {
+  /* Each page carries the maximum number of staves that could ever fit. Clipping the
+     content box to a whole number of strides hides the surplus at looser spacings —
+     and because the height lands exactly on a staff boundary, no staff is ever cut
+     in half. */
+  .sp-content {
+    height: calc(var(--staves-per-page) * var(--stride) - var(--staff-spacing));
+    overflow: hidden;
+  }
+
+  .sp-staff {
     position: relative;
+    height: var(--staff-height);
+    margin-bottom: var(--staff-spacing);
   }
 
   /* Staff lines are drawn as borders, not backgrounds. Browsers print with
@@ -315,13 +409,13 @@ import {
      including a 1px-tall line box — as white, so a background-drawn staff
      prints as a completely blank page. Borders are foreground paint and always
      print. */
-  .sheet-wrap :global(.sp-line) {
+  .sp-line {
     position: absolute;
     left: 0;
     right: 0;
     height: 0;
-    /* Width is set inline per line, from the thickness control. */
-    border-top: 0 solid var(--text);
+    top: calc(var(--line-index) * var(--line-spacing));
+    border-top: var(--line-thickness) solid var(--text);
   }
 
   @media print {
@@ -329,7 +423,7 @@ import {
       overflow: visible;
     }
 
-    .sheet-wrap :global(.sp-page) {
+    .sp-page {
       margin: 0;
       border: none;
       /* Never paint the page fill — with background graphics enabled, the dark
@@ -338,11 +432,11 @@ import {
       break-after: page;
     }
 
-    .sheet-wrap :global(.sp-page:last-child) {
+    .sp-page:last-child {
       break-after: auto;
     }
 
-    .sheet-wrap :global(.sp-line) {
+    .sp-line {
       border-top-color: #000;
     }
   }

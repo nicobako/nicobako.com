@@ -1,0 +1,25 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import BookmarkSheet from "../../../components/BookmarkSheet.astro";
+import { subPageYears } from "../../../printables/calendar/years.ts";
+
+// One statically generated page per year in the range, minus the build year, which
+// lives at the bare `/printables/bookmark-calendar` path.
+export function getStaticPaths() {
+  return subPageYears().map((year) => ({ params: { year: String(year) } }));
+}
+
+const year = Number(Astro.params.year);
+const basePath = "/printables/bookmark-calendar";
+---
+
+<Layout title={`Bookmark Calendar ${year} — Nico Bako`}>
+  <BookmarkSheet year={year} basePath={basePath} />
+</Layout>
+
+<style>
+  @page {
+    size: A4 landscape;
+    margin: 0.5cm;
+  }
+</style>

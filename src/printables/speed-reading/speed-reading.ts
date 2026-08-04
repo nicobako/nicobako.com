@@ -1,9 +1,13 @@
 // Pure layout logic for the speed-reading practice sheet.
 //
-// Same contract as the calendar module: no DOM access, no side effects at import.
-// The render function returns an HTML string, so the page can render it on the server
-// (via `set:html`) and re-render it in the browser on every control change with the
-// exact same code path.
+// No DOM access, no side effects at import, and no markup: the module works out *what*
+// goes on each line and hands back nested arrays, leaving both renderers to build real
+// elements from them.
+//
+// Unlike the other printables, this sheet cannot be laid out ahead of time. Where a line
+// breaks depends on the actual width of the words in the reader's font, so the browser
+// re-runs the layout with canvas measurements — and against its own viewport — once it
+// loads. The build-time pass uses `estimateWidth` to get a sensible first paint.
 //
 // The drill this lays out comes from "Triple Your Reading Speed": instead of tracking
 // along a line word by word, the eye fixes once on the centre of a short group of words
@@ -212,14 +216,6 @@ export function sheetLines(
   return lines.slice(0, linesPerColumn(opts) * opts.columns);
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 /**
  * Deal one page's lines into its columns, in the order the eye will travel them.
  *
@@ -243,51 +239,48 @@ function dealIntoColumns(
 }
 
 /**
- * Render the full sheet: one `.sr-page` per printed page, each holding `columns`
- * columns of lines.
+ * The finished sheet as plain data: pages, each holding columns, each holding lines.
+ *
+ * This is where layout stops. Turning it into elements is the renderer's job — Astro's
+ * template does it for the first paint and the page's script does it with DOM calls for
+ * live updates, so the words are never spliced into a string of markup.
  */
-export function renderSheetHTML(
+export function sheetPages(
   opts: SheetOptions,
   measure: MeasureLine,
   pxPerMm: number,
-): string {
+): string[][][] {
   const lines = sheetLines(opts, measure, pxPerMm);
-  if (lines.length === 0) return `<p class="sr-empty">No text to show.</p>`;
+  if (lines.length === 0) return [];
 
-  const perColumn = linesPerColumn(opts);
-  const perPage = perColumn * opts.columns;
+  const perPage = linesPerColumn(opts) * opts.columns;
   const pageCount = Math.max(1, Math.ceil(lines.length / perPage));
 
-  // No paper geometry here: on screen the sheet is just columns, and when printing the
-  // `@page` box supplies the sheet and its margins.
-  const style = [
-    `--sr-cols:${opts.columns}`,
-    `--sr-col-width:${opts.columnWidthMm}mm`,
-    `--sr-font-size:${opts.fontSizePt}pt`,
-    `--sr-line-spacing:${opts.lineSpacing}`,
-  ].join(";");
+  return Array.from({ length: pageCount }, (_, p) =>
+    dealIntoColumns(lines.slice(p * perPage, (p + 1) * perPage), opts.columns, opts.flow),
+  );
+}
 
-  const classes = ["sr-sheet", opts.guide ? "sr-has-guide" : ""]
-    .filter(Boolean)
-    .join(" ");
+/**
+ * The sheet's typography, as CSS custom properties.
+ *
+ * No paper geometry here: on screen the sheet is just columns, and when printing the
+ * `@page` box supplies the sheet and its margins.
+ */
+export function sheetStyleVars(opts: SheetOptions): Record<string, string> {
+  return {
+    "--sr-cols": String(opts.columns),
+    "--sr-col-width": `${opts.columnWidthMm}mm`,
+    "--sr-font-size": `${opts.fontSizePt}pt`,
+    "--sr-line-spacing": String(opts.lineSpacing),
+  };
+}
 
-  const pages: string[] = [];
-  for (let p = 0; p < pageCount; p++) {
-    const pageLines = lines.slice(p * perPage, (p + 1) * perPage);
-
-    const columns = dealIntoColumns(pageLines, opts.columns, opts.flow)
-      .map((colLines) => {
-        const rendered = colLines
-          .map((line) => `<p class="sr-line">${escapeHtml(line)}</p>`)
-          .join("");
-        return `<div class="sr-col">${rendered}</div>`;
-      })
-      .join("");
-
-    pages.push(`<div class="sr-page">${columns}</div>`);
-  }
-
-  return `<div class="${classes}" style="${style}">${pages.join("")}</div>`;
+/** The same custom properties as an inline `style` string, for the Astro template. */
+export function sheetStyleAttr(opts: SheetOptions): string {
+  return Object.entries(sheetStyleVars(opts))
+    .map(([name, value]) => `${name}:${value}`)
+    .join(";");
 }
 
 /** One-line summary of the drill, shown under the controls (not printed). */

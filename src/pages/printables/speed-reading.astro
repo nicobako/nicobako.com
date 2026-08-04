@@ -5,13 +5,17 @@ import {
   DEFAULT_OPTIONS,
   describeSheet,
   estimateWidth,
-  renderSheetHTML,
+  sheetPages,
+  sheetStyleAttr,
 } from "../../printables/speed-reading/speed-reading.ts";
 
-// The server has no font metrics, so the first paint is wrapped with an estimate at the
+// The build has no font metrics, so the first paint is wrapped with an estimate at the
 // nominal 96dpi. The browser re-wraps with real measurements the moment it loads.
 const measure = estimateWidth(DEFAULT_OPTIONS.fontSizePt);
 const pxPerMm = 96 / 25.4;
+
+const pages = sheetPages(DEFAULT_OPTIONS, measure, pxPerMm);
+const sheetStyle = sheetStyleAttr(DEFAULT_OPTIONS);
 ---
 
 <Layout
@@ -111,7 +115,23 @@ const pxPerMm = 96 / 25.4;
   </div>
 
   <div class="sheet-wrap">
-    <div id="sheet" set:html={renderSheetHTML(DEFAULT_OPTIONS, measure, pxPerMm)} />
+    <div id="sheet">
+      <div class:list={["sr-sheet", { "sr-has-guide": DEFAULT_OPTIONS.guide }]} style={sheetStyle}>
+        {
+          pages.map((columns) => (
+            <div class="sr-page">
+              {columns.map((lines) => (
+                <div class="sr-col">
+                  {lines.map((line) => (
+                    <p class="sr-line">{line}</p>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))
+        }
+      </div>
+    </div>
   </div>
 
   <button type="button" id="exit-focus" class="exit-focus no-print" hidden>Done</button>
@@ -120,7 +140,8 @@ const pxPerMm = 96 / 25.4;
 <script>
   import {
     describeSheet,
-    renderSheetHTML,
+    sheetPages,
+    sheetStyleVars,
     type Flow,
     type Orientation,
     type PageSize,
@@ -250,13 +271,64 @@ const pxPerMm = 96 / 25.4;
     };
   }
 
+  /**
+   * Build the sheet as elements, mirroring the markup Astro emits for the first paint.
+   *
+   * Words reach the page as text nodes, so nothing is ever parsed as markup — which is
+   * also why no escaping step is needed here.
+   */
+  function buildSheet(
+    opts: SheetOptions,
+    measure: (line: string) => number,
+    mm: number,
+  ): DocumentFragment {
+    const fragment = document.createDocumentFragment();
+    const pages = sheetPages(opts, measure, mm);
+
+    if (pages.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "sr-empty";
+      empty.textContent = "No text to show.";
+      fragment.append(empty);
+      return fragment;
+    }
+
+    const root = document.createElement("div");
+    root.className = opts.guide ? "sr-sheet sr-has-guide" : "sr-sheet";
+    for (const [name, value] of Object.entries(sheetStyleVars(opts))) {
+      root.style.setProperty(name, value);
+    }
+
+    for (const columns of pages) {
+      const page = document.createElement("div");
+      page.className = "sr-page";
+
+      for (const lines of columns) {
+        const column = document.createElement("div");
+        column.className = "sr-col";
+
+        for (const line of lines) {
+          const paragraph = document.createElement("p");
+          paragraph.className = "sr-line";
+          paragraph.textContent = line;
+          column.append(paragraph);
+        }
+        page.append(column);
+      }
+      root.append(page);
+    }
+
+    fragment.append(root);
+    return fragment;
+  }
+
   function render(target: "screen" | "print" = "screen") {
     const base = readOptions();
     const measure = measurerFor(base.fontSizePt);
     const mm = pxPerMm();
     const opts = optionsFor(target, mm);
 
-    sheet.innerHTML = renderSheetHTML(opts, measure, mm);
+    sheet.replaceChildren(buildSheet(opts, measure, mm));
     pageRule.textContent = `@page { size: ${base.pageSize} ${base.orientation}; margin: 15mm; }`;
 
     if (target === "screen") {

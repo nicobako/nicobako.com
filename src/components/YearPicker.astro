@@ -1,0 +1,95 @@
+---
+import { adjacentYears, yearHref } from "../printables/calendar/years.ts";
+
+interface Props {
+  /** The year currently being shown. */
+  year: number;
+  /** Route the year pages hang off, e.g. `/printables/year-calendar`. */
+  basePath: string;
+}
+
+const { year, basePath } = Astro.props;
+const { prev, next } = adjacentYears(year);
+---
+
+<div class="year-picker no-print">
+  {
+    prev === null ? (
+      <span class="step" aria-disabled="true">
+        &larr;
+      </span>
+    ) : (
+      <a class="step" href={yearHref(basePath, prev)} rel="prev" aria-label={`Go to ${prev}`}>
+        &larr;
+      </a>
+    )
+  }
+
+  <span class="current" aria-current="page">{year}</span>
+
+  {
+    next === null ? (
+      <span class="step" aria-disabled="true">
+        &rarr;
+      </span>
+    ) : (
+      <a class="step" href={yearHref(basePath, next)} rel="next" aria-label={`Go to ${next}`}>
+        &rarr;
+      </a>
+    )
+  }
+
+  <button type="button" class="print-button">Print</button>
+</div>
+
+<script>
+  // The only script these pages need: printing has no declarative equivalent.
+  for (const button of document.querySelectorAll(".print-button")) {
+    button.addEventListener("click", () => window.print());
+  }
+</script>
+
+<style>
+  .year-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .step,
+  .current,
+  .print-button {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .current {
+    background: var(--bg);
+    font-variant-numeric: tabular-nums;
+    min-width: 4rem;
+    text-align: center;
+  }
+
+  .print-button {
+    cursor: pointer;
+    font: inherit;
+  }
+
+  a.step:hover,
+  .print-button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* At the ends of the generated range there is nowhere to go; the arrow stays in
+     place so the row doesn't reflow, but reads as inert. */
+  .step[aria-disabled="true"] {
+    color: var(--muted);
+    opacity: 0.5;
+  }
+</style>

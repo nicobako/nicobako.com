@@ -1,0 +1,112 @@
+---
+import BookmarkTable from "./BookmarkTable.astro";
+import YearPicker from "./YearPicker.astro";
+
+interface Props {
+  year: number;
+  basePath: string;
+}
+
+const { year, basePath } = Astro.props;
+
+const DEFAULT_COPIES = 4;
+const MAX_COPIES = 10;
+const copyOptions = Array.from({ length: MAX_COPIES }, (_, i) => i + 1);
+---
+
+<div class="controls no-print">
+  <h1>Bookmark Calendar</h1>
+  <div class="picker-row">
+    <YearPicker year={year} basePath={basePath} />
+    <label class="copies-field">
+      Per page
+      <select id="copies" aria-label="Bookmarks per page">
+        {
+          copyOptions.map((count) => (
+            <option value={count} selected={count === DEFAULT_COPIES}>
+              {count}
+            </option>
+          ))
+        }
+      </select>
+    </label>
+  </div>
+  <p>
+    One row per ISO week: week number, the day-of-month under each weekday
+    (Mon&ndash;Sun), and the month of that week&rsquo;s Sunday. Sized to fit a
+    bookmark; printing lays several copies across a landscape page to cut apart.
+  </p>
+</div>
+
+{/* One copy ships in the HTML; the rest are cloned from it. A 53-week table is ~30KB,
+    and the whole site is precached, so shipping ten identical copies of every year
+    would cost more than the feature is worth. */}
+<div class="sheet" id="sheet">
+  <BookmarkTable year={year} />
+</div>
+
+<script>
+  // Copies are cloned from the table Astro rendered — no markup is built in JS. Only the
+  // first is ever visible on screen, so this only affects what comes out of the printer.
+  const sheet = document.getElementById("sheet") as HTMLDivElement;
+  const copiesInput = document.getElementById("copies") as HTMLSelectElement;
+  const template = sheet.firstElementChild as HTMLElement;
+
+  function syncCopies() {
+    const wanted = Math.max(1, parseInt(copiesInput.value, 10) || 1);
+    while (sheet.childElementCount > wanted) sheet.lastElementChild!.remove();
+    while (sheet.childElementCount < wanted) sheet.append(template.cloneNode(true));
+  }
+
+  copiesInput.addEventListener("change", syncCopies);
+  syncCopies();
+</script>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .picker-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .copies-field {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--muted);
+  }
+
+  .copies-field select {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 6px;
+  }
+
+  /* On screen one bookmark is enough of a preview; the rest exist only to print. */
+  .sheet > :global(*:not(:first-child)) {
+    display: none;
+  }
+
+  @media print {
+    .sheet {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      gap: 0.5cm;
+    }
+
+    .sheet > :global(*:not(:first-child)) {
+      display: table;
+    }
+  }
+</style>
