@@ -1,0 +1,74 @@
+---
+import { SHEETS, sheetHref, type Sheet } from "../printables/staff-paper/staff-paper.ts";
+
+interface Props {
+  /** The sheet currently being shown. */
+  sheet: Sheet;
+}
+
+const { sheet } = Astro.props;
+---
+
+<div class="sheet-picker no-print">
+  {
+    SHEETS.map((option) =>
+      option === sheet ? (
+        <span class="size current" aria-current="page">
+          {option.name}
+        </span>
+      ) : (
+        <a class="size" href={sheetHref(option)} title={option.description}>
+          {option.name}
+        </a>
+      ),
+    )
+  }
+
+  <button type="button" class="print-button">Print</button>
+</div>
+
+<script>
+  // The only script these pages need: printing has no declarative equivalent.
+  for (const button of document.querySelectorAll(".print-button")) {
+    button.addEventListener("click", () => window.print());
+  }
+</script>
+
+<style>
+  .sheet-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .size,
+  .print-button {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .current {
+    background: var(--bg);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .print-button {
+    cursor: pointer;
+    font: inherit;
+    /* Pushed to the end of the row so the sizes read as one group. */
+    margin-left: auto;
+  }
+
+  a.size:hover,
+  .print-button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>

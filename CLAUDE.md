@@ -28,7 +28,7 @@ Requires Node `>=22.12.0`.
 ### How pages are built
 
 This is a static site: nothing runs on a server, and a `---` block runs once, at build
-time. Three rules keep pages declarative — they are the house style, and reversing any
+time. Four rules keep pages declarative — they are the house style, and reversing any
 of them should be a deliberate decision:
 
 1. **Markup is written as markup.** Never build HTML by concatenating strings and
@@ -36,18 +36,30 @@ of them should be a deliberate decision:
    *data* (arrays, records); `.astro` templates map that data to elements. Where the
    browser genuinely has to re-render, it builds nodes with `document.createElement`,
    as `speed-reading.astro` does.
-2. **Variation that is purely visual belongs in CSS.** Prefer setting a CSS custom
-   property over rebuilding DOM. `blank-sheet-music.astro` renders the maximum number
-   of staves once and lets six custom properties resize and clip them, so dragging a
-   slider restyles rather than re-renders.
-3. **Variation that changes content belongs in a route.** A control that picks between
+2. **Prefer a static component over a control.** The default answer to "the user might
+   want this a bit different" is a component with props plus a short, hand-picked list
+   of presets — not a panel of sliders. Pick the handful of variants that are actually
+   worth printing or using, name them, and generate a page for each. A knob is only
+   worth its weight when the useful values are genuinely continuous and personal
+   (there is no sensible preset), and even then it must not be the thing that decides
+   what the page contains.
+3. **Variation that is purely visual belongs in CSS.** Prefer setting a CSS custom
+   property over rebuilding DOM. `SheetMusic.astro` resolves every dimension in its
+   `---` block and passes them down as five custom properties, so the CSS stays
+   readable while the values are plain build-time constants.
+4. **Variation that changes content belongs in a route.** A control that picks between
    a known, finite set of contents should be links to pre-rendered pages, not client
-   rendering. The calendars use `[year].astro` + `getStaticPaths()`, which is why they
-   ship no rendering code at all.
+   rendering. The calendars use `[year].astro` + `getStaticPaths()` and the sheet music
+   uses `[sheet].astro`, which is why they ship no rendering code at all. The default
+   variant keeps the bare path (`/printables/blank-sheet-music`) so existing links
+   resolve; the rest hang off it, and the picker is a row of links.
 
 Client `<script>` is for what only the browser can do: audio, timing, persistence,
 font measurement, `window.print()`. Selection state that CSS can express — the circle
 of fifths uses `:target` — should not become JavaScript.
+
+Every generated variant is a real page that the service worker precaches, so the list
+of presets trades directly against install size. Keep it short and deliberate.
 
 ### Pages
 
@@ -64,7 +76,9 @@ Printables: `blank-sheet-music`, `speed-reading`, `scribal-abbreviations`,
 `weekly-time-tracker`, `daily-practice-schedule`, `weekly-practice-schedule`, plus
 `year-calendar` and `bookmark-calendar`, which each also generate a page per year
 (`year-calendar/[year].astro`). `src/printables/calendar/years.ts` sets that range —
-widening it multiplies real, precached pages, so keep it small.
+widening it multiplies real, precached pages, so keep it small. `blank-sheet-music`
+works the same way with staff sizes: `SHEETS` in `staff-paper.ts` lists them and
+`blank-sheet-music/[sheet].astro` generates a page each.
 
 ### Game subsystem
 
@@ -86,7 +100,7 @@ widening it multiplies real, precached pages, so keep it small.
 
 `src/printables/` holds the same kind of DOM-free logic modules, returning data rather than markup:
 
-- `staff-paper/staff-paper.ts` — staff geometry maths and the control ranges (`CONTROLS`) that both the template and the client script read, so bounds are declared once.
+- `staff-paper/staff-paper.ts` — staff geometry maths plus `SHEETS`, the fixed list of staff sizes that get a page. A sheet is declared as "this many staves, this rastral size"; the gap between staves is *derived* so the staves fill the printable area exactly, which is what lets a preset be one line of data. Rendered by `components/SheetMusic.astro` (pure props, no state) with `components/SheetMusicPicker.astro` as the row of links between sizes. This page used to expose six sliders and rebuild itself in the browser; it is now four static pages and the only script left is `window.print()`. Adding a size means adding an entry to `SHEETS`.
 - `calendar/calendar.ts` — ISO-8601 week maths and the grid/row builders; `calendar/years.ts` decides which years get pages. Rendered by `components/YearGrid.astro` and `components/BookmarkTable.astro`.
 - `speed-reading/speed-reading.ts` — line wrapping and column dealing. The one page that must re-render in the browser: where a line breaks depends on the reader's actual font metrics, so the build uses `estimateWidth` for first paint and the browser re-runs the layout with canvas measurements.
 
