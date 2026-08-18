@@ -4,7 +4,7 @@
 // preset: nothing here is configured in the browser, so all of it resolves at build
 // time and the pages ship no JavaScript beyond `window.print()`.
 
-/** The dimensions that define how one sheet of staff paper looks. */
+/** The dimensions that define how one page of staff paper looks. */
 export interface StaffGeometry {
   /** Staves printed on the page. */
   staves: number;
@@ -14,8 +14,8 @@ export interface StaffGeometry {
   lineThicknessMm: number;
 }
 
-/** A staff-paper preset: geometry plus the words and URL that go with it. */
-export interface Sheet extends StaffGeometry {
+/** A staff size: geometry plus the words and URL segment that go with it. */
+export interface StaffSize extends StaffGeometry {
   /** URL segment under `/printables/blank-sheet-music`. */
   slug: string;
   /** Label shown in the picker and the page title. */
@@ -36,15 +36,15 @@ export const PAGE_MARGIN_MM = 15;
 export const LINES_PER_STAFF = 5;
 
 /**
- * Every sheet that gets a page, largest staves first. Kept deliberately short: each
- * entry is a real generated page and the whole site is precached by the service
- * worker, so the list trades directly against install size.
+ * Every staff size that gets pages, largest staves first. Kept deliberately short:
+ * each size is generated once per page count below, and the whole site is precached
+ * by the service worker, so this list trades directly against install size.
  *
  * Line spacing is the rastral size — roughly 1.75mm for engraved music, wider for
  * hand-written practice paper. The staff count is chosen to suit it; the gap between
  * staves is then derived so the staves fill the printable area exactly.
  */
-export const SHEETS: Sheet[] = [
+export const SIZES: StaffSize[] = [
   {
     slug: "beginner",
     name: "Beginner",
@@ -80,20 +80,58 @@ export const SHEETS: Sheet[] = [
 ];
 
 /**
+ * Page counts each size is generated in. Two is the double-sided variant: printed
+ * duplex it fills both faces of a single sheet of paper, which is the only reason a
+ * second page is worth its own route — anything more is the print dialog's copy count.
+ */
+export const PAGE_COUNTS = [1, 2];
+
+/** One generated page: a staff size printed a given number of times. */
+export interface Sheet {
+  size: StaffSize;
+  pages: number;
+}
+
+/** The cross product — every size in every page count, and nothing else. */
+export const SHEETS: Sheet[] = SIZES.flatMap((size) =>
+  PAGE_COUNTS.map((pages) => ({ size, pages })),
+);
+
+/**
  * The sheet shown at the bare `/printables/blank-sheet-music` path. Every other sheet
  * lives under it, the same way the calendars put the build year at their bare path.
  */
-export const DEFAULT_SHEET: Sheet = SHEETS.find((sheet) => sheet.slug === "standard")!;
+export const DEFAULT_SHEET: Sheet = sheetFor("standard", 1);
 
-/** The sheets that need a `[sheet]` page — all of them except the one at the bare path. */
-export function subPageSheets(): Sheet[] {
-  return SHEETS.filter((sheet) => sheet !== DEFAULT_SHEET);
+/** The one entry in `SHEETS` with this size and page count. */
+export function sheetFor(sizeSlug: string, pages: number): Sheet {
+  return SHEETS.find((sheet) => sheet.size.slug === sizeSlug && sheet.pages === pages)!;
+}
+
+/** Whether a sheet is the one at the bare path. Compared by value, not identity. */
+export function isDefaultSheet(sheet: Sheet): boolean {
+  return sheet.size.slug === DEFAULT_SHEET.size.slug && sheet.pages === DEFAULT_SHEET.pages;
+}
+
+/** URL segment for a sheet — `compact`, `compact-2-pages`. */
+export function sheetSlug(sheet: Sheet): string {
+  return sheet.pages === 1 ? sheet.size.slug : `${sheet.size.slug}-${sheet.pages}-pages`;
 }
 
 /** URL for a sheet. The default keeps the bare path so existing links still resolve. */
 export function sheetHref(sheet: Sheet): string {
   const basePath = "/printables/blank-sheet-music";
-  return sheet === DEFAULT_SHEET ? `${basePath}/` : `${basePath}/${sheet.slug}/`;
+  return isDefaultSheet(sheet) ? `${basePath}/` : `${basePath}/${sheetSlug(sheet)}/`;
+}
+
+/** The sheets that need a `[sheet]` page — all of them except the one at the bare path. */
+export function subPageSheets(): Sheet[] {
+  return SHEETS.filter((sheet) => !isDefaultSheet(sheet));
+}
+
+/** Name of a sheet for titles — "Compact", "Compact, 2 pages". */
+export function sheetName(sheet: Sheet): string {
+  return sheet.pages === 1 ? sheet.size.name : `${sheet.size.name}, ${sheet.pages} pages`;
 }
 
 /**
@@ -120,8 +158,16 @@ export function formatMm(valueMm: number): string {
   return `${Number(valueMm.toFixed(2))}mm`;
 }
 
+/** What the sheet prints on, for the intro line. */
+export function describePaper(sheet: Sheet): string {
+  return sheet.pages === 1
+    ? "Fits one A4 page — ask for more copies in the print dialog."
+    : `${sheet.pages} identical A4 pages — print double-sided to fill one sheet of paper.`;
+}
+
 /** The measurements of a sheet, for the line of small print under the intro. */
 export function describeSheet(sheet: Sheet): string {
-  const staveWord = sheet.staves === 1 ? "staff" : "staves";
-  return `${sheet.staves} ${staveWord} · ${formatMm(staffHeightMm(sheet))} staff height · ${formatMm(staffGapMm(sheet))} between staves.`;
+  const { size } = sheet;
+  const staveWord = size.staves === 1 ? "staff" : "staves";
+  return `${size.staves} ${staveWord} per page · ${formatMm(staffHeightMm(size))} staff height · ${formatMm(staffGapMm(size))} between staves.`;
 }

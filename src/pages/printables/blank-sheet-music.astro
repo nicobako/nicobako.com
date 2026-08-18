@@ -2,28 +2,33 @@
 import Layout from "../../layouts/Layout.astro";
 import SheetMusic from "../../components/SheetMusic.astro";
 import SheetMusicPicker from "../../components/SheetMusicPicker.astro";
-import { DEFAULT_SHEET, describeSheet } from "../../printables/staff-paper/staff-paper.ts";
+import {
+  DEFAULT_SHEET,
+  describePaper,
+  describeSheet,
+} from "../../printables/staff-paper/staff-paper.ts";
 
-// The bare path shows the standard sheet; every other size has its own page under
-// `blank-sheet-music/[sheet]`, reached through the picker's links.
+// The bare path shows the standard one-page sheet; every other size and length has
+// its own page under `blank-sheet-music/[sheet]`, reached through the picker's links.
 const sheet = DEFAULT_SHEET;
 ---
 
 <Layout
   title="Blank Sheet Music — Nico Bako"
-  description="Printable blank staff paper on A4, in four fixed staff sizes."
+  description="Printable blank staff paper on A4, in four fixed staff sizes, one or two pages."
 >
   <div class="controls no-print">
     <h1>Blank Sheet Music</h1>
     <SheetMusicPicker sheet={sheet} />
-    <p>{sheet.description} Fits one A4 page — ask for more copies in the print dialog.</p>
+    <p>{sheet.size.description} {describePaper(sheet)}</p>
     <p class="hint">{describeSheet(sheet)}</p>
   </div>
 
   <SheetMusic
-    staves={sheet.staves}
-    lineSpacingMm={sheet.lineSpacingMm}
-    lineThicknessMm={sheet.lineThicknessMm}
+    staves={sheet.size.staves}
+    lineSpacingMm={sheet.size.lineSpacingMm}
+    lineThicknessMm={sheet.size.lineThicknessMm}
+    pages={sheet.pages}
   />
 </Layout>
 

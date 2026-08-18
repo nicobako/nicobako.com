@@ -1,5 +1,11 @@
 ---
-import { SHEETS, sheetHref, type Sheet } from "../printables/staff-paper/staff-paper.ts";
+import {
+  PAGE_COUNTS,
+  SIZES,
+  sheetFor,
+  sheetHref,
+  type Sheet,
+} from "../printables/staff-paper/staff-paper.ts";
 
 interface Props {
   /** The sheet currently being shown. */
@@ -7,21 +13,45 @@ interface Props {
 }
 
 const { sheet } = Astro.props;
+
+// Each row swaps one axis and keeps the other, so the picker is two rows of links
+// between pre-rendered pages rather than a pair of controls over one page.
+const sizeOptions = SIZES.map((size) => ({
+  label: size.name,
+  title: size.description,
+  target: sheetFor(size.slug, sheet.pages),
+  current: size.slug === sheet.size.slug,
+}));
+
+const pageOptions = PAGE_COUNTS.map((pages) => ({
+  label: pages === 1 ? "1 page" : `${pages} pages`,
+  title: pages === 1 ? "A single sheet" : "Print double-sided onto one sheet",
+  target: sheetFor(sheet.size.slug, pages),
+  current: pages === sheet.pages,
+}));
 ---
 
 <div class="sheet-picker no-print">
   {
-    SHEETS.map((option) =>
-      option === sheet ? (
-        <span class="size current" aria-current="page">
-          {option.name}
-        </span>
-      ) : (
-        <a class="size" href={sheetHref(option)} title={option.description}>
-          {option.name}
-        </a>
-      ),
-    )
+    [
+      { legend: "Size", options: sizeOptions },
+      { legend: "Length", options: pageOptions },
+    ].map((row) => (
+      <div class="row">
+        <span class="legend">{row.legend}</span>
+        {row.options.map((option) =>
+          option.current ? (
+            <span class="option current" aria-current="page">
+              {option.label}
+            </span>
+          ) : (
+            <a class="option" href={sheetHref(option.target)} title={option.title}>
+              {option.label}
+            </a>
+          ),
+        )}
+      </div>
+    ))
   }
 
   <button type="button" class="print-button">Print</button>
@@ -37,12 +67,28 @@ const { sheet } = Astro.props;
 <style>
   .sheet-picker {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .row {
+    display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
   }
 
-  .size,
+  .legend {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    /* Fixed width so both rows of options start on the same left edge. */
+    width: 4rem;
+  }
+
+  .option,
   .print-button {
     padding: 0.35rem 0.7rem;
     border: 1px solid var(--border);
@@ -62,11 +108,10 @@ const { sheet } = Astro.props;
   .print-button {
     cursor: pointer;
     font: inherit;
-    /* Pushed to the end of the row so the sizes read as one group. */
-    margin-left: auto;
+    margin-top: 0.25rem;
   }
 
-  a.size:hover,
+  a.option:hover,
   .print-button:hover {
     border-color: var(--accent);
     color: var(--accent);

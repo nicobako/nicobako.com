@@ -52,7 +52,8 @@ of them should be a deliberate decision:
    rendering. The calendars use `[year].astro` + `getStaticPaths()` and the sheet music
    uses `[sheet].astro`, which is why they ship no rendering code at all. The default
    variant keeps the bare path (`/printables/blank-sheet-music`) so existing links
-   resolve; the rest hang off it, and the picker is a row of links.
+   resolve; the rest hang off it, and the picker is rows of links — one row per axis,
+   each swapping its own axis and keeping the rest.
 
 Client `<script>` is for what only the browser can do: audio, timing, persistence,
 font measurement, `window.print()`. Selection state that CSS can express — the circle
@@ -77,8 +78,9 @@ Printables: `blank-sheet-music`, `speed-reading`, `scribal-abbreviations`,
 `year-calendar` and `bookmark-calendar`, which each also generate a page per year
 (`year-calendar/[year].astro`). `src/printables/calendar/years.ts` sets that range —
 widening it multiplies real, precached pages, so keep it small. `blank-sheet-music`
-works the same way with staff sizes: `SHEETS` in `staff-paper.ts` lists them and
-`blank-sheet-music/[sheet].astro` generates a page each.
+works the same way, over two axes: `SIZES` × `PAGE_COUNTS` in `staff-paper.ts` is
+expanded into `SHEETS`, and `blank-sheet-music/[sheet].astro` generates a page for
+each (`compact`, `compact-2-pages`, …).
 
 ### Game subsystem
 
@@ -100,7 +102,7 @@ works the same way with staff sizes: `SHEETS` in `staff-paper.ts` lists them and
 
 `src/printables/` holds the same kind of DOM-free logic modules, returning data rather than markup:
 
-- `staff-paper/staff-paper.ts` — staff geometry maths plus `SHEETS`, the fixed list of staff sizes that get a page. A sheet is declared as "this many staves, this rastral size"; the gap between staves is *derived* so the staves fill the printable area exactly, which is what lets a preset be one line of data. Rendered by `components/SheetMusic.astro` (pure props, no state) with `components/SheetMusicPicker.astro` as the row of links between sizes. This page used to expose six sliders and rebuild itself in the browser; it is now four static pages and the only script left is `window.print()`. Adding a size means adding an entry to `SHEETS`.
+- `staff-paper/staff-paper.ts` — staff geometry maths plus the two preset axes: `SIZES` (four staff sizes) and `PAGE_COUNTS` (`1`, and `2` for printing double-sided onto one sheet of paper). `SHEETS` is their cross product, so the page count is a variant like any other rather than a stepper. A size is declared as "this many staves, this rastral size"; the gap between staves is *derived* so the staves fill the printable area exactly, which is what lets a preset be one line of data. Rendered by `components/SheetMusic.astro` (pure props, no state) with `components/SheetMusicPicker.astro` as two rows of links — each row swaps one axis and keeps the other. This page used to expose six sliders and rebuild itself in the browser; it is now eight static pages and the only script left is `window.print()`. Adding a size means adding an entry to `SIZES`, which costs one page per page count.
 - `calendar/calendar.ts` — ISO-8601 week maths and the grid/row builders; `calendar/years.ts` decides which years get pages. Rendered by `components/YearGrid.astro` and `components/BookmarkTable.astro`.
 - `speed-reading/speed-reading.ts` — line wrapping and column dealing. The one page that must re-render in the browser: where a line breaks depends on the reader's actual font metrics, so the build uses `estimateWidth` for first paint and the browser re-runs the layout with canvas measurements.
 

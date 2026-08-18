@@ -7,9 +7,12 @@ import {
   type StaffGeometry,
 } from "../printables/staff-paper/staff-paper.ts";
 
-interface Props extends StaffGeometry {}
+interface Props extends StaffGeometry {
+  /** How many identical pages to print. Two of them print duplex onto one sheet. */
+  pages?: number;
+}
 
-const geometry: StaffGeometry = Astro.props;
+const { pages = 1, ...geometry }: Props = Astro.props;
 
 // Every dimension is resolved here, at build time, and reaches the page as a custom
 // property on the sheet's root element. Nothing reassigns them afterwards: the sheet
@@ -24,22 +27,25 @@ const sheetVars = [
   `--staff-gap:${mm(staffGapMm(geometry))}`,
 ].join(";");
 
+const sheetPages = Array.from({ length: pages }, (_, i) => i);
 const staves = Array.from({ length: geometry.staves }, (_, i) => i);
 const lines = Array.from({ length: LINES_PER_STAFF }, (_, i) => i);
 ---
 
-<div class="sheet-wrap">
-  <div class="sp-page" style={sheetVars}>
-    {
-      staves.map(() => (
-        <div class="sp-staff">
-          {lines.map((i) => (
-            <span class="sp-line" style={`--line-index:${i}`} />
-          ))}
-        </div>
-      ))
-    }
-  </div>
+<div class="sheet-wrap" style={sheetVars}>
+  {
+    sheetPages.map(() => (
+      <div class="sp-page">
+        {staves.map(() => (
+          <div class="sp-staff">
+            {lines.map((i) => (
+              <span class="sp-line" style={`--line-index:${i}`} />
+            ))}
+          </div>
+        ))}
+      </div>
+    ))
+  }
 </div>
 
 <style>
@@ -58,11 +64,15 @@ const lines = Array.from({ length: LINES_PER_STAFF }, (_, i) => i);
     gap: var(--staff-gap);
     width: 210mm;
     height: 297mm;
-    margin: 0 auto;
+    margin: 0 auto 1.5rem;
     padding: var(--page-margin);
     background: var(--bg);
     border: 1px solid var(--border);
     box-sizing: border-box;
+  }
+
+  .sp-page:last-child {
+    margin-bottom: 0;
   }
 
   .sp-staff {
@@ -95,6 +105,12 @@ const lines = Array.from({ length: LINES_PER_STAFF }, (_, i) => i);
       /* Never paint the page fill — with background graphics enabled, the dark
          theme's --bg would print as a solid black sheet. */
       background: none;
+      break-after: page;
+    }
+
+    /* No trailing break, or the printer ejects a blank sheet after the last page. */
+    .sp-page:last-child {
+      break-after: auto;
     }
 
     .sp-line {
