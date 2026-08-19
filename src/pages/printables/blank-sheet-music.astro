@@ -1,448 +1,48 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import SheetMusic from "../../components/SheetMusic.astro";
+import SheetMusicPicker from "../../components/SheetMusicPicker.astro";
 import {
-  CONTROLS,
-  DEFAULT_OPTIONS,
-  LINES_PER_STAFF,
-  MAX_STAVES_PER_PAGE,
+  DEFAULT_SHEET,
+  describePaper,
   describeSheet,
-  formatMm,
-  stavesPerPage,
 } from "../../printables/staff-paper/staff-paper.ts";
 
-// Every dimension reaches the DOM as a CSS custom property, so the controls only ever
-// reassign a variable — the staves themselves are static markup rendered once, here.
-const sheetVars = [
-  `--left-margin:${DEFAULT_OPTIONS.leftMarginMm}mm`,
-  `--right-margin:${DEFAULT_OPTIONS.rightMarginMm}mm`,
-  `--line-spacing:${DEFAULT_OPTIONS.lineSpacingMm}mm`,
-  `--staff-spacing:${DEFAULT_OPTIONS.staffSpacingMm}mm`,
-  `--line-thickness:${DEFAULT_OPTIONS.lineThicknessMm}mm`,
-  `--staves-per-page:${stavesPerPage(DEFAULT_OPTIONS)}`,
-].join(";");
-
-const staves = Array.from({ length: MAX_STAVES_PER_PAGE }, (_, i) => i);
-const lines = Array.from({ length: LINES_PER_STAFF }, (_, i) => i);
+// The bare path shows the standard one-page sheet; every other size and length has
+// its own page under `blank-sheet-music/[sheet]`, reached through the picker's links.
+const sheet = DEFAULT_SHEET;
 ---
 
 <Layout
   title="Blank Sheet Music — Nico Bako"
-  description="Printable blank staff paper with configurable margins, staff spacing, and page count."
+  description="Printable blank staff paper on A4, in four fixed staff sizes, one or two pages."
 >
   <div class="controls no-print">
     <h1>Blank Sheet Music</h1>
-    <p>Blank staff paper, sized to A4. Set the margins and spacing, then print.</p>
-
-    <div class="grid">
-      <label>
-        <span>Left margin <output id="left-out">{formatMm(DEFAULT_OPTIONS.leftMarginMm)}</output></span>
-        <input
-          id="left-margin"
-          type="range"
-          min={CONTROLS.leftMarginMm.min}
-          max={CONTROLS.leftMarginMm.max}
-          step={CONTROLS.leftMarginMm.step}
-          value={DEFAULT_OPTIONS.leftMarginMm}
-        />
-      </label>
-
-      <label>
-        <span>Right margin <output id="right-out">{formatMm(DEFAULT_OPTIONS.rightMarginMm)}</output></span>
-        <input
-          id="right-margin"
-          type="range"
-          min={CONTROLS.rightMarginMm.min}
-          max={CONTROLS.rightMarginMm.max}
-          step={CONTROLS.rightMarginMm.step}
-          value={DEFAULT_OPTIONS.rightMarginMm}
-        />
-      </label>
-
-      <label>
-        <span>Space between lines <output id="spacing-out">{formatMm(DEFAULT_OPTIONS.lineSpacingMm)}</output></span>
-        <input
-          id="line-spacing"
-          type="range"
-          min={CONTROLS.lineSpacingMm.min}
-          max={CONTROLS.lineSpacingMm.max}
-          step={CONTROLS.lineSpacingMm.step}
-          value={DEFAULT_OPTIONS.lineSpacingMm}
-        />
-      </label>
-
-      <label>
-        <span>Space between staves <output id="staff-spacing-out">{formatMm(DEFAULT_OPTIONS.staffSpacingMm)}</output></span>
-        <input
-          id="staff-spacing"
-          type="range"
-          min={CONTROLS.staffSpacingMm.min}
-          max={CONTROLS.staffSpacingMm.max}
-          step={CONTROLS.staffSpacingMm.step}
-          value={DEFAULT_OPTIONS.staffSpacingMm}
-        />
-      </label>
-
-      <label>
-        <span>Line thickness <output id="thickness-out">{formatMm(DEFAULT_OPTIONS.lineThicknessMm)}</output></span>
-        <input
-          id="line-thickness"
-          type="range"
-          min={CONTROLS.lineThicknessMm.min}
-          max={CONTROLS.lineThicknessMm.max}
-          step={CONTROLS.lineThicknessMm.step}
-          value={DEFAULT_OPTIONS.lineThicknessMm}
-        />
-      </label>
-
-      <div class="field">
-        <span id="pages-label">Pages</span>
-        <div class="stepper">
-          <button type="button" id="pages-down" aria-label="One page fewer" disabled>−</button>
-          <input
-            id="pages"
-            type="number"
-            inputmode="numeric"
-            min={CONTROLS.pages.min}
-            max={CONTROLS.pages.max}
-            step={CONTROLS.pages.step}
-            value={DEFAULT_OPTIONS.pages}
-            aria-labelledby="pages-label"
-          />
-          <button type="button" id="pages-up" aria-label="One page more">+</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="actions">
-      <button type="button" id="print">Print</button>
-    </div>
-
-    <p class="summary" id="summary">{describeSheet(DEFAULT_OPTIONS)}</p>
+    <SheetMusicPicker sheet={sheet} />
+    <p>{sheet.size.description} {describePaper(sheet)}</p>
+    <p class="hint">{describeSheet(sheet)}</p>
   </div>
 
-  <div class="sheet-wrap">
-    <div id="sheet" style={sheetVars}>
-      {/* Extra pages are cloned from this one, so the markup lives in exactly one place. */}
-      <div class="sp-page">
-        <div class="sp-content">
-          {
-            staves.map(() => (
-              <div class="sp-staff">
-                {lines.map((i) => (
-                  <span class="sp-line" style={`--line-index:${i}`} />
-                ))}
-              </div>
-            ))
-          }
-        </div>
-      </div>
-    </div>
-  </div>
+  <SheetMusic
+    staves={sheet.size.staves}
+    lineSpacingMm={sheet.size.lineSpacingMm}
+    lineThicknessMm={sheet.size.lineThicknessMm}
+    pages={sheet.pages}
+  />
 </Layout>
-
-<script>
-  import {
-    CONTROLS,
-    describeSheet,
-    formatMm,
-    stavesPerPage,
-    type StaffPaperOptions,
-  } from "../../printables/staff-paper/staff-paper.ts";
-
-  const sheet = document.getElementById("sheet") as HTMLDivElement;
-  const summary = document.getElementById("summary") as HTMLParagraphElement;
-
-  const leftMargin = document.getElementById("left-margin") as HTMLInputElement;
-  const rightMargin = document.getElementById("right-margin") as HTMLInputElement;
-  const lineSpacing = document.getElementById("line-spacing") as HTMLInputElement;
-  const staffSpacing = document.getElementById("staff-spacing") as HTMLInputElement;
-  const lineThickness = document.getElementById("line-thickness") as HTMLInputElement;
-  const pages = document.getElementById("pages") as HTMLInputElement;
-  const pagesDown = document.getElementById("pages-down") as HTMLButtonElement;
-  const pagesUp = document.getElementById("pages-up") as HTMLButtonElement;
-
-  const out = {
-    left: document.getElementById("left-out")!,
-    right: document.getElementById("right-out")!,
-    spacing: document.getElementById("spacing-out")!,
-    staffSpacing: document.getElementById("staff-spacing-out")!,
-    thickness: document.getElementById("thickness-out")!,
-  };
-
-  function clampPages(value: number): number {
-    return Math.min(
-      CONTROLS.pages.max,
-      Math.max(CONTROLS.pages.min, Math.round(value) || CONTROLS.pages.min),
-    );
-  }
-
-  function readOptions(): StaffPaperOptions {
-    return {
-      pages: clampPages(Number(pages.value)),
-      leftMarginMm: Number(leftMargin.value),
-      rightMarginMm: Number(rightMargin.value),
-      lineSpacingMm: Number(lineSpacing.value),
-      staffSpacingMm: Number(staffSpacing.value),
-      lineThicknessMm: Number(lineThickness.value),
-    };
-  }
-
-  /**
-   * Adds or removes whole page nodes to match the requested count. Pages are cloned
-   * from the one Astro rendered, so no markup is written in JavaScript.
-   */
-  function syncPageCount(count: number) {
-    const template = sheet.firstElementChild as HTMLElement;
-    while (sheet.childElementCount > count) sheet.lastElementChild!.remove();
-    while (sheet.childElementCount < count) sheet.append(template.cloneNode(true));
-  }
-
-  function apply() {
-    const options = readOptions();
-    const perPage = stavesPerPage(options);
-
-    // Restyling only: the staves are already in the DOM and simply re-lay out.
-    sheet.style.setProperty("--left-margin", `${options.leftMarginMm}mm`);
-    sheet.style.setProperty("--right-margin", `${options.rightMarginMm}mm`);
-    sheet.style.setProperty("--line-spacing", `${options.lineSpacingMm}mm`);
-    sheet.style.setProperty("--staff-spacing", `${options.staffSpacingMm}mm`);
-    sheet.style.setProperty("--line-thickness", `${options.lineThicknessMm}mm`);
-    sheet.style.setProperty("--staves-per-page", String(perPage));
-
-    syncPageCount(options.pages);
-
-    summary.textContent = describeSheet(options);
-    out.left.textContent = formatMm(options.leftMarginMm);
-    out.right.textContent = formatMm(options.rightMarginMm);
-    out.spacing.textContent = formatMm(options.lineSpacingMm);
-    out.staffSpacing.textContent = formatMm(options.staffSpacingMm);
-    out.thickness.textContent = formatMm(options.lineThicknessMm);
-
-    pagesDown.disabled = options.pages <= CONTROLS.pages.min;
-    pagesUp.disabled = options.pages >= CONTROLS.pages.max;
-  }
-
-  for (const control of [leftMargin, rightMargin, lineSpacing, staffSpacing, lineThickness]) {
-    control.addEventListener("input", apply);
-  }
-
-  function stepPages(delta: number) {
-    pages.value = String(clampPages(Number(pages.value) + delta));
-    apply();
-  }
-
-  pagesDown.addEventListener("click", () => stepPages(-1));
-  pagesUp.addEventListener("click", () => stepPages(1));
-
-  // Typed input applies the clamped value but leaves the field alone, so a half-typed
-  // number isn't rewritten under the cursor; blur/commit normalises it.
-  pages.addEventListener("input", apply);
-  pages.addEventListener("change", () => stepPages(0));
-
-  document.getElementById("print")!.addEventListener("click", () => window.print());
-</script>
 
 <style>
   .controls {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-    gap: 0.9rem 1.25rem;
-  }
-
-  /* `.field` is the non-<label> variant, used by the pages stepper: its caption
-     labels a group of controls rather than a single one, so it can't be a <label>. */
-  label,
-  .field {
-    display: flex;
-    flex-direction: column;
-    /* Bottom-anchored so controls stay on one line across a grid row even when a
-       longer caption ("Space between staves") wraps to two lines. */
-    justify-content: flex-end;
-    gap: 0.3rem;
-  }
-
-  label > span,
-  .field > span {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-  }
-
-  output {
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
-  }
-
-  input[type="range"] {
-    accent-color: var(--accent);
-  }
-
-  input[type="number"] {
-    width: 6rem;
-    padding: 0.35rem 0.5rem;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--text);
-    border-radius: 6px;
-  }
-
-  /* Segmented − / value / + control: the three parts butt together into one
-     rounded box, so only the outer corners are rounded and inner borders collapse. */
-  .stepper {
-    display: flex;
-    align-items: stretch;
-    width: max-content;
-  }
-
-  .stepper input[type="number"] {
-    width: 3.5rem;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    border-radius: 0;
-    border-left-width: 0;
-    border-right-width: 0;
-    /* The native spinner is redundant next to the buttons, and in most browsers
-       stays invisible until hover. */
-    appearance: textfield;
-  }
-
-  .stepper input[type="number"]::-webkit-outer-spin-button,
-  .stepper input[type="number"]::-webkit-inner-spin-button {
-    appearance: none;
-    margin: 0;
-  }
-
-  .stepper button {
-    width: 2.25rem;
-    padding: 0;
-    font-size: 1.1rem;
-    line-height: 1;
-    border-radius: 6px 0 0 6px;
-  }
-
-  .stepper button + input + button {
-    border-radius: 0 6px 6px 0;
-  }
-
-  .stepper button:disabled {
-    color: var(--muted);
-    border-color: var(--border);
-    cursor: not-allowed;
-  }
-
-  .actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  button {
-    padding: 0.45rem 0.9rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-    cursor: pointer;
-  }
-
-  button:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .summary {
+  .hint {
     margin: 0;
     font-size: 0.9rem;
     color: var(--muted);
-  }
-
-  /* The sheet is rendered at true A4 physical size (mm) so screen preview and print
-     output match exactly; on narrow viewports it scrolls rather than shrinks, since
-     shrinking would misrepresent the margins being configured. */
-  .sheet-wrap {
-    overflow-x: auto;
-  }
-
-  /* Derived dimensions. The six inputs above are set as custom properties on #sheet;
-     everything below is computed from them by the browser, which is why changing a
-     control needs no re-render. */
-  #sheet {
-    --staff-height: calc(4 * var(--line-spacing) + var(--line-thickness));
-    --stride: calc(var(--staff-height) + var(--staff-spacing));
-  }
-
-  .sp-page {
-    width: 210mm;
-    height: 297mm;
-    margin: 0 auto 1.5rem;
-    padding: 15mm var(--right-margin) 15mm var(--left-margin);
-    background: var(--bg);
-    border: 1px solid var(--border);
-    box-sizing: border-box;
-  }
-
-  /* Each page carries the maximum number of staves that could ever fit. Clipping the
-     content box to a whole number of strides hides the surplus at looser spacings —
-     and because the height lands exactly on a staff boundary, no staff is ever cut
-     in half. */
-  .sp-content {
-    height: calc(var(--staves-per-page) * var(--stride) - var(--staff-spacing));
-    overflow: hidden;
-  }
-
-  .sp-staff {
-    position: relative;
-    height: var(--staff-height);
-    margin-bottom: var(--staff-spacing);
-  }
-
-  /* Staff lines are drawn as borders, not backgrounds. Browsers print with
-     "background graphics" off by default, which repaints every background —
-     including a 1px-tall line box — as white, so a background-drawn staff
-     prints as a completely blank page. Borders are foreground paint and always
-     print. */
-  .sp-line {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 0;
-    top: calc(var(--line-index) * var(--line-spacing));
-    border-top: var(--line-thickness) solid var(--text);
-  }
-
-  @media print {
-    .sheet-wrap {
-      overflow: visible;
-    }
-
-    .sp-page {
-      margin: 0;
-      border: none;
-      /* Never paint the page fill — with background graphics enabled, the dark
-         theme's --bg would print as a solid black sheet. */
-      background: none;
-      break-after: page;
-    }
-
-    .sp-page:last-child {
-      break-after: auto;
-    }
-
-    .sp-line {
-      border-top-color: #000;
-    }
-  }
-
-  @page {
-    size: A4 portrait;
-    margin: 0;
   }
 </style>

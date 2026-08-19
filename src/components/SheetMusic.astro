@@ -1,0 +1,125 @@
+---
+import {
+  LINES_PER_STAFF,
+  PAGE_MARGIN_MM,
+  staffGapMm,
+  staffHeightMm,
+  type StaffGeometry,
+} from "../printables/staff-paper/staff-paper.ts";
+
+interface Props extends StaffGeometry {
+  /** How many identical pages to print. Two of them print duplex onto one sheet. */
+  pages?: number;
+}
+
+const { pages = 1, ...geometry }: Props = Astro.props;
+
+// Every dimension is resolved here, at build time, and reaches the page as a custom
+// property on the sheet's root element. Nothing reassigns them afterwards: the sheet
+// is a fixed piece of paper, so its measurements are constants like any other.
+const mm = (valueMm: number) => `${Number(valueMm.toFixed(3))}mm`;
+
+const sheetVars = [
+  `--page-margin:${mm(PAGE_MARGIN_MM)}`,
+  `--line-spacing:${mm(geometry.lineSpacingMm)}`,
+  `--line-thickness:${mm(geometry.lineThicknessMm)}`,
+  `--staff-height:${mm(staffHeightMm(geometry))}`,
+  `--staff-gap:${mm(staffGapMm(geometry))}`,
+].join(";");
+
+const sheetPages = Array.from({ length: pages }, (_, i) => i);
+const staves = Array.from({ length: geometry.staves }, (_, i) => i);
+const lines = Array.from({ length: LINES_PER_STAFF }, (_, i) => i);
+---
+
+<div class="sheet-wrap" style={sheetVars}>
+  {
+    sheetPages.map(() => (
+      <div class="sp-page">
+        {staves.map(() => (
+          <div class="sp-staff">
+            {lines.map((i) => (
+              <span class="sp-line" style={`--line-index:${i}`} />
+            ))}
+          </div>
+        ))}
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  /* The sheet is rendered at true A4 physical size (mm) so screen preview and print
+     output match exactly; on narrow viewports it scrolls rather than shrinks, since
+     shrinking would misrepresent the printed margins. */
+  .sheet-wrap {
+    overflow-x: auto;
+  }
+
+  /* The staves are spaced by `gap`, so the last one carries no trailing space and the
+     column lands flush on the bottom margin. */
+  .sp-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--staff-gap);
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto 1.5rem;
+    padding: var(--page-margin);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    box-sizing: border-box;
+  }
+
+  .sp-page:last-child {
+    margin-bottom: 0;
+  }
+
+  .sp-staff {
+    position: relative;
+    height: var(--staff-height);
+  }
+
+  /* Staff lines are drawn as borders, not backgrounds. Browsers print with
+     "background graphics" off by default, which repaints every background —
+     including a 1px-tall line box — as white, so a background-drawn staff
+     prints as a completely blank page. Borders are foreground paint and always
+     print. */
+  .sp-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0;
+    top: calc(var(--line-index) * var(--line-spacing));
+    border-top: var(--line-thickness) solid var(--text);
+  }
+
+  @media print {
+    .sheet-wrap {
+      overflow: visible;
+    }
+
+    .sp-page {
+      margin: 0;
+      border: none;
+      /* Never paint the page fill — with background graphics enabled, the dark
+         theme's --bg would print as a solid black sheet. */
+      background: none;
+      break-after: page;
+    }
+
+    /* No trailing break, or the printer ejects a blank sheet after the last page. */
+    .sp-page:last-child {
+      break-after: auto;
+    }
+
+    .sp-line {
+      border-top-color: #000;
+    }
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+</style>

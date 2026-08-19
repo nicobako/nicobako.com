@@ -1,0 +1,62 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import SheetMusic from "../../../components/SheetMusic.astro";
+import SheetMusicPicker from "../../../components/SheetMusicPicker.astro";
+import {
+  describePaper,
+  describeSheet,
+  sheetName,
+  sheetSlug,
+  subPageSheets,
+  type Sheet,
+} from "../../../printables/staff-paper/staff-paper.ts";
+
+// One statically generated page per staff size and length, minus the standard
+// one-page sheet, which lives at the bare `/printables/blank-sheet-music` path.
+export function getStaticPaths() {
+  return subPageSheets().map((sheet) => ({
+    params: { sheet: sheetSlug(sheet) },
+    props: { sheet },
+  }));
+}
+
+interface Props {
+  sheet: Sheet;
+}
+
+const { sheet } = Astro.props;
+---
+
+<Layout
+  title={`Blank Sheet Music — ${sheetName(sheet)} — Nico Bako`}
+  description={`Printable blank staff paper on A4: ${sheet.size.description}`}
+>
+  <div class="controls no-print">
+    <h1>Blank Sheet Music</h1>
+    <SheetMusicPicker sheet={sheet} />
+    <p>{sheet.size.description} {describePaper(sheet)}</p>
+    <p class="hint">{describeSheet(sheet)}</p>
+  </div>
+
+  <SheetMusic
+    staves={sheet.size.staves}
+    lineSpacingMm={sheet.size.lineSpacingMm}
+    lineThicknessMm={sheet.size.lineThicknessMm}
+    pages={sheet.pages}
+  />
+</Layout>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

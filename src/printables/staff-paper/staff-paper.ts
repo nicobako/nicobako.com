@@ -1,46 +1,28 @@
-// Pure staff-paper layout maths for the Printables blank sheet music page.
+// Staff-paper geometry and the fixed set of sheets that get a page.
 //
-// This module holds numbers only — no markup. The staves are written declaratively
-// in `blank-sheet-music.astro` and every dimension is applied through CSS custom
-// properties, so changing a control restyles the existing DOM instead of rebuilding it.
+// This module holds numbers only — no markup. Every sheet is a named, hand-picked
+// preset: nothing here is configured in the browser, so all of it resolves at build
+// time and the pages ship no JavaScript beyond `window.print()`.
 
-export interface StaffPaperOptions {
-  /** Number of pages to generate. */
-  pages: number;
-  /** Left page margin, in millimetres. */
-  leftMarginMm: number;
-  /** Right page margin, in millimetres. */
-  rightMarginMm: number;
+/** The dimensions that define how one page of staff paper looks. */
+export interface StaffGeometry {
+  /** Staves printed on the page. */
+  staves: number;
   /** Gap between adjacent lines *within* one five-line staff, in millimetres. */
   lineSpacingMm: number;
-  /** Gap between the bottom line of one staff and the top line of the next, in millimetres. */
-  staffSpacingMm: number;
   /** Stroke width of each staff line, in millimetres. */
   lineThicknessMm: number;
 }
 
-/**
- * Range of every control on the page. The `.astro` template spreads these onto the
- * `<input>` elements and the client script clamps against them, so the bounds are
- * declared exactly once.
- */
-export const CONTROLS = {
-  pages: { min: 1, max: 50, step: 1 },
-  leftMarginMm: { min: 0, max: 40, step: 1 },
-  rightMarginMm: { min: 0, max: 40, step: 1 },
-  lineSpacingMm: { min: 1, max: 8, step: 0.25 },
-  staffSpacingMm: { min: 4, max: 40, step: 1 },
-  lineThicknessMm: { min: 0.1, max: 1, step: 0.05 },
-} as const;
-
-export const DEFAULT_OPTIONS: StaffPaperOptions = {
-  pages: 1,
-  leftMarginMm: 15,
-  rightMarginMm: 15,
-  lineSpacingMm: 1.75,
-  staffSpacingMm: 10,
-  lineThicknessMm: 0.25,
-};
+/** A staff size: geometry plus the words and URL segment that go with it. */
+export interface StaffSize extends StaffGeometry {
+  /** URL segment under `/printables/blank-sheet-music`. */
+  slug: string;
+  /** Label shown in the picker and the page title. */
+  name: string;
+  /** One line of prose about who the size suits. */
+  description: string;
+}
 
 // A4 portrait. The page box is rendered at its true physical size (mm), so screen
 // preview and print output are identical — margins live entirely in `.sp-page`
@@ -48,51 +30,144 @@ export const DEFAULT_OPTIONS: StaffPaperOptions = {
 export const PAGE_WIDTH_MM = 210;
 export const PAGE_HEIGHT_MM = 297;
 
-// Top/bottom margin is fixed rather than user-configurable, matching the page's scope
-// (left/right margin, spacing, thickness, and page count only).
+/** Margin on all four sides. Fixed rather than configurable, like everything here. */
 export const PAGE_MARGIN_MM = 15;
 
 export const LINES_PER_STAFF = 5;
 
 /**
- * Height of one staff, top edge of the first line to bottom edge of the last —
- * four gaps plus the thickness of the final line.
+ * Every staff size that gets pages, largest staves first. Kept deliberately short:
+ * each size is generated once per page count below, and the whole site is precached
+ * by the service worker, so this list trades directly against install size.
+ *
+ * Line spacing is the rastral size — roughly 1.75mm for engraved music, wider for
+ * hand-written practice paper. The staff count is chosen to suit it; the gap between
+ * staves is then derived so the staves fill the printable area exactly.
  */
-export function staffHeightMm(options: StaffPaperOptions): number {
-  return (LINES_PER_STAFF - 1) * options.lineSpacingMm + options.lineThicknessMm;
+export const SIZES: StaffSize[] = [
+  {
+    slug: "beginner",
+    name: "Beginner",
+    description: "Oversized staves with plenty of room to write between them.",
+    staves: 6,
+    lineSpacingMm: 3,
+    lineThicknessMm: 0.3,
+  },
+  {
+    slug: "large",
+    name: "Large",
+    description: "Wide staves, comfortable for pencil and eraser work.",
+    staves: 8,
+    lineSpacingMm: 2.5,
+    lineThicknessMm: 0.3,
+  },
+  {
+    slug: "standard",
+    name: "Standard",
+    description: "Engraving size — the usual manuscript page.",
+    staves: 12,
+    lineSpacingMm: 1.75,
+    lineThicknessMm: 0.25,
+  },
+  {
+    slug: "compact",
+    name: "Compact",
+    description: "Tight staves for sketching a long passage on one page.",
+    staves: 16,
+    lineSpacingMm: 1.4,
+    lineThicknessMm: 0.2,
+  },
+];
+
+/**
+ * Page counts each size is generated in. Two is the double-sided variant: printed
+ * duplex it fills both faces of a single sheet of paper, which is the only reason a
+ * second page is worth its own route — anything more is the print dialog's copy count.
+ */
+export const PAGE_COUNTS = [1, 2];
+
+/** One generated page: a staff size printed a given number of times. */
+export interface Sheet {
+  size: StaffSize;
+  pages: number;
 }
 
-/** How many staves fit in the printable area at the given spacing. */
-export function stavesPerPage(options: StaffPaperOptions): number {
-  const contentHeightMm = PAGE_HEIGHT_MM - PAGE_MARGIN_MM * 2;
-  // The last staff on a page needs no trailing gap, so lend one to the numerator.
-  const strideMm = staffHeightMm(options) + options.staffSpacingMm;
-  return Math.max(1, Math.floor((contentHeightMm + options.staffSpacingMm) / strideMm));
+/** The cross product — every size in every page count, and nothing else. */
+export const SHEETS: Sheet[] = SIZES.flatMap((size) =>
+  PAGE_COUNTS.map((pages) => ({ size, pages })),
+);
+
+/**
+ * The sheet shown at the bare `/printables/blank-sheet-music` path. Every other sheet
+ * lives under it, the same way the calendars put the build year at their bare path.
+ */
+export const DEFAULT_SHEET: Sheet = sheetFor("standard", 1);
+
+/** The one entry in `SHEETS` with this size and page count. */
+export function sheetFor(sizeSlug: string, pages: number): Sheet {
+  return SHEETS.find((sheet) => sheet.size.slug === sizeSlug && sheet.pages === pages)!;
+}
+
+/** Whether a sheet is the one at the bare path. Compared by value, not identity. */
+export function isDefaultSheet(sheet: Sheet): boolean {
+  return sheet.size.slug === DEFAULT_SHEET.size.slug && sheet.pages === DEFAULT_SHEET.pages;
+}
+
+/** URL segment for a sheet — `compact`, `compact-2-pages`. */
+export function sheetSlug(sheet: Sheet): string {
+  return sheet.pages === 1 ? sheet.size.slug : `${sheet.size.slug}-${sheet.pages}-pages`;
+}
+
+/** URL for a sheet. The default keeps the bare path so existing links still resolve. */
+export function sheetHref(sheet: Sheet): string {
+  const basePath = "/printables/blank-sheet-music";
+  return isDefaultSheet(sheet) ? `${basePath}/` : `${basePath}/${sheetSlug(sheet)}/`;
+}
+
+/** The sheets that need a `[sheet]` page — all of them except the one at the bare path. */
+export function subPageSheets(): Sheet[] {
+  return SHEETS.filter((sheet) => !isDefaultSheet(sheet));
+}
+
+/** Name of a sheet for titles — "Compact", "Compact, 2 pages". */
+export function sheetName(sheet: Sheet): string {
+  return sheet.pages === 1 ? sheet.size.name : `${sheet.size.name}, ${sheet.pages} pages`;
 }
 
 /**
- * The most staves that can ever fit on one page — reached at the tightest setting
- * every control allows. Each page carries exactly this many staves in the markup;
- * CSS then clips the page's content box to a whole number of staves, so the ones
- * that do not fit at the current spacing are hidden without any DOM being rebuilt.
+ * Height of one staff, top edge of the first line to bottom edge of the last —
+ * four gaps plus the thickness of the final line.
  */
-export const MAX_STAVES_PER_PAGE = stavesPerPage({
-  ...DEFAULT_OPTIONS,
-  lineSpacingMm: CONTROLS.lineSpacingMm.min,
-  staffSpacingMm: CONTROLS.staffSpacingMm.min,
-  lineThicknessMm: CONTROLS.lineThicknessMm.min,
-});
+export function staffHeightMm(geometry: StaffGeometry): number {
+  return (LINES_PER_STAFF - 1) * geometry.lineSpacingMm + geometry.lineThicknessMm;
+}
 
-/** Formats a millimetre measurement for the on-screen controls (10mm, 1.75mm, 0.25mm). */
+/**
+ * Gap between one staff and the next, derived so the staves span the printable area
+ * exactly. Deriving it rather than declaring it is what lets a preset be written as
+ * "twelve staves this big" and still print a page with no ragged space at the foot.
+ */
+export function staffGapMm(geometry: StaffGeometry): number {
+  const contentHeightMm = PAGE_HEIGHT_MM - PAGE_MARGIN_MM * 2;
+  const inkMm = geometry.staves * staffHeightMm(geometry);
+  return (contentHeightMm - inkMm) / (geometry.staves - 1);
+}
+
+/** Formats a millimetre measurement for display (10mm, 1.75mm, 0.25mm). */
 export function formatMm(valueMm: number): string {
   return `${Number(valueMm.toFixed(2))}mm`;
 }
 
-/** Human-readable summary of what will print, for the on-screen controls. */
-export function describeSheet(options: StaffPaperOptions): string {
-  const perPage = stavesPerPage(options);
-  const staveWord = perPage === 1 ? "staff" : "staves";
-  const pageWord = options.pages === 1 ? "page" : "pages";
-  const total = perPage * options.pages;
-  return `${perPage} ${staveWord} per page × ${options.pages} ${pageWord} = ${total} staves total.`;
+/** What the sheet prints on, for the intro line. */
+export function describePaper(sheet: Sheet): string {
+  return sheet.pages === 1
+    ? "Fits one A4 page — ask for more copies in the print dialog."
+    : `${sheet.pages} identical A4 pages — print double-sided to fill one sheet of paper.`;
+}
+
+/** The measurements of a sheet, for the line of small print under the intro. */
+export function describeSheet(sheet: Sheet): string {
+  const { size } = sheet;
+  const staveWord = size.staves === 1 ? "staff" : "staves";
+  return `${size.staves} ${staveWord} per page · ${formatMm(staffHeightMm(size))} staff height · ${formatMm(staffGapMm(size))} between staves.`;
 }
