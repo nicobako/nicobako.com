@@ -74,7 +74,8 @@ of presets trades directly against install size. Keep it short and deliberate.
 | `/offline` | `src/pages/offline.astro` |
 
 Printables: `blank-sheet-music`, `speed-reading`, `scribal-abbreviations`,
-`weekly-time-tracker`, `daily-practice-schedule`, `weekly-practice-schedule`, plus
+`weekly-time-tracker`, `daily-practice-schedule`, `weekly-practice-schedule`,
+`weekly-schedule`, plus
 `year-calendar` and `bookmark-calendar`, which each also generate a page per year
 (`year-calendar/[year].astro`). `src/printables/calendar/years.ts` sets that range —
 widening it multiplies real, precached pages, so keep it small. `blank-sheet-music`
