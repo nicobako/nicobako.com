@@ -1,0 +1,173 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+// Static, write-in weekly schedule: no inputs, no JS. Blank cells to fill by hand.
+// One column per day (Monday first), one row per half hour from 06:00 to 22:00.
+const START_HOUR = 6;
+const END_HOUR = 22;
+
+const DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+const SLOTS = Array.from(
+  { length: (END_HOUR - START_HOUR) * 2 },
+  (_, i) => {
+    const half = i % 2 === 1;
+    const hour = START_HOUR + Math.floor(i / 2);
+    return { half, label: `${hour}:${half ? "30" : "00"}` };
+  },
+);
+---
+
+<Layout
+  title="Weekly Schedule — Nico Bako"
+  description="A printable weekly schedule: a column for each day, half-hour rows from 6:00 to 22:00."
+>
+  <h1 class="no-print">Weekly Schedule</h1>
+  <p class="no-print">
+    A blank weekly schedule to print and fill in by hand — one column per day,
+    half-hour rows from 6:00 to 22:00.
+  </p>
+
+  <div class="sheet">
+    <div class="sheet-head">
+      Weekly Schedule<span class="week-of">Week of</span>
+    </div>
+
+    <table class="schedule">
+      <thead>
+        <tr>
+          <th class="timecol" scope="col">Time</th>
+          {
+            DAYS.map((day) => (
+              <th class="daycol" scope="col">
+                {day}
+              </th>
+            ))
+          }
+        </tr>
+      </thead>
+      <tbody>
+        {
+          SLOTS.map((slot) => (
+            <tr class={slot.half ? "half" : "hour"}>
+              <th class="timelabel" scope="row">
+                {slot.label}
+              </th>
+              {DAYS.map(() => (
+                <td class="cell" />
+              ))}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+
+    <p class="grid-note">
+      Each row is a 30-minute block; the last one ends at {END_HOUR}:00.
+    </p>
+  </div>
+</Layout>
+
+<style>
+  .sheet-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .sheet-head .week-of {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 12rem;
+  }
+
+  .schedule {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.7rem;
+  }
+
+  .schedule th,
+  .schedule td {
+    border: 1px solid var(--border);
+  }
+
+  .schedule thead th {
+    background: var(--surface);
+    padding: 0.35rem 0.2rem;
+    text-align: center;
+    font-weight: 600;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .schedule .timecol {
+    width: 3.2rem;
+  }
+
+  .schedule .timelabel {
+    background: var(--surface);
+    font-weight: 600;
+    text-align: right;
+    padding-right: 0.35rem;
+    white-space: nowrap;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Empty write-in cells, sized so the whole 6:00–22:00 day fits one sheet. */
+  .schedule tbody td,
+  .schedule tbody th {
+    height: 1.25rem;
+  }
+
+  /* Soft divider at the 30-minute marks: the hour lines stay solid, the half
+     hours are a faint dashed rule so the eye still reads the hour grid. */
+  .schedule tbody tr.half > * {
+    border-top: 1px dashed color-mix(in srgb, var(--border) 55%, var(--bg));
+  }
+
+  .schedule tbody tr.half .timelabel {
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .grid-note {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin: 0.5rem 0 0;
+  }
+
+  @media print {
+    .schedule th,
+    .schedule td,
+    .sheet-head .week-of {
+      border-color: #000;
+    }
+
+    /* Keep the half-hour rule soft against black hour lines. */
+    .schedule tbody tr.half > * {
+      border-top-color: #b0b0b0;
+    }
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+</style>
