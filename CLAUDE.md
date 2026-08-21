@@ -97,6 +97,17 @@ each (`compact`, `compact-2-pages`, …).
 - `src/music/metronome/metronome.ts` — `Metronome` class using the Web Audio API scheduler (look-ahead scheduling with `setInterval`). Accepts a `skipPercent` to randomly drop beats. Mounted by `metronome.astro`.
 - `src/music/drone/drone.ts` — `Drone` class and `NOTES` array (one octave C4–C5). Supports one-shot `pluck()` and sustained `startNote`/`stopNote`. Mounted by `drone.astro`, which also computes piano key layout in its frontmatter. The piano key colours are hardcoded (not CSS tokens) because the visual realism requires fixed white/black key colours regardless of theme.
 - `src/music/violin/scales.ts` — the Carl Flesch fingering tables. Reference data only; `violin-3-octave-fingerings.astro` is a pure template over it.
+- `src/music/abc-track/abc-track.ts` — mounting logic for `components/AbcTrack.astro`, one
+  self-contained tune: SVG notation plus abcjs's playback widget. Its only props are
+  `abcText` and `transposition`, because everything else abcjs understands is said in the
+  ABC source itself — a prop is only warranted for what has to reach abcjs's JavaScript.
+  The source travels to the browser as data attributes on the track's root element and the
+  component's `<script>` (hoisted and bundled once per page, however many tracks a page
+  renders) hands it to abcjs, which draws the DOM itself. `transposition` shifts the
+  notation *and* playback: abcjs reads `visualTranspose` as a transposing-instrument offset
+  and subtracts it back out of the MIDI, so the synth gets a matching `midiTranspose`.
+  Playback fetches soundfonts from abcjs's CDN at first Play, so it is the one part of the
+  site that needs the network even though the page itself is precached.
 - `src/music/circle-of-fifths/circle.ts` — the twelve keys plus the wheel's SVG geometry, all resolved at build time into `SEGMENTS`. The page maps that to static SVG and ships **no** JavaScript: each wedge is an `<a href="#key-N">` and the matching panel is revealed by `:target`.
 
 ### Printables subsystem
