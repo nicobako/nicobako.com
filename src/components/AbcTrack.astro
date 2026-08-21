@@ -1,0 +1,92 @@
+---
+interface Props {
+  /**
+   * ABC notation source for one tune, headers included. Everything abcjs can be
+   * told through the notation itself — key, meter, tempo, voices, instrument —
+   * belongs here rather than in a prop.
+   */
+  abcText: string;
+  /**
+   * Semitones to shift the track by. Applies to the notation and to playback
+   * alike; `abcText` is left exactly as written.
+   */
+  transposition?: number;
+}
+
+const { abcText, transposition = 0 } = Astro.props;
+---
+
+<section
+  class="abc-track"
+  data-abc-track
+  data-abc={abcText}
+  data-transposition={transposition}
+>
+  <div class="abc-notation-wrap">
+    <div class="abc-notation" data-notation></div>
+  </div>
+  <p class="abc-warnings no-print" data-warnings aria-live="polite"></p>
+  <div class="abc-audio no-print" data-audio></div>
+</section>
+
+<script>
+  // Hoisted and bundled once per page, however many tracks the page renders.
+  import { mountAbcTracks } from "../music/abc-track/abc-track.ts";
+
+  mountAbcTracks();
+</script>
+
+<style>
+  .abc-track {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Wide tunes scroll inside the frame rather than shrinking the staff. */
+  .abc-notation-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* abcjs draws its SVG with `fill`/`stroke` set to `currentColor`, so the
+     notation follows the theme from this one declaration. */
+  .abc-notation {
+    color: var(--text);
+    min-width: max-content;
+  }
+
+  .abc-warnings {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #c0392b;
+    white-space: pre-wrap;
+  }
+
+  .abc-warnings:empty {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .abc-warnings {
+      color: #ff8a80;
+    }
+  }
+
+  .abc-audio {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  @media print {
+    .abc-notation-wrap {
+      border: none;
+      padding: 0;
+      overflow: visible;
+    }
+  }
+</style>
