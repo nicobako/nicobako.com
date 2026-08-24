@@ -1,0 +1,92 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../../../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../../../../components/Breadcrumbs.astro";
+import { MODES, tonicHref } from "../../../../../../music/etudes/single-octave-single-string.ts";
+
+export function getStaticPaths() {
+  return MODES.map((mode) => ({
+    params: { mode: mode.slug },
+    props: { modeSlug: mode.slug, modeName: mode.name },
+  }));
+}
+
+const { modeSlug, modeName } = Astro.props;
+
+// One entry per starting note, in pitch order. Derived from the collection rather than
+// from the pitch tables, so the list can never drift from the pages that exist.
+const entries = await getCollection("etudes", (e) => e.data.modeSlug === modeSlug);
+const tonics = [...new Map(entries.map((e) => [e.data.tonicSlug, e.data])).values()].sort(
+  (a, b) => a.semitonesFromC4 - b.semitonesFromC4,
+);
+
+// Grouped by octave, which is how a player thinks about where on the instrument they are.
+const octaves = [...new Set(tonics.map((t) => t.octave))].map((octave) => ({
+  octave,
+  tonics: tonics.filter((t) => t.octave === octave),
+}));
+---
+
+<Layout
+  title={`${modeName} Single String Scales — Nico Bako`}
+  description={`Single-octave ${modeName.toLowerCase()} scales played on one string, starting on any note from C3 to C6.`}
+>
+  <Breadcrumbs
+    trail={[
+      { label: "Music", href: "/music/" },
+      { label: "Etudes", href: "/music/etudes/" },
+      { label: "Single octave", href: "/music/etudes/single-octave/" },
+      { label: "Single string", href: "/music/etudes/single-octave/single-string/" },
+    ]}
+  />
+  <h1>{modeName}</h1>
+  <p>Pick the note the scale starts on.</p>
+
+  {
+    octaves.map((group) => (
+      <section class="octave">
+        <h2>Octave {group.octave}</h2>
+        <ul class="tonics">
+          {group.tonics.map((tonic) => (
+            <li>
+              <a href={tonicHref(modeSlug, tonic.tonicSlug)}>{tonic.tonicName}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</Layout>
+
+<style>
+  .octave h2 {
+    font-size: 1rem;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .tonics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .tonics a {
+    display: block;
+    min-width: 3rem;
+    text-align: center;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    text-decoration: none;
+  }
+
+  .tonics a:hover {
+    border-color: var(--accent);
+  }
+</style>

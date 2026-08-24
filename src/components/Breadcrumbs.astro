@@ -1,0 +1,41 @@
+---
+// The trail back up a nested section. The etude pages carry no picker, so this is the
+// only way out of a leaf other than the browser's back button.
+export interface Crumb {
+  label: string;
+  href: string;
+}
+
+interface Props {
+  trail: Crumb[];
+}
+
+const { trail } = Astro.props;
+---
+
+<nav class="crumbs no-print" aria-label="Breadcrumb">
+  {
+    trail.map((crumb, index) => (
+      <>
+        {index > 0 && <span class="sep" aria-hidden="true">/</span>}
+        <a href={crumb.href}>{crumb.label}</a>
+      </>
+    ))
+  }
+</nav>
+
+<style>
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .sep {
+    color: var(--border);
+  }
+</style>

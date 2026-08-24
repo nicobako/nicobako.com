@@ -1,0 +1,38 @@
+---
+import Layout from "../../../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../../../components/Breadcrumbs.astro";
+import { MODES, modeHref } from "../../../../../music/etudes/single-octave-single-string.ts";
+---
+
+<Layout
+  title="Single String Scale Etudes — Nico Bako"
+  description="Single-octave major and minor scales played on one string, in every key, with fingerings and shift notes."
+>
+  <Breadcrumbs
+    trail={[
+      { label: "Music", href: "/music/" },
+      { label: "Etudes", href: "/music/etudes/" },
+      { label: "Single octave", href: "/music/etudes/single-octave/" },
+    ]}
+  />
+  <h1>Single string</h1>
+  <p>
+    One octave, major or minor, played entirely on a single string. The finger pattern is
+    the same wherever the scale starts, so each of these is the same exercise moved to a
+    new note.
+  </p>
+  <p class="hint">
+    Each scale comes in two forms: plain, and with the shifts written out as audible
+    slides on the travelling finger.
+  </p>
+  <ul>
+    {MODES.map((mode) => <li><a href={modeHref(mode.slug)}>{mode.name}</a></li>)}
+  </ul>
+</Layout>
+
+<style>
+  .hint {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

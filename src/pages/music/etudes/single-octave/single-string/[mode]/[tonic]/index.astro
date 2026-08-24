@@ -1,0 +1,70 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../../../../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../../../../../components/Breadcrumbs.astro";
+import {
+  etudeHref,
+  modeHref,
+} from "../../../../../../../music/etudes/single-octave-single-string.ts";
+
+// One page per mode and starting note.
+export async function getStaticPaths() {
+  const entries = await getCollection("etudes");
+  const pairs = new Map(
+    entries.map((e) => [`${e.data.modeSlug}/${e.data.tonicSlug}`, e.data]),
+  );
+  return [...pairs.values()].map((etude) => ({
+    params: { mode: etude.modeSlug, tonic: etude.tonicSlug },
+    props: {
+      modeSlug: etude.modeSlug,
+      modeName: etude.modeName,
+      tonicSlug: etude.tonicSlug,
+      tonicName: etude.tonicName,
+    },
+  }));
+}
+
+const { modeSlug, modeName, tonicSlug, tonicName } = Astro.props;
+
+const entries = await getCollection(
+  "etudes",
+  (e) => e.data.modeSlug === modeSlug && e.data.tonicSlug === tonicSlug,
+);
+const variations = entries.map((e) => e.data);
+---
+
+<Layout
+  title={`${tonicName} ${modeName} Single String Scale — Nico Bako`}
+  description={`A single-octave ${modeName.toLowerCase()} scale starting on ${tonicName}, played on one string.`}
+>
+  <Breadcrumbs
+    trail={[
+      { label: "Music", href: "/music/" },
+      { label: "Etudes", href: "/music/etudes/" },
+      { label: "Single octave", href: "/music/etudes/single-octave/" },
+      { label: "Single string", href: "/music/etudes/single-octave/single-string/" },
+      { label: modeName, href: modeHref(modeSlug) },
+    ]}
+  />
+  <h1>{tonicName} {modeName}</h1>
+  <p>Pick how much the shifts are spelled out.</p>
+  <ul class="variations">
+    {
+      variations.map((variation) => (
+        <li>
+          <a href={etudeHref(variation)}>{variation.variationName}</a>
+        </li>
+      ))
+    }
+  </ul>
+</Layout>
+
+<style>
+  .variations {
+    padding-left: 1.2rem;
+  }
+
+  .variations li {
+    margin-bottom: 0.4rem;
+  }
+</style>

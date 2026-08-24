@@ -1,0 +1,20 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+---
+
+<Layout
+  title="Etudes — Nico Bako"
+  description="Practice material for violin: scales and studies with fingerings, notation, and playback."
+>
+  <Breadcrumbs trail={[{ label: "Music", href: "/music/" }]} />
+  <h1>Etudes</h1>
+  <p>
+    Practice material with fingerings written in, rendered as notation you can read and
+    play back. Everything here is generated from a handful of written-out exercises, so
+    the same study is available starting on any note.
+  </p>
+  <ul>
+    <li><a href="/music/etudes/single-octave/">Single octave</a></li>
+  </ul>
+</Layout>

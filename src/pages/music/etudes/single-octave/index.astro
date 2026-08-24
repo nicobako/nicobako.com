@@ -1,0 +1,21 @@
+---
+import Layout from "../../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../../components/Breadcrumbs.astro";
+---
+
+<Layout
+  title="Single Octave Etudes — Nico Bako"
+  description="Single-octave violin scale etudes, grouped by how they are played."
+>
+  <Breadcrumbs
+    trail={[
+      { label: "Music", href: "/music/" },
+      { label: "Etudes", href: "/music/etudes/" },
+    ]}
+  />
+  <h1>Single octave</h1>
+  <p>Scales that stay within one octave, grouped by how they are played.</p>
+  <ul>
+    <li><a href="/music/etudes/single-octave/single-string/">Single string</a></li>
+  </ul>
+</Layout>
