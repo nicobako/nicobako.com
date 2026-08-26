@@ -1,0 +1,272 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import PaperOverlay from "../../components/PaperOverlay.astro";
+import {
+  A_SERIES,
+  B_SERIES,
+  C_SERIES,
+  NORTH_AMERICAN,
+  CARDS,
+  OVERLAY_A_SERIES,
+  OVERLAY_EVERYDAY,
+  OVERLAY_CARDS,
+  formatMm,
+  formatIn,
+  formatRatio,
+  type PaperSize,
+} from "../../references/page-sizes/page-sizes";
+
+// Every table is the same four columns over a different list, so the markup is
+// written once here and the sections below pass their list to it.
+const tables: { id: string; caption: string; sizes: PaperSize[] }[] = [
+  { id: "a", caption: "ISO A series", sizes: A_SERIES },
+  { id: "b", caption: "ISO B series", sizes: B_SERIES },
+  { id: "c", caption: "ISO C series (envelopes)", sizes: C_SERIES },
+  { id: "na", caption: "North American", sizes: NORTH_AMERICAN },
+  { id: "cards", caption: "Cards and photos", sizes: CARDS },
+];
+const [aTable, bTable, cTable, naTable, cardsTable] = tables;
+---
+
+<Layout
+  title="Page Sizes — Nico Bako"
+  description="A quick reference to the common paper sizes — ISO A, B and C, North American, index cards — with the dimensions, the aspect ratios, and an overlay showing how they relate."
+>
+  <Breadcrumbs trail={[{ label: "References", href: "/references/" }]} />
+
+  <h1>Page Sizes</h1>
+  <p class="intro">
+    The common paper sizes, their dimensions, and how big they actually are
+    next to each other. All sizes are given portrait; turn them on their side
+    for landscape. The overlays are proportional, not life-size.
+  </p>
+
+  <h2>The A series</h2>
+  <p>
+    ISO 216. A0 is exactly one square metre, and every step halves the one
+    before it by folding the long side in two. That only works because the
+    sides are in a 1 : √2 ratio — the one ratio that keeps its shape when
+    halved, so every A size is the same rectangle.
+  </p>
+
+  <PaperOverlay sizes={OVERLAY_A_SERIES} height="24rem" />
+
+  <table>
+    <caption>{aTable!.caption}</caption>
+    <thead>
+      <tr><th>Size</th><th>mm</th><th>in</th><th>Ratio</th><th>Typical use</th></tr>
+    </thead>
+    <tbody>
+      {
+        aTable!.sizes.map((size) => (
+          <tr>
+            <th scope="row">{size.name}</th>
+            <td>{formatMm(size)}</td>
+            <td>{formatIn(size)}</td>
+            <td>{formatRatio(size)}</td>
+            <td>{size.note}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+
+  <h2>A4 against Letter</h2>
+  <p>
+    They are close enough to be annoying and different enough to reflow a
+    document. A4 is narrower and taller; Letter is wider and shorter. Legal is
+    Letter's width stretched three inches longer, which is why it has its own
+    proportions entirely.
+  </p>
+
+  <PaperOverlay sizes={OVERLAY_EVERYDAY} height="20rem" />
+
+  <table>
+    <caption>{naTable!.caption}</caption>
+    <thead>
+      <tr><th>Size</th><th>mm</th><th>in</th><th>Ratio</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      {
+        naTable!.sizes.map((size) => (
+          <tr>
+            <th scope="row">{size.name}</th>
+            <td>{formatMm(size)}</td>
+            <td>{formatIn(size)}</td>
+            <td>{formatRatio(size)}</td>
+            <td>{size.note}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+
+  <h2>B and C</h2>
+  <p>
+    B sizes sit between two A sizes (B4 is between A4 and A3), which is what
+    you want for a poster or a book that should not look like office paper. C
+    sizes are the envelopes: <b>C<i>n</i> holds an unfolded A<i>n</i></b>, and
+    each fold moves you one size down.
+  </p>
+
+  <div class="two-up">
+    <table>
+      <caption>{bTable!.caption}</caption>
+      <thead>
+        <tr><th>Size</th><th>mm</th><th>in</th></tr>
+      </thead>
+      <tbody>
+        {
+          bTable!.sizes.map((size) => (
+            <tr>
+              <th scope="row">{size.name}</th>
+              <td>{formatMm(size)}</td>
+              <td>{formatIn(size)}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+
+    <table>
+      <caption>{cTable!.caption}</caption>
+      <thead>
+        <tr><th>Size</th><th>mm</th><th>in</th></tr>
+      </thead>
+      <tbody>
+        {
+          cTable!.sizes.map((size) => (
+            <tr>
+              <th scope="row">{size.name}</th>
+              <td>{formatMm(size)}</td>
+              <td>{formatIn(size)}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Cards</h2>
+  <p>
+    The small end, where a credit card is the most reliable ruler you own.
+    Index cards come in inches in North America and in A sizes in Europe, and
+    the pairs are close but never equal.
+  </p>
+
+  <PaperOverlay sizes={OVERLAY_CARDS} height="16rem" />
+
+  <table>
+    <caption>{cardsTable!.caption}</caption>
+    <thead>
+      <tr><th>Size</th><th>mm</th><th>in</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      {
+        cardsTable!.sizes.map((size) => (
+          <tr>
+            <th scope="row">{size.name}</th>
+            <td>{formatMm(size)}</td>
+            <td>{formatIn(size)}</td>
+            <td>{size.note}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+
+  <h2>Worth knowing</h2>
+  <ul class="notes">
+    <li>
+      <b>Scaling between the two systems.</b> A4 → Letter is 94%, Letter → A4
+      is 97%, A3 → Letter is 66%. Two pages per sheet is 71% on A4 (√2 ÷ 2,
+      the number on the photocopier button) but 64% on Letter, which is why
+      2-up on Letter leaves a strip of white down the side.
+    </li>
+    <li>
+      <b>Half a Letter sheet</b> is 139.7 × 215.9 mm. A B6+ notebook page
+      (125 × 190) fits it at true size with 7 mm to spare; A5 does not — at
+      148 mm it is 8 mm too wide, so the best you get is 94%.
+    </li>
+    <li>
+      <b>Paper weight.</b> gsm is the weight of one square metre, so an A4
+      sheet weighs gsm ÷ 16 grams: 80 gsm A4 = 5 g exactly. US “20 lb bond” ≈
+      75 gsm.
+    </li>
+    <li>
+      <b>JIS B is not ISO B.</b> Japan's B4 is 257 × 364 mm against ISO's 250 ×
+      353 mm — different paper with the same name.
+    </li>
+    <li>
+      <b>Engineering sizes.</b> ANSI A–E double Letter each step (ANSI B =
+      Tabloid, 11 × 17 in; ANSI E = 34 × 44 in). ARCH A–E are the
+      architectural set at 4:3 and 3:2 (ARCH D = 24 × 36 in).
+    </li>
+    <li>
+      <b>Printing.</b> Full-bleed artwork wants ~3 mm (⅛ in) of bleed past the
+      trim and a safe margin the same distance inside it.
+    </li>
+  </ul>
+</Layout>
+
+<style>
+  .intro {
+    color: var(--muted);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 2rem;
+    font-size: 0.9rem;
+  }
+
+  caption {
+    text-align: left;
+    font-weight: 600;
+    padding-bottom: 0.5rem;
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.4rem 0.6rem 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: baseline;
+  }
+
+  thead th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  tbody th {
+    white-space: nowrap;
+  }
+
+  tbody td {
+    font-variant-numeric: tabular-nums;
+  }
+
+  tbody td:last-child {
+    font-variant-numeric: normal;
+    color: var(--muted);
+  }
+
+  .two-up {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0 2rem;
+  }
+
+  .notes {
+    line-height: 1.7;
+  }
+
+  .notes li {
+    margin-bottom: 0.5rem;
+  }
+</style>

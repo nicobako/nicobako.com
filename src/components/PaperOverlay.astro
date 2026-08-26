@@ -1,0 +1,139 @@
+---
+// A set of paper sizes drawn on top of one another, sharing a bottom-left corner,
+// so their real-world proportions can be compared at a glance.
+//
+// Every box's size is a percentage of the largest box in the set, resolved here in
+// the frontmatter and handed to CSS as custom properties — the figure is static
+// markup with no client script. It is proportional, not life-size: a CSS millimetre
+// is a nominal 96dpi millimetre, not the one on your ruler.
+import type { PaperSize } from "../references/page-sizes/page-sizes";
+import { formatMm, formatIn } from "../references/page-sizes/page-sizes";
+
+interface Props {
+  sizes: PaperSize[];
+  /** Figure height, as a CSS length. Wider sets want more. */
+  height?: string;
+}
+
+const { sizes, height = "22rem" } = Astro.props;
+
+// Largest first, so the smaller sheets stack on top and stay readable.
+const ordered = [...sizes].sort(
+  (a, b) => b.widthMm * b.heightMm - a.widthMm * a.heightMm,
+);
+
+const maxWidthMm = Math.max(...ordered.map((size) => size.widthMm));
+const maxHeightMm = Math.max(...ordered.map((size) => size.heightMm));
+
+// Hues are spread around the wheel rather than taken from the palette tokens: the
+// tokens carry one accent, and this figure needs every box to be told apart. The
+// lightness and alpha *are* themed, in the CSS below.
+const HUE_STEP = 47;
+
+const boxes = ordered.map((size, index) => ({
+  size,
+  widthPercent: (size.widthMm / maxWidthMm) * 100,
+  heightPercent: (size.heightMm / maxHeightMm) * 100,
+  hue: (index * HUE_STEP + 205) % 360,
+}));
+---
+
+<figure class="overlay-figure">
+  <div
+    class="overlay"
+    style={`--ratio: ${maxWidthMm} / ${maxHeightMm}; --figure-height: ${height};`}
+  >
+    {
+      boxes.map((box) => (
+        <div
+          class="sheet"
+          style={`--w: ${box.widthPercent}%; --h: ${box.heightPercent}%; --hue: ${box.hue};`}
+        >
+          <span class="tag">{box.size.name}</span>
+        </div>
+      ))
+    }
+  </div>
+  <figcaption>
+    {
+      boxes.map((box, index) => (
+        <>
+          {index > 0 && <span class="sep" aria-hidden="true">·</span>}
+          <span class="key" style={`--hue: ${box.hue};`}>
+            <b>{box.size.name}</b> {formatMm(box.size)} mm / {formatIn(box.size)} in
+          </span>
+        </>
+      ))
+    }
+  </figcaption>
+</figure>
+
+<style>
+  .overlay-figure {
+    margin: 1.25rem 0 1.75rem;
+  }
+
+  .overlay {
+    position: relative;
+    /* Height leads and width follows, so a tall set (A0 is 1189mm) stays on screen;
+       `min()` hands the lead back to the width on a narrow viewport, keeping the
+       aspect ratio — and so every box's proportions — intact either way. */
+    aspect-ratio: var(--ratio);
+    height: auto;
+    width: min(100%, calc(var(--figure-height) * var(--ratio)));
+    margin-inline: auto;
+  }
+
+  /* Boxes share the bottom-left corner: that is the corner an A-series sheet keeps
+     when you fold it in half, so the halving reads directly off the figure. */
+  .sheet {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: var(--w);
+    height: var(--h);
+    border: 1px solid hsl(var(--hue) 60% 40%);
+    background: hsl(var(--hue) 60% 50% / 0.1);
+    border-radius: 2px;
+  }
+
+  .tag {
+    position: absolute;
+    top: 0.15rem;
+    right: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    color: hsl(var(--hue) 60% 32%);
+  }
+
+  figcaption {
+    margin-top: 0.9rem;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .key b {
+    color: hsl(var(--hue) 60% 32%);
+  }
+
+  .sep {
+    color: var(--border);
+    margin: 0 0.35rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .sheet {
+      border-color: hsl(var(--hue) 55% 62%);
+      background: hsl(var(--hue) 55% 62% / 0.12);
+    }
+
+    .tag,
+    .key b {
+      color: hsl(var(--hue) 60% 72%);
+    }
+  }
+</style>
