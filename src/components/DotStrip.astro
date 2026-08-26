@@ -1,0 +1,85 @@
+---
+// One run of cells drawn to scale: each segment's share of the width on screen is
+// its share of the page. Sizes come from `flex-grow`, so the strip fills whatever
+// column it is put in and stays proportional at any width.
+import type { StripSegment } from "../references/dot-grid/dot-grid";
+
+interface Props {
+  segments: StripSegment[];
+  /** Show the cell count inside each segment. Only worth it when segments are few. */
+  labelled?: boolean;
+}
+
+const { segments, labelled = false } = Astro.props;
+---
+
+<div class="strip">
+  {
+    segments.map((segment) => (
+      <span
+        class:list={["seg", segment.kind]}
+        style={`flex-grow: ${segment.cells}`}
+        title={`${segment.label ?? ""} ${segment.cells} cells`.trim()}
+      >
+        {labelled && <span class="text">{segment.label}</span>}
+      </span>
+    ))
+  }
+</div>
+
+<style>
+  .strip {
+    display: flex;
+    gap: 2px;
+    align-items: stretch;
+    /* A definite height, not a min-height: inside a table cell the latter collapses
+       and every segment renders as a hairline. */
+    height: 1.5rem;
+  }
+
+  .seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 2px;
+    /* Segments are sized purely by flex-grow, so nothing may claim a base width. */
+    flex-basis: 0;
+    min-width: 0;
+  }
+
+  .part {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  /* The wide half of an uneven split — the side that holds the content. */
+  .major {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    border: 1px solid var(--accent);
+  }
+
+  /* The narrow half — a label column, a gutter, a sidebar. */
+  .minor {
+    background: var(--surface);
+    border: 1px solid var(--muted);
+  }
+
+  /* Cells left over: margin, not a column. */
+  .spare {
+    border: 1px dashed var(--border);
+    opacity: 0.6;
+  }
+
+  .text {
+    padding: 0 0.25rem;
+    font-size: 0.7rem;
+    line-height: 1.5rem;
+    white-space: nowrap;
+    color: var(--muted);
+  }
+
+  .major .text {
+    color: var(--text);
+  }
+</style>

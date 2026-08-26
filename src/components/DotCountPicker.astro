@@ -1,0 +1,58 @@
+---
+// Rows of links, one per dot count. Picking a count changes the page, so it is a
+// link to a pre-rendered route rather than a control.
+import { DOT_COUNTS } from "../references/dot-grid/dot-grid";
+
+interface Props {
+  /** The count currently being shown, if any. */
+  current?: number;
+}
+
+const { current } = Astro.props;
+---
+
+<nav class="picker" aria-label="Dot count">
+  {
+    DOT_COUNTS.map((dots) => (
+      <a
+        href={`/references/dot-grid/${dots}`}
+        aria-current={dots === current ? "page" : undefined}
+      >
+        {dots}
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 1rem 0 2rem;
+  }
+
+  .picker a {
+    min-width: 2.2rem;
+    padding: 0.25rem 0.4rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .picker a:hover {
+    background: var(--surface);
+    text-decoration: none;
+  }
+
+  .picker a[aria-current="page"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+  }
+</style>

@@ -1,0 +1,138 @@
+---
+// One run of dot-grid cells, and every way to cut it into equal parts.
+//
+// The strip beside each row is the answer drawn out: parts sized by flex-grow, so a
+// column's share of the width on screen is its share of the page. Static markup — the
+// arithmetic is done in the frontmatter and never repeated in the browser.
+import DotStrip from "./DotStrip.astro";
+import {
+  divisions,
+  exactParts,
+  type Division,
+  type StripSegment,
+} from "../references/dot-grid/dot-grid";
+
+interface Props {
+  /** Cells in the run. */
+  cells: number;
+  /** What the run is — "One page", "A spread". */
+  caption: string;
+}
+
+const { cells, caption } = Astro.props;
+
+const rows: Division[] = divisions(cells);
+const exact = exactParts(cells);
+
+/** A division drawn as spare, then the equal parts, then spare. */
+function strip(row: Division): StripSegment[] {
+  return [
+    ...(row.leadingSpare > 0
+      ? [{ cells: row.leadingSpare, kind: "spare" as const }]
+      : []),
+    ...Array.from({ length: row.parts }, () => ({
+      cells: row.each,
+      kind: "part" as const,
+    })),
+    ...(row.trailingSpare > 0
+      ? [{ cells: row.trailingSpare, kind: "spare" as const }]
+      : []),
+  ];
+}
+---
+
+<table class="divisions">
+  <caption>{caption}</caption>
+  <thead>
+    <tr>
+      <th>Parts</th>
+      <th>Each</th>
+      <th>Spare</th>
+      <th>How it lands</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      rows.map((row) => (
+        <tr class={row.exact ? "exact" : undefined}>
+          <th scope="row">{row.parts}</th>
+          <td>{row.each}</td>
+          <td>{row.exact ? "—" : row.spare}</td>
+          <td>
+            <DotStrip segments={strip(row)} />
+          </td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<p class="exact-note">
+  {
+    exact.length > 0 ? (
+      <>
+        Divides exactly by <b>{exact.join(", ")}</b> — those are the layouts with
+        nothing left over.
+      </>
+    ) : (
+      <>
+        {cells} is prime, so nothing below a full division divides it exactly.
+        Every layout here leaves a remainder; use it as margin.
+      </>
+    )
+  }
+</p>
+
+<style>
+  .divisions {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  caption {
+    text-align: left;
+    font-weight: 600;
+    padding-bottom: 0.5rem;
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.35rem 0.6rem 0.35rem 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  thead th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  tbody th,
+  tbody td {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The last column is the picture, so it takes whatever width is going. */
+  th:last-child,
+  td:last-child {
+    width: 55%;
+    padding-right: 0;
+  }
+
+  tr.exact th,
+  tr.exact td {
+    font-weight: 600;
+  }
+
+
+  .exact-note {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+  }
+</style>

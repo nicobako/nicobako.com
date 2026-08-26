@@ -1,0 +1,192 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import DotGridDivisions from "../../../components/DotGridDivisions.astro";
+import DotCountPicker from "../../../components/DotCountPicker.astro";
+import DotStrip from "../../../components/DotStrip.astro";
+import NamedLayoutTable from "../../../components/NamedLayoutTable.astro";
+import {
+  DOT_COUNTS,
+  MAX_DOTS,
+  MIN_DOTS,
+  SPACING_MM,
+  cellsFor,
+  millimetres,
+  spaceLayouts,
+} from "../../../references/dot-grid/dot-grid";
+
+export function getStaticPaths() {
+  return DOT_COUNTS.map((dots) => ({ params: { dots: String(dots) } }));
+}
+
+const dots = Number(Astro.params.dots);
+const cells = cellsFor(dots);
+const spreadCells = cells * 2;
+
+// Both contexts offer every layout. Which axis a spread doubles depends on how the
+// notebook is held, so nothing here is filtered by axis.
+const pageLayouts = spaceLayouts(cells);
+const spreadLayouts = spaceLayouts(spreadCells);
+
+
+---
+
+<Layout
+  title={`${dots} dots — Nico Bako`}
+  description={`How to divide a run of ${dots} dots (${cells} cells) on a dot grid — equally, as columns on a page or spread, and as rows.`}
+>
+  <Breadcrumbs
+    trail={[
+      { label: "References", href: "/references/" },
+      { label: "Dot Grid", href: "/references/dot-grid/" },
+    ]}
+  />
+
+  <h1>{dots} dots</h1>
+  <p class="intro">
+    A run of <b>{dots} dots</b> is <b>{cells} cells</b> — you write between the
+    dots, not on them, so there is always one fewer cell than dot. At {SPACING_MM} mm
+    spacing that is {millimetres(cells)} mm of paper.
+  </p>
+
+  <DotCountPicker current={dots} />
+
+  <p>
+    Which edge you counted is up to you: dividing a run into equal parts is the
+    same arithmetic across the page or down it, and every layout below works
+    either way round. Each is drawn as a run left to right, so read a strip as
+    columns or as bands stacked down the page, whichever you are laying out.
+  </p>
+
+  <h2>On a single page — {cells} cells</h2>
+
+  <h3>Divide equally</h3>
+  <p>
+    <b>Spare</b> is what will not fit: split it between the two ends as margin,
+    or keep it together as a sidebar.
+  </p>
+  <DotGridDivisions cells={cells} caption={`A run of ${cells} cells`} />
+
+  <h3>Named layouts</h3>
+  <NamedLayoutTable cells={cells} />
+
+  <h3>Layouts that are not evenly divided</h3>
+  <p class="lead">
+    An equal split is the obvious answer and often the wrong one: a label and the
+    text beside it do not want the same width. The filled block holds the
+    content.
+  </p>
+  <div class="layouts">
+    {
+      pageLayouts.map((layout) => (
+        <article>
+          <h4>{layout.name}</h4>
+          <DotStrip segments={layout.segments} labelled />
+          <p class="sizes">
+            {`${layout.segments.map((segment) => segment.cells).join(" · ")} cells`}
+          </p>
+          <p>{layout.why}</p>
+        </article>
+      ))
+    }
+  </div>
+
+  <h2>Across a spread — {spreadCells} cells</h2>
+  <p>
+    Two pages joined at the spine. Only one of the two axes doubles — the one
+    that crosses the spine — and which one that is depends on how you are
+    holding the notebook: upright, the run across the page doubles and the rows
+    are untouched; turned ninety degrees, it is the other way round. The axis
+    that does not cross the spine is unchanged, and the tables above are still
+    its answer.
+  </p>
+  <p>
+    The fold falls exactly in the middle, which is worth planning around: an
+    <b>even</b> number of parts puts a boundary on it, so the fold does the
+    dividing for free and each page holds a whole number of parts. An odd number
+    puts a part across the fold — fine for a table you read across, awkward for
+    one you write in.
+  </p>
+
+  <h3>Divide equally</h3>
+  <DotGridDivisions cells={spreadCells} caption={`A spread of ${spreadCells} cells`} />
+
+  <h3>Named layouts</h3>
+  <NamedLayoutTable cells={spreadCells} />
+
+  <h3>Layouts that are not evenly divided</h3>
+  <p class="lead">
+    The proportions hold, but the narrow parts get room to breathe: a gutter
+    stays a gutter while the content part doubles.
+  </p>
+  <div class="layouts">
+    {
+      spreadLayouts.map((layout) => (
+        <article>
+          <h4>{layout.name}</h4>
+          <DotStrip segments={layout.segments} labelled />
+          <p class="sizes">
+            {`${layout.segments.map((segment) => segment.cells).join(" · ")} cells`}
+          </p>
+        </article>
+      ))
+    }
+  </div>
+
+  <p class="footnote">
+    Counted <i>squares</i> rather than dots? Then you want{" "}
+    {dots + 1 <= MAX_DOTS ? (
+      <a href={`/references/dot-grid/${dots + 1}`}>{dots + 1} dots</a>
+    ) : (
+      <>the next count up</>
+    )}
+    , since {dots} squares means {dots + 1} dots. Counts run from {MIN_DOTS} to{" "}
+    {MAX_DOTS}.
+  </p>
+</Layout>
+
+<style>
+  .intro {
+    color: var(--muted);
+  }
+
+  h3 {
+    margin-top: 2rem;
+  }
+
+  h4:not(.layouts h4) {
+    margin-top: 1.5rem;
+  }
+
+  .lead {
+    font-size: 0.9rem;
+  }
+
+  .layouts {
+    display: grid;
+    gap: 1.5rem;
+    margin: 1.25rem 0 2rem;
+  }
+
+  .layouts h4 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+  }
+
+  .layouts p {
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+  }
+
+
+  .sizes {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .footnote {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+</style>

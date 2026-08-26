@@ -1,0 +1,69 @@
+---
+// The divisions people ask for by name rather than by number, for one run of cells.
+// Layouts too big for the run are simply absent — a seven-day week does not fit six
+// cells, and saying so in a row would be noise.
+import { namedFor } from "../references/dot-grid/dot-grid";
+
+interface Props {
+  cells: number;
+}
+
+const { cells } = Astro.props;
+const layouts = namedFor(cells);
+---
+
+<table class="named">
+  <thead>
+    <tr>
+      <th>Layout</th><th>Parts</th><th>Each</th><th>Spare</th><th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      layouts.map((layout) => (
+        <tr>
+          <th scope="row">{layout.label}</th>
+          <td>{layout.parts}</td>
+          <td>
+            {`${layout.division.each} ${layout.division.each === 1 ? "cell" : "cells"}`}
+          </td>
+          <td>{layout.division.exact ? "—" : layout.division.spare}</td>
+          <td class="muted">{layout.note}</td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .named {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.4rem 0.6rem 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  tbody th,
+  tbody td {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .muted {
+    color: var(--muted);
+    font-variant-numeric: normal;
+  }
+</style>

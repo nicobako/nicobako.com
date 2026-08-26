@@ -1,0 +1,41 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import DotCountPicker from "../../../components/DotCountPicker.astro";
+import { MAX_DOTS, MIN_DOTS, SPACING_MM } from "../../../references/dot-grid/dot-grid";
+---
+
+<Layout
+  title="Dot Grid Divisions — Nico Bako"
+  description="Count the dots along one edge of your notebook, then look up every way to divide that run into equal columns or rows, on one page and across a spread."
+>
+  <Breadcrumbs trail={[{ label: "References", href: "/references/" }]} />
+
+  <h1>Dot Grid Divisions</h1>
+  <p>
+    Count the dots along one edge of the page — across the top for columns, down
+    the side for rows — then pick that number below. Each page lists every way
+    that run divides into equal parts, what is left over, and how it changes
+    across a spread.
+  </p>
+  <p class="muted">
+    Counts run from {MIN_DOTS} to {MAX_DOTS}. Widths assume a {SPACING_MM} mm grid,
+    which is what Leuchtturm1917, Rhodia and most others print; on a 4 mm or
+    ¼-inch grid the cell counts are identical and only the millimetres change.
+  </p>
+
+  <DotCountPicker />
+
+  <p class="muted">
+    One thing to get right before counting: a page <i>n</i> dots across is
+    <i>n</i> − 1 cells across, because you write between the dots. If you counted
+    squares, you already have the cell count — pick the number one higher.
+  </p>
+</Layout>
+
+<style>
+  .muted {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+</style>
