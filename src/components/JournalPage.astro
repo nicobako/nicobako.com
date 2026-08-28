@@ -1,29 +1,78 @@
 ---
-// One blank journal page, drawn to scale. Bands stack down the page and regions run
-// across a band, both sized purely by `flex-grow`, so the drawing is proportional at
-// any width and the page's own aspect ratio is the only fixed dimension.
+// One journal page, drawn to scale. Every element carries its own box in percentages of
+// the page, so the drawing is proportional at any width and the page's aspect ratio is
+// the only fixed dimension. Boxes may sit outside 0–100%; the page clips them, which is
+// how something bleeds off an edge.
 //
-// Blank is the point: a region is an outline and a label, never ruling or filler. What
-// the shape is *for* is said in prose beside it.
+// Declaration order is paint order: an element declared later sits on top of one
+// declared earlier, which is how a caption gets to sit on a photograph.
+//
+// The pages stay blank. An element is drawn as what it *is* — ruling for writing, a
+// grid for a table, a dashed edge for something drawn by hand — and never as what it
+// says, because the shape is the part worth copying.
+//
+// Ruling is drawn as real elements rather than a repeating gradient. A gradient is
+// rasterised before the element is rotated, so on anything set off square it resamples
+// into visibly wavy lines; a border on its own element is composited after the rotation
+// and stays straight. It also lets the ruling be a *count* of lines that share the box
+// between them, so it stays proportional however wide the drawing is rendered.
 import type { Page } from "../references/journal-layouts/journal-layouts";
-import { PAGE_ASPECT } from "../references/journal-layouts/journal-layouts";
+import {
+  PAGE_ASPECT,
+  columnCount,
+  ruleCount,
+} from "../references/journal-layouts/journal-layouts";
 
 interface Props {
   page: Page;
 }
 
 const { page } = Astro.props;
+
+/** `n` of something. Astro needs no keys, so the values are never used. */
+const times = (count: number) => Array.from({ length: count });
 ---
 
 <div class="page" style={`aspect-ratio: ${PAGE_ASPECT}`}>
   {
-    page.bands.map((band) => (
-      <div class="band" style={`flex-grow: ${band.weight}`}>
-        {band.regions.map((region) => (
-          <div class="region" style={`flex-grow: ${region.weight}`}>
-            {region.label && <span class="label">{region.label}</span>}
+    page.elements.map((element) => (
+      <div
+        class:list={[
+          "el",
+          element.kind,
+          element.labelAt === "bottom" && "foot",
+        ]}
+        style={[
+          `left:${element.x}%`,
+          `top:${element.y}%`,
+          `width:${element.w}%`,
+          `height:${element.h}%`,
+          element.rotate ? `transform:rotate(${element.rotate}deg)` : "",
+        ]
+          .filter(Boolean)
+          .join(";")}
+      >
+        {element.label && <span class="label">{element.label}</span>}
+
+        {element.kind === "text" && (
+          <div class="rules">
+            {times(ruleCount(element.h)).map(() => (
+              <span class="rule" />
+            ))}
           </div>
-        ))}
+        )}
+
+        {element.kind === "table" && (
+          <div class="rules">
+            {times(ruleCount(element.h)).map(() => (
+              <div class="row">
+                {times(columnCount(element.w)).map(() => (
+                  <span class="cell" />
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     ))
   }
@@ -31,41 +80,126 @@ const { page } = Astro.props;
 
 <style>
   .page {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+    position: relative;
+    /* Labels are sized against the page, not the viewport: the drawing scales with
+       whatever column it is placed in, and a fixed-size label swamps it on a phone. */
+    container-type: inline-size;
     flex: 1 1 0;
     min-width: 0;
-    padding: 3px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 2px;
-  }
-
-  .band {
-    display: flex;
-    gap: 3px;
-    /* Bands are sized purely by flex-grow, so nothing may claim a base height. */
-    flex-basis: 0;
-    min-height: 0;
-  }
-
-  .region {
     overflow: hidden;
-    /* Likewise across: no region may claim a base width. */
-    flex-basis: 0;
-    min-width: 0;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 2px;
   }
 
+  .el {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 2px;
+  }
+
+  /* A box that runs off the top of the page: its own top corner is not on the paper,
+     so the label goes to the foot of it instead. */
+  .foot {
+    justify-content: flex-end;
+  }
+
   .label {
     display: block;
     padding: 0.2rem 0.3rem;
-    font-size: 0.7rem;
-    line-height: 1.2;
-    white-space: nowrap;
+    font-size: clamp(0.42rem, 4.4cqw, 0.72rem);
+    line-height: 1.15;
+    /* Wrap rather than truncate: a clipped label reads as a bug, and these boxes are
+       narrow by design. */
+    overflow-wrap: anywhere;
     color: var(--muted);
+  }
+
+  /* The lines share out whatever height the label leaves. */
+  .rules {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .rule,
+  .row {
+    flex: 1;
+    min-height: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .row {
+    display: flex;
+  }
+
+  .cell {
+    flex: 1;
+    min-width: 0;
+    border-right: 1px solid var(--border);
+  }
+
+  .cell:last-child,
+  .rules > :last-child {
+    border: 0;
+  }
+
+  /* Ruled off and left empty: the grids are made of these. */
+  .open {
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+
+  /* A line that names the page — a rule under it, not a box around it. */
+  .title {
+    border-bottom: 2px solid var(--muted);
+  }
+
+  /* Ruled rows and columns. */
+  .table {
+    border: 1px solid var(--border);
+  }
+
+  /* Drawn by hand — the one edge on the page that is not ruled. */
+  .sketch {
+    border: 1px dashed var(--muted);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+
+  /* Something pasted in: a print, a ticket, a leaf. */
+  .photo {
+    border: 1px solid var(--muted);
+    background:
+      linear-gradient(
+          to bottom right,
+          transparent calc(50% - 0.5px),
+          var(--border) calc(50% - 0.5px),
+          var(--border) calc(50% + 0.5px),
+          transparent calc(50% + 0.5px)
+        )
+        no-repeat,
+      linear-gradient(
+          to bottom left,
+          transparent calc(50% - 0.5px),
+          var(--border) calc(50% - 0.5px),
+          var(--border) calc(50% + 0.5px),
+          transparent calc(50% + 0.5px)
+        )
+        no-repeat,
+      var(--surface);
+  }
+
+  /* A line borrowed from somewhere else, or one saved for later. */
+  .quote {
+    padding-left: 0.4rem;
+    border-left: 3px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+  }
+
+  .quote .label {
+    font-style: italic;
   }
 </style>
