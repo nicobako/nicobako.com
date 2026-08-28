@@ -1,0 +1,180 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import JournalPage from "../../components/JournalPage.astro";
+import {
+  COMPOSITIONS,
+  GRIDS,
+  LEGEND,
+  type JournalLayout,
+} from "../../references/journal-layouts/journal-layouts";
+
+const sections: { title: string; lead: string; layouts: JournalLayout[] }[] = [
+  {
+    title: "Grids",
+    lead: "Pages you rule before you write on them. A grid is a promise about tomorrow — it decides where things go while you are still calm, so the day does not have to.",
+    layouts: GRIDS,
+  },
+  {
+    title: "Compositions",
+    lead: "Pages you arrange. A composition decides afterwards, once you know what the page is about, and it can do the three things a grid cannot: let something run off the edge, set a block a degree or two off square, and let one thing sit on top of another.",
+    layouts: COMPOSITIONS,
+  },
+];
+---
+
+<Layout
+  title="Journal Layouts — Nico Bako"
+  description="Journal page layouts drawn blank: the grids you rule before you write — daily log, Cornell, weekly, monthly — and the compositions you arrange, where a drawing, a table and a few lines of writing have to hold a page together."
+>
+  <Breadcrumbs trail={[{ label: "References", href: "/references/" }]} />
+
+  <h1>Journal Layouts</h1>
+  <p>
+    Page shapes worth stealing, drawn blank. Every element here says what it
+    <i>is</i> — writing, a table, a drawing, something pasted in — and never what it
+    says, because the shape is the part worth copying and the words are yours.
+  </p>
+  <p class="muted">
+    Nothing here is a measurement. Every layout is proportions, so it holds at any
+    page size and any grid spacing; to land those proportions on real dots, count
+    the run along your own page and look it up in the{" "}
+    <a href="/references/dot-grid/">dot grid divisions</a>.
+  </p>
+
+  <h2>How to read the drawings</h2>
+  <div class="legend">
+    <div class="pages single"><JournalPage page={LEGEND} /></div>
+    <p>
+      Ruling means writing. A grid means a table — anything you will want to read
+      down a column. A dashed edge means drawn by hand, and it is dashed because
+      that is the one edge on the page you are not going to rule. A crossed box is
+      something pasted in: a print, a ticket, a pressed leaf. A bar down the side
+      is a line borrowed from somewhere else, or one saved for later.
+    </p>
+  </div>
+
+  {
+    sections.map((section) => (
+      <section>
+        <h2>{section.title}</h2>
+        <p class="lead">{section.lead}</p>
+        <div class="layouts">
+          {section.layouts.map((layout) => (
+            <article id={layout.slug}>
+              <h3>{layout.name}</h3>
+              <div
+                class:list={[
+                  "pages",
+                  layout.pages.length > 1 ? "spread" : "single",
+                ]}
+              >
+                {layout.pages.map((page) => (
+                  <JournalPage page={page} />
+                ))}
+              </div>
+              <p class="caption">
+                {layout.pages.length > 1 ? "A spread — two pages" : "One page"}
+              </p>
+              <p>{layout.why}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    ))
+  }
+
+  <p class="footnote">
+    A spread is not a third kind of thing: it is two pages, ruled or arranged one at
+    a time, that happen to be open at once. Anything that spans the fold has to
+    survive being read across it — a grid can, a sentence cannot, and a drawing can
+    if it is the drawing you meant to put there.
+  </p>
+</Layout>
+
+<style>
+  .muted {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .lead {
+    color: var(--muted);
+  }
+
+  section {
+    margin-top: 3rem;
+  }
+
+  .legend {
+    display: grid;
+    grid-template-columns: 16rem 1fr;
+    gap: 1.25rem;
+    align-items: start;
+    margin: 1.5rem 0 1rem;
+  }
+
+  .legend p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .legend .pages {
+    /* A grid item with auto side margins shrinks to fit, and a flex child with a zero
+       basis has nothing to fit to — so the drawing has to be told to fill its column. */
+    max-width: none;
+    margin-inline: 0;
+  }
+
+  .layouts {
+    display: grid;
+    gap: 2.5rem;
+    margin: 2rem 0;
+  }
+
+  .layouts h3 {
+    margin: 0 0 1rem;
+    font-size: 1.15rem;
+  }
+
+  .layouts p {
+    margin: 0.75rem 0 0;
+  }
+
+  /* Two pages side by side, with the gap between them standing in for the spine. */
+  .pages {
+    display: flex;
+    gap: 0.75rem;
+    margin-inline: auto;
+  }
+
+  .single {
+    max-width: 16rem;
+  }
+
+  .spread {
+    max-width: 33rem;
+  }
+
+  .caption {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .footnote {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 34rem) {
+    .legend {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+
+    .legend .pages {
+      max-width: 16rem;
+    }
+  }
+</style>
