@@ -1,0 +1,71 @@
+---
+// One blank journal page, drawn to scale. Bands stack down the page and regions run
+// across a band, both sized purely by `flex-grow`, so the drawing is proportional at
+// any width and the page's own aspect ratio is the only fixed dimension.
+//
+// Blank is the point: a region is an outline and a label, never ruling or filler. What
+// the shape is *for* is said in prose beside it.
+import type { Page } from "../references/journal-layouts/journal-layouts";
+import { PAGE_ASPECT } from "../references/journal-layouts/journal-layouts";
+
+interface Props {
+  page: Page;
+}
+
+const { page } = Astro.props;
+---
+
+<div class="page" style={`aspect-ratio: ${PAGE_ASPECT}`}>
+  {
+    page.bands.map((band) => (
+      <div class="band" style={`flex-grow: ${band.weight}`}>
+        {band.regions.map((region) => (
+          <div class="region" style={`flex-grow: ${region.weight}`}>
+            {region.label && <span class="label">{region.label}</span>}
+          </div>
+        ))}
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .page {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 3px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+
+  .band {
+    display: flex;
+    gap: 3px;
+    /* Bands are sized purely by flex-grow, so nothing may claim a base height. */
+    flex-basis: 0;
+    min-height: 0;
+  }
+
+  .region {
+    overflow: hidden;
+    /* Likewise across: no region may claim a base width. */
+    flex-basis: 0;
+    min-width: 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+
+  .label {
+    display: block;
+    padding: 0.2rem 0.3rem;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    color: var(--muted);
+  }
+</style>

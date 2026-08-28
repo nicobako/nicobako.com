@@ -1,0 +1,98 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import JournalPage from "../../components/JournalPage.astro";
+import { LAYOUTS } from "../../references/journal-layouts/journal-layouts";
+---
+
+<Layout
+  title="Journal Layouts — Nico Bako"
+  description="A short set of journal page layouts drawn as blank pages: the daily log, Cornell, a time-blocked day, quadrants, and the weekly and monthly spreads."
+>
+  <Breadcrumbs trail={[{ label: "References", href: "/references/" }]} />
+
+  <h1>Journal Layouts</h1>
+  <p>
+    The handful of page shapes worth ruling, drawn blank. Each one is boxes and
+    nothing else — no ruling, no writing, no dots — because the shape is the part
+    worth copying and everything else is yours.
+  </p>
+  <p class="muted">
+    Nothing here is a measurement. Every layout is proportions, so it holds at any
+    page size and any grid spacing; to land those proportions on real dots, count
+    the run along your own page and look it up in the{" "}
+    <a href="/references/dot-grid/">dot grid divisions</a>.
+  </p>
+
+  <div class="layouts">
+    {
+      LAYOUTS.map((layout) => (
+        <article id={layout.slug}>
+          <h2>{layout.name}</h2>
+          <div class:list={["pages", layout.pages.length > 1 ? "spread" : "single"]}>
+            {layout.pages.map((page) => (
+              <JournalPage page={page} />
+            ))}
+          </div>
+          <p class="caption">
+            {layout.pages.length > 1 ? "A spread — two pages" : "One page"}
+          </p>
+          <p>{layout.why}</p>
+        </article>
+      ))
+    }
+  </div>
+
+  <p class="footnote">
+    A spread is not a third kind of thing: it is two pages, ruled one at a time,
+    that happen to be open at once. Anything that spans the fold has to survive
+    being read across it — a grid can, a sentence cannot.
+  </p>
+</Layout>
+
+<style>
+  .muted {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .layouts {
+    display: grid;
+    gap: 2.5rem;
+    margin: 2rem 0;
+  }
+
+  .layouts h2 {
+    margin: 0 0 1rem;
+  }
+
+  .layouts p {
+    margin: 0.75rem 0 0;
+  }
+
+  /* Two pages side by side, with the gap between them standing in for the spine. */
+  .pages {
+    display: flex;
+    gap: 0.75rem;
+    margin-inline: auto;
+  }
+
+  .single {
+    max-width: 15rem;
+  }
+
+  .spread {
+    max-width: 31rem;
+  }
+
+  .caption {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .footnote {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+</style>
