@@ -169,8 +169,10 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
   <p id="summary" class="summary no-print" aria-live="polite"></p>
 
   <div class="actions no-print">
+    <button id="copy-link-btn" type="button">Copy link</button>
     <button id="print-btn" type="button">Print</button>
     <a id="open-in-editor" href="/music/abc-editor">Open in ABC editor</a>
+    <span id="copy-status" class="copy-status" aria-live="polite"></span>
   </div>
 
   <div id="etude-track" class="etude-track"></div>
@@ -294,6 +296,32 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
 
   document.getElementById("print-btn")!.addEventListener("click", () => {
     window.print();
+  });
+
+  // The address bar already holds the whole etude, so copying the link is copying the
+  // etude. Clipboard access needs a secure context and can still be refused, so the
+  // button says which of those happened rather than failing silently.
+  const copyStatus = document.getElementById("copy-status")!;
+  let copyTimer = 0;
+
+  function reportCopy(message: string): void {
+    copyStatus.textContent = message;
+    window.clearTimeout(copyTimer);
+    copyTimer = window.setTimeout(() => {
+      copyStatus.textContent = "";
+    }, 3000);
+  }
+
+  document.getElementById("copy-link-btn")!.addEventListener("click", () => {
+    const clipboard = navigator.clipboard;
+    if (!clipboard) {
+      reportCopy("Copying isn't available here — use the address bar.");
+      return;
+    }
+    clipboard
+      .writeText(location.href)
+      .then(() => reportCopy("Link copied."))
+      .catch(() => reportCopy("Couldn't copy — use the address bar."));
   });
 
   restoreFromUrl();
@@ -434,6 +462,11 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
   .actions button:hover {
     border-color: var(--accent);
     color: var(--accent);
+  }
+
+  .copy-status {
+    font-size: 0.85rem;
+    color: var(--muted);
   }
 
   .etude-track {
