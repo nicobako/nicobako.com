@@ -28,6 +28,9 @@ const PRESETS: { field: string; label: string; items: { name: string; value: str
       { name: "Arpeggio", value: "1 3 5 1' 5 3" },
       { name: "Turns", value: "1 2 1 7, 1 3 2 1" },
       { name: "Pedal tonic", value: "1 2 1 3 1 4 1 5" },
+      { name: "Thirds", value: "1+3 2+4 3+5 4+6 5+7 6+1'" },
+      { name: "Sixths", value: "1+6 2+7 3+1' 4+2'" },
+      { name: "Octaves", value: "1+1' 2+2' 3+3' 4+4'" },
     ],
   },
   {
@@ -83,7 +86,10 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
         <code>b</code> in front to alter the degree (<code>#7</code> gives
         harmonic minor), and a finger in parentheses where you want one marked:
         <code>1(1)</code>, <code>5(0)</code> for an open string. A marked finger
-        travels with its note, so it stays right when the pattern repeats.
+        travels with its note, so it stays right when the pattern repeats. Join
+        notes with <code>+</code> for a double stop — <code>1+3</code>, or
+        <code>1(1)+3(3)</code> to finger both. A double stop takes one bow and
+        one rhythm value, the same as any single note.
       </p>
     </div>
 

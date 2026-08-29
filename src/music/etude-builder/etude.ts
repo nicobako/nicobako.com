@@ -81,7 +81,7 @@ const RHYTHM_PATTERN = /^([seqhw])(\.?)$/;
 const BOWING_PATTERN = /^[1-9][0-9]*$/;
 const METER_PATTERN = /^(\d+)\/(\d+)$/;
 
-export interface ParsedNote {
+export interface NoteMember {
   /** Scale degree, 1–7. */
   degree: number;
   /** Octaves above (or below) the tonic's own octave. */
@@ -90,6 +90,15 @@ export interface ParsedNote {
   accidental: number;
   /** Left-hand finger, 0 for an open string, or null to leave the note unmarked. */
   finger: number | null;
+}
+
+/**
+ * One thing the bow does: a single note, or a double stop of several notes sounded
+ * together. An event takes one duration from the rhythm and one place in the bowing
+ * however many pitches it holds, which is what a double stop is — one stroke.
+ */
+export interface NoteEvent {
+  members: NoteMember[];
 }
 
 export interface EtudeSpec {
@@ -129,25 +138,42 @@ function lcm(a: number, b: number): number {
   return (a / gcd(a, b)) * b;
 }
 
-export function parseNotes(input: string): { notes: ParsedNote[]; errors: string[] } {
-  const notes: ParsedNote[] = [];
+function parseMember(part: string): NoteMember | null {
+  const match = NOTE_PATTERN.exec(part);
+  if (!match) return null;
+  const [, accidentals = "", degree = "1", octaves = "", finger] = match;
+  return {
+    degree: Number(degree),
+    octave: (octaves.match(/'/g)?.length ?? 0) - (octaves.match(/,/g)?.length ?? 0),
+    accidental:
+      (accidentals.match(/#/g)?.length ?? 0) - (accidentals.match(/b/g)?.length ?? 0),
+    finger: finger === undefined ? null : Number(finger),
+  };
+}
+
+/**
+ * Whitespace separates events; `+` joins the notes of a double stop into one. Every
+ * member is a note in its own right, so each carries its own accidental, octave and
+ * finger — `1(1)+3(3)` is a third fingered on two strings.
+ */
+export function parseNotes(input: string): { notes: NoteEvent[]; errors: string[] } {
+  const notes: NoteEvent[] = [];
   const errors: string[] = [];
 
   for (const token of tokenize(input)) {
-    const match = NOTE_PATTERN.exec(token);
-    if (!match) {
-      errors.push(`Note "${token}" isn't a degree 1–7, optionally with #/b, ' or , and a finger in parentheses.`);
-      continue;
+    const members: NoteMember[] = [];
+    for (const part of token.split("+")) {
+      const member = parseMember(part);
+      if (!member) {
+        errors.push(
+          `Note "${token}" isn't a degree 1–7 — optionally with #/b in front, ' or , for octaves, a finger in parentheses, and + between the notes of a double stop.`,
+        );
+        members.length = 0;
+        break;
+      }
+      members.push(member);
     }
-    const [, accidentals = "", degree = "1", octaves = "", finger] = match;
-    notes.push({
-      degree: Number(degree),
-      octave:
-        (octaves.match(/'/g)?.length ?? 0) - (octaves.match(/,/g)?.length ?? 0),
-      accidental:
-        (accidentals.match(/#/g)?.length ?? 0) - (accidentals.match(/b/g)?.length ?? 0),
-      finger: finger === undefined ? null : Number(finger),
-    });
+    if (members.length > 0) notes.push({ members });
   }
 
   if (notes.length === 0 && errors.length === 0) errors.push("Add some notes.");
@@ -201,6 +227,33 @@ function accidentalMark(alteration: number): string {
   if (alteration === 0) return "=";
   if (alteration === 1) return "^";
   return "^^";
+}
+
+/**
+ * One note of an event: its fingering, the accidental it needs against what is already
+ * in force in this bar, and its pitch. Duration is not included — a double stop carries
+ * a single duration outside the brackets that hold its members.
+ */
+function renderMember(
+  member: NoteMember,
+  mode: ModeSlug,
+  inForce: Map<string, number>,
+): string {
+  const letterIndex = member.degree - 1;
+  const octave = 4 + member.octave;
+  const alteration =
+    DEGREE_OFFSETS[mode][letterIndex]! - NATURAL_OFFSETS[letterIndex]! + member.accidental;
+
+  const voiceKey = `${letterIndex}:${octave}`;
+  const current = inForce.get(voiceKey) ?? KEY_SIGNATURE[mode][letterIndex]!;
+
+  let out = "";
+  if (member.finger !== null) out += `!${member.finger}!`;
+  if (alteration !== current) {
+    out += accidentalMark(alteration);
+    inForce.set(voiceKey, alteration);
+  }
+  return out + pitchLetter(letterIndex, octave);
 }
 
 /** `C` is middle C; higher octaves go lowercase then take apostrophes, lower take commas. */
@@ -262,28 +315,19 @@ export function buildEtude(spec: EtudeSpec): BuildResult {
   let bowIsDown = !spec.startUpBow;
 
   for (let i = 0; i < count; i++) {
-    const note = notes[i % notes.length]!;
+    const event = notes[i % notes.length]!;
     const duration = durations[i % durations.length]!;
     const startsGroup = remainingInGroup === groups[groupIndex]!;
     const groupSize = groups[groupIndex]!;
 
-    const letterIndex = note.degree - 1;
-    const octave = 4 + note.octave;
-    const alteration =
-      DEGREE_OFFSETS[spec.mode][letterIndex]! - NATURAL_OFFSETS[letterIndex]! + note.accidental;
-
-    const voiceKey = `${letterIndex}:${octave}`;
-    const current = inForce.get(voiceKey) ?? KEY_SIGNATURE[spec.mode][letterIndex]!;
-
     let token = "";
     if (startsGroup && groupSize > 1) token += "(";
     if (startsGroup && spec.showBowings) token += bowIsDown ? "!downbow!" : "!upbow!";
-    if (note.finger !== null) token += `!${note.finger}!`;
-    if (alteration !== current) {
-      token += accidentalMark(alteration);
-      inForce.set(voiceKey, alteration);
-    }
-    token += pitchLetter(letterIndex, octave);
+
+    // A double stop is one event: its members go inside brackets and the duration sits
+    // outside them, so the bow and the rhythm still see a single note.
+    const members = event.members.map((member) => renderMember(member, spec.mode, inForce));
+    token += members.length > 1 ? `[${members.join("")}]` : members[0]!;
     if (duration !== 1) token += String(duration);
 
     remainingInGroup -= 1;
