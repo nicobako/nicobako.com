@@ -77,7 +77,7 @@ export const RHYTHM_NAMES: [string, string][] = [
 const MAX_NOTES = 192;
 
 const NOTE_PATTERN = /^([#b]*)([1-7])([',]*)(?:\(([0-4])\))?$/;
-const RHYTHM_PATTERN = /^([seqhw])(\.?)$/;
+const RHYTHM_PATTERN = /^(3)?([seqhw])(\.?)$/;
 const BOWING_PATTERN = /^[1-9][0-9]*$/;
 const METER_PATTERN = /^(\d+)\/(\d+)$/;
 
@@ -180,23 +180,56 @@ export function parseNotes(input: string): { notes: NoteEvent[]; errors: string[
   return { notes, errors };
 }
 
-export function parseRhythm(input: string): { durations: number[]; errors: string[] } {
-  const durations: number[] = [];
+/**
+ * One note's worth of rhythm.
+ *
+ * `occupies` is counted in *thirds* of a unit rather than units, which is what keeps a
+ * triplet exact: a triplet member is written at its plain duration and takes two thirds
+ * of it, so measuring in thirds leaves every value a whole number and barlines land where
+ * they should.
+ */
+export interface RhythmSlot {
+  /** Written duration, in units of L — what goes after the note in the ABC. */
+  duration: number;
+  /** Time actually taken, in thirds of a unit. */
+  occupies: number;
+  /** Position within a triplet (0, 1 or 2), or null for a plain note. */
+  tripletIndex: number | null;
+}
+
+/**
+ * A leading `3` makes a triplet: `3e` is one token that yields three eighths in the time
+ * of two. Expanding it here rather than at generation time means the rest of the builder
+ * still sees a flat list of one slot per note, so the cycling, bowing and beaming logic
+ * needs to know nothing about tuplets.
+ */
+export function parseRhythm(input: string): { slots: RhythmSlot[]; errors: string[] } {
+  const slots: RhythmSlot[] = [];
   const errors: string[] = [];
 
   for (const token of tokenize(input)) {
     const match = RHYTHM_PATTERN.exec(token);
     if (!match) {
-      errors.push(`Rhythm "${token}" isn't one of s, e, q, h, w with an optional dot.`);
+      errors.push(
+        `Rhythm "${token}" isn't one of s, e, q, h, w — optionally dotted, or with a leading 3 for a triplet.`,
+      );
       continue;
     }
-    const [, letter = "q", dot = ""] = match;
+    const [, triplet, letter = "q", dot = ""] = match;
     const base = RHYTHM_UNITS[letter]!;
-    durations.push(dot ? base * 1.5 : base);
+    const duration = dot ? base * 1.5 : base;
+
+    if (triplet) {
+      for (let index = 0; index < 3; index++) {
+        slots.push({ duration, occupies: duration * 2, tripletIndex: index });
+      }
+    } else {
+      slots.push({ duration, occupies: duration * 3, tripletIndex: null });
+    }
   }
 
-  if (durations.length === 0 && errors.length === 0) errors.push("Add a rhythm.");
-  return { durations, errors };
+  if (slots.length === 0 && errors.length === 0) errors.push("Add a rhythm.");
+  return { slots, errors };
 }
 
 export function parseBowing(input: string): { groups: number[]; errors: string[] } {
@@ -273,7 +306,7 @@ function pitchLetter(letterIndex: number, octave: number): string {
  */
 export function buildEtude(spec: EtudeSpec): BuildResult {
   const { notes, errors: noteErrors } = parseNotes(spec.notes);
-  const { durations, errors: rhythmErrors } = parseRhythm(spec.rhythm);
+  const { slots, errors: rhythmErrors } = parseRhythm(spec.rhythm);
   const { groups, errors: bowingErrors } = parseBowing(spec.bowing);
 
   const meterMatch = METER_PATTERN.exec(spec.meter.trim());
@@ -298,9 +331,22 @@ export function buildEtude(spec: EtudeSpec): BuildResult {
   const beamGroup =
     Number(beatUnit) === 8 && Number(beats) % 3 === 0 ? unitsPerBeat * 3 : unitsPerBeat;
 
+  // Durations are measured in thirds of a unit throughout, so triplets stay exact.
+  const barThirds = barUnits * 3;
+  const beamThirds = beamGroup * 3;
+
   const bowedNotes = groups.reduce((sum, group) => sum + group, 0);
-  const cycle = cycleLength(notes.length, durations.length, bowedNotes);
-  const count = Math.min(spec.length ?? cycle, MAX_NOTES);
+  const cycle = cycleLength(notes.length, slots.length, bowedNotes);
+
+  // A full cycle always ends on a slot boundary, but an explicit length need not, and
+  // `(3` promises abcjs three notes — so a count that would stop mid-triplet is nudged on
+  // to the end of it.
+  let count = Math.min(spec.length ?? cycle, MAX_NOTES);
+  for (;;) {
+    const last = slots[(count - 1) % slots.length]!;
+    if (last.tripletIndex === null || last.tripletIndex === 2) break;
+    count += 1;
+  }
 
   const body: string[] = [];
   let barText = "";
@@ -316,19 +362,22 @@ export function buildEtude(spec: EtudeSpec): BuildResult {
 
   for (let i = 0; i < count; i++) {
     const event = notes[i % notes.length]!;
-    const duration = durations[i % durations.length]!;
+    const slot = slots[i % slots.length]!;
     const startsGroup = remainingInGroup === groups[groupIndex]!;
     const groupSize = groups[groupIndex]!;
 
     let token = "";
     if (startsGroup && groupSize > 1) token += "(";
+    // The tuplet marker sits inside a slur that opens here and before the bow mark, which
+    // is the order abcjs reads as "this slur covers a triplet starting on a down-bow".
+    if (slot.tripletIndex === 0) token += "(3";
     if (startsGroup && spec.showBowings) token += bowIsDown ? "!downbow!" : "!upbow!";
 
     // A double stop is one event: its members go inside brackets and the duration sits
     // outside them, so the bow and the rhythm still see a single note.
     const members = event.members.map((member) => renderMember(member, spec.mode, inForce));
     token += members.length > 1 ? `[${members.join("")}]` : members[0]!;
-    if (duration !== 1) token += String(duration);
+    if (slot.duration !== 1) token += String(slot.duration);
 
     remainingInGroup -= 1;
     if (remainingInGroup === 0) {
@@ -338,19 +387,21 @@ export function buildEtude(spec: EtudeSpec): BuildResult {
       bowIsDown = !bowIsDown;
     }
 
-    const beam = Math.floor(filled / beamGroup);
+    const beam = Math.floor(filled / beamThirds);
     if (barText !== "" && beam !== lastGroup) barText += " ";
     barText += token;
     lastGroup = beam;
-    filled += duration;
+    filled += slot.occupies;
 
     // A note that overruns the bar is left whole and the barline goes after it, so the
-    // following bars stay aligned to the meter rather than to the overrun.
-    if (filled >= barUnits) {
+    // following bars stay aligned to the meter rather than to the overrun. A half-written
+    // triplet is never split, since its three notes have to stay together.
+    const tripletOpen = slot.tripletIndex !== null && slot.tripletIndex < 2;
+    if (filled >= barThirds && !tripletOpen) {
       body.push(barText);
       barText = "";
       lastGroup = -1;
-      filled -= barUnits;
+      filled -= barThirds;
       inForce = new Map();
     }
   }

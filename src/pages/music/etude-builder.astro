@@ -41,6 +41,7 @@ const PRESETS: { field: string; label: string; items: { name: string; value: str
       { name: "Eighths", value: "e" },
       { name: "Sixteenths", value: "s" },
       { name: "Long–short–short", value: "q e e" },
+      { name: "Triplets", value: "3e" },
       { name: "Gallop", value: "e. s" },
       { name: "Reverse gallop", value: "s e." },
     ],
@@ -99,7 +100,9 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
       <p class="hint">
         {RHYTHM_NAMES.map(([letter, name], i) => (
           <>{i > 0 ? ", " : ""}<code>{letter}</code>{` ${name}`}</>
-        ))}. Add a dot for dotted: <code>q.</code>
+        ))}. Add a dot for dotted: <code>q.</code> A leading <code>3</code> makes
+        a triplet — <code>3e</code> is three eighths in the time of two, and
+        counts as three notes against the other patterns.
       </p>
     </div>
 
