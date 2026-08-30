@@ -160,7 +160,7 @@ const DEFAULT_LABELS = "both";
     type Key,
     type QuizNote,
   } from "../../music/ear-training/ear-training.ts";
-  import { EarTrainingSynth } from "../../music/ear-training/audio.ts";
+  import { ToneSynth } from "../../music/synth.ts";
 
   const keySelect = document.getElementById("key") as HTMLSelectElement;
   const octaveBoxes = [...document.querySelectorAll<HTMLInputElement>("input[name='octave']")];
@@ -176,7 +176,7 @@ const DEFAULT_LABELS = "both";
   const replayBtn = button("replay-btn");
   const revealBtn = button("reveal-btn");
 
-  const synth = new EarTrainingSynth();
+  const synth = new ToneSynth();
 
   let key: Key = keyBySlug(keySelect.value);
   let pool: QuizNote[] = [];
