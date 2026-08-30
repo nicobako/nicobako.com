@@ -1,0 +1,424 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { DEFAULT_KEY, KEYS, keyBySlug, octaveRange } from "../../music/ear-training/ear-training.ts";
+import {
+  BAR_COUNTS,
+  DEFAULT_BARS,
+  DEFAULT_LEAP,
+  DEFAULT_OCTAVES,
+  LEAPS,
+  OCTAVES,
+} from "../../music/sight-reading/sight-reading.ts";
+
+// The controls are the whole of the page that can be written at build time: the line
+// itself is different every time it is asked for, so it is drawn in the browser and the
+// staff below starts empty. Everything the reader chooses — key, octaves, leap, length —
+// changes which notes the line is drawn from, so each of them draws a new one.
+const defaultKey = keyBySlug(DEFAULT_KEY);
+
+const KEY_GROUPS = [
+  { name: "Major", keys: KEYS.filter((key) => key.mode === "major") },
+  { name: "Minor", keys: KEYS.filter((key) => key.mode === "minor") },
+];
+---
+
+<Layout
+  title="Vocal Sight Reading — Nico Bako"
+  description="Hear a cadence to fix the key, then sing a freshly written line at sight — quarter notes only, in any major or minor key, with the leaps kept as small as you like."
+>
+  <h1 class="no-print">Vocal Sight Reading</h1>
+  <p class="no-print">
+    Play the cadence first — <strong>I – IV – V – I</strong>, major or minor to match
+    the key you chose — which is what tells your ear where <em>Do</em> is. Then sing the
+    line, and only afterwards play it back to see whether you were right.
+  </p>
+  <p class="no-print">
+    Every line is quarter notes and nothing else: the exercise is pitch, not rhythm. It
+    starts on <em>Do</em> and ends on one, so you always know where you began and where
+    you are meant to land. The <strong>largest leap</strong> is the difficulty knob —
+    stepwise is the easiest thing to sing, and the wider you set it the more the line may
+    jump. Small intervals stay the rule at any setting, big ones get rarer the bigger they
+    are, and a leap upward is rarer than the same leap down.
+  </p>
+
+  <form class="settings no-print" id="settings" autocomplete="off">
+    <div class="field">
+      <label for="key">Key</label>
+      <select id="key" name="key">
+        {KEY_GROUPS.map((group) => (
+          <optgroup label={group.name}>
+            {group.keys.map((key) => (
+              <option value={key.slug} selected={key.slug === DEFAULT_KEY}>{key.label}</option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+
+    <fieldset class="field">
+      <legend>Octaves</legend>
+      <div class="checks">
+        {OCTAVES.map((octave) => (
+          <label class="check">
+            <input
+              type="checkbox"
+              name="octave"
+              value={octave}
+              checked={DEFAULT_OCTAVES.includes(octave)}
+            />
+            <span data-octave-range={octave}>{octaveRange(defaultKey, octave)}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <label for="leap">Largest leap</label>
+      <select id="leap" name="leap">
+        {LEAPS.map((leap) => (
+          <option value={leap.steps} selected={leap.steps === DEFAULT_LEAP}>
+            {leap.steps === 1 ? `${leap.name} — steps only` : leap.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="bars">Bars</label>
+      <select id="bars" name="bars">
+        {BAR_COUNTS.map((bars) => (
+          <option value={bars} selected={bars === DEFAULT_BARS}>{bars}</option>
+        ))}
+      </select>
+    </div>
+  </form>
+
+  <div class="transport no-print">
+    <button id="cadence-btn" type="button">Play cadence</button>
+    <button id="new-line-btn" type="button" class="primary">New line</button>
+    <button id="play-btn" type="button">Play the line</button>
+    <button id="print-btn" type="button">Print</button>
+  </div>
+
+  <div class="notation-wrap">
+    <div id="notation" class="notation"></div>
+  </div>
+
+  <p id="status" class="status no-print" aria-live="polite">
+    Play the cadence, then sing the line.
+  </p>
+  <p class="hint no-print">
+    Keyboard: <kbd>C</kbd> cadence, <kbd>N</kbd> new line, <kbd>P</kbd> play it back.
+  </p>
+</Layout>
+
+<script>
+  import abcjs from "abcjs";
+  import {
+    cadenceChords,
+    keyBySlug,
+    octaveRange,
+    type Key,
+  } from "../../music/ear-training/ear-training.ts";
+  import {
+    DEFAULT_OCTAVES,
+    TEMPO,
+    generateMelody,
+    leapBySteps,
+    type Melody,
+  } from "../../music/sight-reading/sight-reading.ts";
+  import { ToneSynth } from "../../music/synth.ts";
+
+  const keySelect = document.getElementById("key") as HTMLSelectElement;
+  const leapSelect = document.getElementById("leap") as HTMLSelectElement;
+  const barsSelect = document.getElementById("bars") as HTMLSelectElement;
+  const octaveBoxes = [...document.querySelectorAll<HTMLInputElement>("input[name='octave']")];
+  const notationEl = document.getElementById("notation") as HTMLElement;
+  const statusEl = document.getElementById("status")!;
+
+  const button = (id: string) => document.getElementById(id) as HTMLButtonElement;
+  const cadenceBtn = button("cadence-btn");
+  const newLineBtn = button("new-line-btn");
+  const playBtn = button("play-btn");
+
+  // The cadence and the line are sung by the same voice as the ear trainer's, rather than
+  // by abcjs's synth: it needs no soundfont from the network, so the page works offline
+  // exactly as it does online. abcjs is here only to draw the staff.
+  const synth = new ToneSynth();
+
+  let key: Key = keyBySlug(keySelect.value);
+  let melody: Melody | null = null;
+
+  /** The twenty-four slugs the `key` parameter is allowed to name. */
+  const KEY_SLUGS = new Set([...keySelect.options].map((option) => option.value));
+
+  function selectedOctaves(): number[] {
+    return octaveBoxes.filter((box) => box.checked).map((box) => Number(box.value));
+  }
+
+  /**
+   * The settings live in the query string, as the ear trainer's and the etude builder's
+   * do: they are four values, so a bookmark is a practice setup. The line itself is not
+   * among them — a fresh one is the point of coming back.
+   */
+  function restoreFromUrl(): void {
+    const params = new URLSearchParams(location.search);
+
+    const wanted = params.get("key");
+    if (wanted && KEY_SLUGS.has(wanted)) keySelect.value = wanted;
+
+    const octaves = params.get("octaves");
+    if (octaves) {
+      const chosen = new Set(octaves.split(","));
+      for (const box of octaveBoxes) box.checked = chosen.has(box.value);
+    }
+
+    const leap = params.get("leap");
+    if (leap) leapSelect.value = String(leapBySteps(Number(leap)).steps);
+
+    const bars = params.get("bars");
+    if (bars && [...barsSelect.options].some((option) => option.value === bars)) {
+      barsSelect.value = bars;
+    }
+  }
+
+  function writeUrl(): void {
+    const url = new URL(location.href);
+    url.search = "";
+    url.searchParams.set("key", keySelect.value);
+    url.searchParams.set("octaves", selectedOctaves().join(","));
+    url.searchParams.set("leap", leapSelect.value);
+    url.searchParams.set("bars", barsSelect.value);
+    history.replaceState(null, "", url);
+  }
+
+  /** Read the settings back out of the form and draw a line from them. */
+  function draw(): void {
+    synth.stop();
+    key = keyBySlug(keySelect.value);
+
+    let octaves = selectedOctaves();
+    if (octaves.length === 0) {
+      // Unchecking the last octave would leave nothing to sing, so it goes back on.
+      const fallback =
+        octaveBoxes.find((box) => Number(box.value) === DEFAULT_OCTAVES[0]) ?? octaveBoxes[0]!;
+      fallback.checked = true;
+      octaves = [Number(fallback.value)];
+    }
+
+    for (const box of octaveBoxes) {
+      const octave = Number(box.value);
+      document.querySelector(`[data-octave-range="${octave}"]`)!.textContent =
+        octaveRange(key, octave);
+    }
+
+    melody = generateMelody(
+      key,
+      octaves,
+      Number(barsSelect.value),
+      leapBySteps(Number(leapSelect.value)).steps,
+    );
+
+    // The line is written on C and transposed into the key, so abcjs spells the key
+    // signature and every note in it — see `sight-reading.ts`. `visualTranspose` moves
+    // the notation only, which is all that is asked of it here: the playback is the
+    // synth's, off the frequencies the generator already worked out.
+    abcjs.renderAbc(notationEl, melody.abc, {
+      responsive: "resize",
+      visualTranspose: melody.transposition,
+    });
+
+    writeUrl();
+  }
+
+  function say(message: string): void {
+    statusEl.textContent = message;
+  }
+
+  cadenceBtn.addEventListener("click", () => {
+    // The cadence is built on the lowest octave in play, but three notes sounding together
+    // that low turn to mud, so it is never voiced below octave 3 even when the line is.
+    const octaves = selectedOctaves().map((octave) => Math.max(3, octave));
+    synth.playChords(cadenceChords(key, octaves), 0.7);
+    say(`That is ${key.label}. Now sing the line.`);
+  });
+
+  newLineBtn.addEventListener("click", () => {
+    draw();
+    say("A new line. Sing it before you play it.");
+  });
+
+  playBtn.addEventListener("click", () => {
+    if (!melody) return;
+    synth.playMelody(melody.freqs, 60 / TEMPO);
+    say("Here it is — how close were you?");
+  });
+
+  document.getElementById("print-btn")!.addEventListener("click", () => {
+    window.print();
+  });
+
+  for (const control of [keySelect, leapSelect, barsSelect, ...octaveBoxes]) {
+    control.addEventListener("change", () => {
+      draw();
+      say(`${key.label}. Play the cadence, then sing the line.`);
+    });
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const target = event.target as HTMLElement | null;
+    if (target && (target.matches("input, select, textarea") || target.isContentEditable)) return;
+
+    const shortcuts: Record<string, HTMLButtonElement> = {
+      c: cadenceBtn,
+      n: newLineBtn,
+      p: playBtn,
+    };
+    const btn = shortcuts[event.key.toLowerCase()];
+    if (btn && !btn.disabled) {
+      event.preventDefault();
+      btn.click();
+    }
+  });
+
+  restoreFromUrl();
+  draw();
+</script>
+
+<style>
+  .settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem 2rem;
+    margin-top: 2rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  .field > label,
+  .field legend {
+    padding: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .field select {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+
+  .checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.1rem;
+  }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  .transport {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.75rem;
+  }
+
+  .transport button {
+    padding: 0.55rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      border-color 0.12s,
+      color 0.12s,
+      background 0.12s;
+  }
+
+  .transport button:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .transport button.primary {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .transport button.primary:hover:not(:disabled) {
+    background: var(--bg);
+    color: var(--accent);
+  }
+
+  /* Wide lines scroll inside the frame rather than shrinking the staff. */
+  .notation-wrap {
+    margin-top: 1.5rem;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* abcjs draws its SVG with `fill`/`stroke` set to `currentColor`, so the notation
+     follows the theme from this one declaration. */
+  .notation {
+    color: var(--text);
+    min-width: max-content;
+  }
+
+  .status {
+    margin: 1.25rem 0 0;
+    min-height: 1.6em;
+    font-size: 1.05rem;
+  }
+
+  .hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  kbd {
+    padding: 0.05rem 0.35rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+  }
+
+  @media print {
+    .notation-wrap {
+      border: none;
+      padding: 0;
+      overflow: visible;
+    }
+  }
+</style>

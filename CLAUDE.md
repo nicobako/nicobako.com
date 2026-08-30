@@ -68,7 +68,7 @@ of presets trades directly against install size. Keep it short and deliberate.
 |---|---|
 | `/` | `src/pages/index.astro` |
 | `/games/`, `/games/classrooms-and-angry-teachers` | `src/pages/games/` |
-| `/music/`, `/music/metronome`, `/music/drone`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/etudes/`, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
+| `/music/`, `/music/metronome`, `/music/drone`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/`, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/printables/`, and the sheets listed below | `src/pages/printables/` |
 | `/offline` | `src/pages/offline.astro` |
@@ -112,8 +112,7 @@ each (`compact`, `compact-2-pages`, …).
 - `src/music/ear-training/` — `ear-training.ts` derives the twenty-four keys from a tonic
   letter plus an accidental plus a mode (so a key is three values, not seven spellings),
   and returns the note pool for the selected octaves and the I–IV–V–I cadence that fixes
-  the key; `audio.ts` is the synth, split from `Drone` because a cadence needs its chords
-  placed on the audio clock rather than held by hand. A key is described as all twelve
+  the key; the voice it speaks with is `src/music/synth.ts`. A key is described as all twelve
   semitones above its tonic, each marked diatonic or not, which is what lets the
   accidentals be a filter over one table rather than a second table: an off-scale note
   carries both of its names (`Di/Ra`, `C♯/D♭`) because either reading of it is right.
@@ -124,6 +123,25 @@ each (`compact`, `compact-2-pages`, …).
   accidentals are in play are attributes (`data-labels`, `data-accidentals`) that CSS
   reads. The settings live in the query string, as in the etude builder, so a bookmark is
   a practice setup.
+- `src/music/synth.ts` — `ToneSynth`, the voice the ear trainer and the vocal sight reader
+  share: single notes, chords, and melodies, all placed on the audio clock rather than held
+  by hand the way `Drone` is (a cadence needs its chords to follow each other to the beat).
+  It sits at the root of `src/music/` rather than inside a feature because two of them need
+  it. Using it, rather than abcjs's synth, is what lets the sight reader sound offline.
+- `src/music/sight-reading/sight-reading.ts` — a fresh singable line, quarter notes only:
+  the rhythm is not a variable because the exercise is pitch. Keys, octaves and the cadence
+  come from the ear trainer; the line is written on C and handed to abcjs with a
+  transposition, exactly as the generated etudes are, so abcjs spells the key signature and
+  picks the accidentals. Two things are worth knowing. The leap limit is measured in
+  *scale steps* against a diatonic index, so it survives a reader picking two octaves with
+  a gap between them, and a leap of n steps is weighted `n^-1.5` — raising the limit widens
+  what can happen without much changing what usually does, and an upward leap is rarer
+  again than the same leap down. And the line must close on the tonic, which the last note
+  cannot decide on its own (with steps only, Fa is three notes from home and no note
+  repeats), so `endings` works the possibilities backwards before a note is drawn and each
+  note is taken only from those that still leave a way home. `vocal-sight-reading.astro`
+  draws the staff with abcjs and nothing else; the settings are in the query string, as
+  the ear trainer's are.
 
 ### Printables subsystem
 
