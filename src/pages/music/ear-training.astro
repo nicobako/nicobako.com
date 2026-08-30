@@ -3,19 +3,22 @@ import Layout from "../../layouts/Layout.astro";
 import {
   DEFAULT_KEY,
   DEFAULT_OCTAVES,
-  DEGREES,
   KEYS,
   OCTAVES,
-  SOLFEGE,
   keyBySlug,
   octaveRange,
 } from "../../music/ear-training/ear-training.ts";
 
-// The page is written for C major and octave 4 — the defaults — and the script rewrites
-// the seven letters and the two octave labels when the reader picks another key. Nothing
-// is built from strings in the browser: the markup below is the whole page, and changing
-// key only changes text inside it.
+// The page is written for C major, octave 4, no accidentals — the defaults — and the
+// script rewrites the twelve labels and the octave ranges when the reader picks another
+// key. Nothing is built from strings in the browser: the markup below is the whole page,
+// and changing key only changes text inside it.
 const defaultKey = keyBySlug(DEFAULT_KEY);
+
+const KEY_GROUPS = [
+  { name: "Major", keys: KEYS.filter((key) => key.mode === "major") },
+  { name: "Minor", keys: KEYS.filter((key) => key.mode === "minor") },
+];
 
 // Which name a degree answers to. Whether you are learning the degrees of a key or the
 // absolute pitches is a real difference in what you are practising, so it is the reader's
@@ -31,25 +34,32 @@ const DEFAULT_LABELS = "both";
 
 <Layout
   title="Ear Training — Nico Bako"
-  description="Hear a cadence to fix the key, then name the note that follows it — by solfège syllable, by letter, or both."
+  description="Hear a cadence to fix the key, then name the note that follows it — by solfège syllable, by letter, or both, in any major or minor key."
 >
   <h1>Ear Training</h1>
   <p>
-    Play the cadence first: <strong>I – IV – V – I</strong> in the key you chose,
-    which is what tells your ear where <em>Do</em> is. Then ask for a note, name it,
-    and check. Every note comes from the key, so there are only seven answers.
+    Play the cadence first — <strong>I – IV – V – I</strong>, major or minor to match
+    the key you chose — which is what tells your ear where <em>Do</em> is. Then ask for
+    a note, name it, and check.
   </p>
   <p>
     Answer with the <strong>solfège</strong> syllable to practise hearing a note's place
     in the key, or with the <strong>letter</strong> to practise naming the pitch itself.
+    Switch <strong>accidentals</strong> on and the questions come from all twelve
+    semitones rather than the seven of the key — an off-scale note answers to two names
+    each way, the degree below it raised or the one above it lowered, and either counts.
   </p>
 
   <form class="settings" id="settings" autocomplete="off">
     <div class="field">
       <label for="key">Key</label>
       <select id="key" name="key">
-        {KEYS.map((key) => (
-          <option value={key.slug} selected={key.slug === DEFAULT_KEY}>{key.name} major</option>
+        {KEY_GROUPS.map((group) => (
+          <optgroup label={group.name}>
+            {group.keys.map((key) => (
+              <option value={key.slug} selected={key.slug === DEFAULT_KEY}>{key.label}</option>
+            ))}
+          </optgroup>
         ))}
       </select>
     </div>
@@ -87,6 +97,16 @@ const DEFAULT_LABELS = "both";
         ))}
       </div>
     </fieldset>
+
+    <fieldset class="field">
+      <legend>Notes</legend>
+      <div class="checks">
+        <label class="check">
+          <input id="accidentals" type="checkbox" />
+          <span>Accidentals</span>
+        </label>
+      </div>
+    </fieldset>
   </form>
 
   <div class="transport">
@@ -100,18 +120,31 @@ const DEFAULT_LABELS = "both";
     Play the cadence to put the key in your ear, then ask for a note.
   </p>
 
-  <div class="answers" id="answers" data-labels={DEFAULT_LABELS} role="group" aria-label="Your answer">
-    {DEGREES.map((degree) => (
-      <button type="button" class="answer" data-degree={degree} disabled>
-        <span class="syllable">{SOLFEGE[degree - 1]}</span>
-        <span class="letter">{defaultKey.degreeNames[degree - 1]}</span>
+  <div
+    class="answers"
+    id="answers"
+    data-labels={DEFAULT_LABELS}
+    data-accidentals="off"
+    role="group"
+    aria-label="Your answer"
+  >
+    {defaultKey.tones.map((tone) => (
+      <button
+        type="button"
+        class="answer"
+        data-offset={tone.offset}
+        data-diatonic={String(tone.diatonic)}
+        disabled
+      >
+        <span class="syllable">{tone.solfege}</span>
+        <span class="letter">{tone.letter}</span>
       </button>
     ))}
   </div>
 
   <p id="score" class="score" aria-live="polite">No guesses yet.</p>
   <p class="hint">
-    Keyboard: <kbd>1</kbd>–<kbd>7</kbd> answer, <kbd>C</kbd> cadence,
+    Keyboard: the number row answers left to right, <kbd>C</kbd> cadence,
     <kbd>N</kbd> new note, <kbd>R</kbd> replay.
   </p>
 </Layout>
@@ -119,11 +152,11 @@ const DEFAULT_LABELS = "both";
 <script>
   import {
     DEFAULT_OCTAVES,
+    cadenceChords,
     keyBySlug,
     notePool,
     octaveRange,
     pickNote,
-    cadenceChords,
     type Key,
     type QuizNote,
   } from "../../music/ear-training/ear-training.ts";
@@ -131,6 +164,7 @@ const DEFAULT_LABELS = "both";
 
   const keySelect = document.getElementById("key") as HTMLSelectElement;
   const octaveBoxes = [...document.querySelectorAll<HTMLInputElement>("input[name='octave']")];
+  const accidentalsBox = document.getElementById("accidentals") as HTMLInputElement;
   const answersEl = document.getElementById("answers") as HTMLElement;
   const answerBtns = [...document.querySelectorAll<HTMLButtonElement>(".answer")];
   const feedbackEl = document.getElementById("feedback")!;
@@ -154,12 +188,12 @@ const DEFAULT_LABELS = "both";
   let asked = 0;
   let right = 0;
 
-  /** The twelve slugs the `key` parameter is allowed to name. */
+  /** The twenty-four slugs the `key` parameter is allowed to name. */
   const KEY_SLUGS = new Set([...keySelect.options].map((option) => option.value));
 
   /**
    * Which control each URL parameter restores. Like the etude builder, the query string
-   * is the whole store: the settings are three values, so a bookmark is a practice setup
+   * is the whole store: the settings are four values, so a bookmark is a practice setup
    * and there is no second copy in localStorage to fall out of step with the page.
    */
   function restoreFromUrl(): void {
@@ -179,6 +213,8 @@ const DEFAULT_LABELS = "both";
       ? document.querySelector<HTMLInputElement>(`input[name='labels'][value='${CSS.escape(labels)}']`)
       : null;
     if (radio) radio.checked = true;
+
+    if (params.has("acc")) accidentalsBox.checked = params.get("acc") === "1";
   }
 
   function writeUrl(): void {
@@ -187,6 +223,7 @@ const DEFAULT_LABELS = "both";
     url.searchParams.set("key", keySelect.value);
     url.searchParams.set("octaves", selectedOctaves().join(","));
     url.searchParams.set("labels", labelMode());
+    if (accidentalsBox.checked) url.searchParams.set("acc", "1");
     history.replaceState(null, "", url);
   }
 
@@ -197,6 +234,12 @@ const DEFAULT_LABELS = "both";
   function labelMode(): string {
     const checked = document.querySelector<HTMLInputElement>("input[name='labels']:checked");
     return checked ? checked.value : "both";
+  }
+
+  /** The buttons on show: the whole octave, or only the notes the key is built from. */
+  function visibleAnswers(): HTMLButtonElement[] {
+    if (accidentalsBox.checked) return answerBtns;
+    return answerBtns.filter((btn) => btn.dataset.diatonic === "true");
   }
 
   /** Read the settings back out of the form and rebuild everything that depends on them. */
@@ -211,12 +254,16 @@ const DEFAULT_LABELS = "both";
       fallback.checked = true;
       octaves = [Number(fallback.value)];
     }
-    pool = notePool(key, octaves);
+    pool = notePool(key, octaves, accidentalsBox.checked);
 
     for (const btn of answerBtns) {
-      const degree = Number(btn.dataset.degree);
-      btn.querySelector(".letter")!.textContent = key.degreeNames[degree - 1]!;
+      const tone = key.tones[Number(btn.dataset.offset)]!;
+      btn.dataset.diatonic = String(tone.diatonic);
+      btn.querySelector(".syllable")!.textContent = tone.solfege;
+      btn.querySelector(".letter")!.textContent = tone.letter;
     }
+    answersEl.dataset.accidentals = accidentalsBox.checked ? "on" : "off";
+
     for (const box of octaveBoxes) {
       const octave = Number(box.value);
       const label = document.querySelector(`[data-octave-range="${octave}"]`)!;
@@ -275,12 +322,16 @@ const DEFAULT_LABELS = "both";
     synth.playNote(note.freq);
   }
 
-  function guess(degree: number): void {
-    if (!current || resolved) return;
-    const btn = answerBtns.find((b) => Number(b.dataset.degree) === degree);
-    if (!btn) return;
+  function answerFor(offset: number): HTMLButtonElement | undefined {
+    return visibleAnswers().find((btn) => Number(btn.dataset.offset) === offset);
+  }
 
-    const correct = degree === current.degree;
+  function guess(offset: number): void {
+    if (!current || resolved) return;
+    const btn = answerFor(offset);
+    if (!btn || btn.disabled) return;
+
+    const correct = offset === current.offset;
     if (!scored) {
       scored = true;
       asked++;
@@ -309,28 +360,43 @@ const DEFAULT_LABELS = "both";
       showScore();
     }
     resolved = true;
-    const answer = answerBtns.find((b) => Number(b.dataset.degree) === current!.degree)!;
-    answer.classList.remove("wrong");
-    answer.classList.add("correct");
+    const answer = answerFor(current.offset);
+    if (answer) {
+      answer.classList.remove("wrong");
+      answer.classList.add("correct");
+    }
     for (const btn of answerBtns) btn.disabled = true;
     revealBtn.disabled = true;
     feedbackEl.textContent = `It was ${describe(current)}.`;
   }
 
-  keySelect.addEventListener("change", () => {
+  /**
+   * A change to what can be played starts a fresh session: a score spanning two keys says
+   * nothing. The message is a function so it is worded from the settings as they now are.
+   */
+  function settingsChanged(message: () => string): void {
     applySettings();
-    // A score mixing two keys says nothing, so a change of key starts a fresh session.
     resetScore();
-    clearQuestion(`${key.name} major. Play the cadence, then ask for a note.`);
+    clearQuestion(message());
+  }
+
+  keySelect.addEventListener("change", () => {
+    settingsChanged(() => `${key.label}. Play the cadence, then ask for a note.`);
   });
 
   for (const box of octaveBoxes) {
     box.addEventListener("change", () => {
-      applySettings();
-      resetScore();
-      clearQuestion("Octaves changed. Ask for a note when you are ready.");
+      settingsChanged(() => "Octaves changed. Ask for a note when you are ready.");
     });
   }
+
+  accidentalsBox.addEventListener("change", () => {
+    settingsChanged(() =>
+      accidentalsBox.checked
+        ? "All twelve semitones are in play now."
+        : "Back to the notes of the key.",
+    );
+  });
 
   for (const radio of document.querySelectorAll<HTMLInputElement>("input[name='labels']")) {
     radio.addEventListener("change", () => {
@@ -341,7 +407,7 @@ const DEFAULT_LABELS = "both";
 
   cadenceBtn.addEventListener("click", () => {
     synth.playChords(cadenceChords(key, selectedOctaves()), 0.7);
-    if (!current) feedbackEl.textContent = `That is ${key.name} major. Now ask for a note.`;
+    if (!current) feedbackEl.textContent = `That is ${key.label}. Now ask for a note.`;
   });
 
   newNoteBtn.addEventListener("click", newQuestion);
@@ -351,20 +417,31 @@ const DEFAULT_LABELS = "both";
   revealBtn.addEventListener("click", reveal);
 
   for (const btn of answerBtns) {
-    btn.addEventListener("click", () => guess(Number(btn.dataset.degree)));
+    btn.addEventListener("click", () => guess(Number(btn.dataset.offset)));
   }
+
+  /**
+   * The number row answers left to right, so the same keys work whether there are seven
+   * buttons on show or twelve — a fixed key per scale degree would leave the accidentals
+   * unreachable.
+   */
+  const KEYBOARD_ORDER = "1234567890-=";
 
   document.addEventListener("keydown", (event) => {
     if (event.metaKey || event.ctrlKey || event.altKey) return;
     const target = event.target as HTMLElement | null;
     if (target && (target.matches("input, select, textarea") || target.isContentEditable)) return;
 
-    const degree = Number(event.key);
-    if (degree >= 1 && degree <= 7) {
-      event.preventDefault();
-      guess(degree);
+    const position = KEYBOARD_ORDER.indexOf(event.key);
+    if (position >= 0) {
+      const btn = visibleAnswers()[position];
+      if (btn) {
+        event.preventDefault();
+        guess(Number(btn.dataset.offset));
+      }
       return;
     }
+
     const shortcuts: Record<string, HTMLButtonElement> = {
       c: cadenceBtn,
       n: newNoteBtn,
@@ -486,7 +563,7 @@ const DEFAULT_LABELS = "both";
 
   .answers {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(5.25rem, 1fr));
     gap: 0.6rem;
     margin-top: 0.75rem;
   }
@@ -496,7 +573,7 @@ const DEFAULT_LABELS = "both";
     flex-direction: column;
     align-items: center;
     gap: 0.1rem;
-    padding: 0.7rem 0.4rem;
+    padding: 0.7rem 0.3rem;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--surface);
@@ -508,15 +585,27 @@ const DEFAULT_LABELS = "both";
       color 0.12s;
   }
 
+  /* A note from outside the key is drawn as one, so the seven of the key still read as
+     the frame the others hang off. */
+  .answer[data-diatonic="false"] {
+    border-style: dashed;
+  }
+
+  /* Whether the accidentals are in play changes which buttons are on show, not what they
+     say, so it is an attribute the CSS reads rather than a rebuild. */
+  .answers[data-accidentals="off"] .answer[data-diatonic="false"] {
+    display: none;
+  }
+
   .answer .syllable {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 600;
     line-height: 1.2;
   }
 
   .answer .letter {
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--muted);
     line-height: 1.2;
   }
@@ -529,7 +618,7 @@ const DEFAULT_LABELS = "both";
   }
 
   .answers[data-labels="letters"] .letter {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: var(--text);
   }
