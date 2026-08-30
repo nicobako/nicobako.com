@@ -68,7 +68,7 @@ of presets trades directly against install size. Keep it short and deliberate.
 |---|---|
 | `/` | `src/pages/index.astro` |
 | `/games/`, `/games/classrooms-and-angry-teachers` | `src/pages/games/` |
-| `/music/`, `/music/metronome`, `/music/drone`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
+| `/music/`, `/music/metronome`, `/music/drone`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/etudes/`, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/printables/`, and the sheets listed below | `src/pages/printables/` |
 | `/offline` | `src/pages/offline.astro` |
@@ -109,6 +109,16 @@ each (`compact`, `compact-2-pages`, …).
   Playback fetches soundfonts from abcjs's CDN at first Play, so it is the one part of the
   site that needs the network even though the page itself is precached.
 - `src/music/circle-of-fifths/circle.ts` — the twelve keys plus the wheel's SVG geometry, all resolved at build time into `SEGMENTS`. The page maps that to static SVG and ships **no** JavaScript: each wedge is an `<a href="#key-N">` and the matching panel is revealed by `:target`.
+- `src/music/ear-training/` — `ear-training.ts` derives the twelve major keys from a tonic
+  letter plus an accidental (so a key is two numbers, not seven spellings), and returns the
+  note pool for the selected octaves and the I–IV–V–I cadence that fixes the key; `audio.ts`
+  is the synth, split from `Drone` because a cadence needs its chords placed on the audio
+  clock rather than held by hand. Its tables are the only ones under `src/music/` that also
+  reach the browser rather than resolving at build time: the reader changes key while
+  listening, so the pool and the answer labels are rebuilt there. Only *text* is rebuilt —
+  the seven answer buttons are written as markup once, and the solfège/letter choice is a
+  `data-labels` attribute that CSS reads rather than a rebuild. The settings
+  live in the query string, as in the etude builder, so a bookmark is a practice setup.
 
 ### Printables subsystem
 
