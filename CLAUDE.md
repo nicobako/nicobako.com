@@ -133,7 +133,12 @@ each (`compact`, `compact-2-pages`, …).
   are written as markup once, and both the solfège/letter choice and whether the
   accidentals are in play are attributes (`data-labels`, `data-accidentals`) that CSS
   reads. The settings live in the query string, as in the etude builder, so a bookmark is
-  a practice setup.
+  a practice setup. Auto-play is the same round the buttons play, on a timer: each part is
+  scheduled from the length of the one before it, which the synth reports, so `setTimeout`
+  only ever waits out silence while the audio inside a part stays on the audio clock. It
+  answers by ear rather than on screen — `answerRun` climbs the notes in play from the
+  tonic up to the question, so counting `Do Re Mi Fa` names it without looking — and holds
+  a screen wake lock while it runs, since the point of it is practising away from a screen.
 - `src/music/synth.ts` — `ToneSynth`, the voice the ear trainer and the vocal sight reader
   share: single notes, chords, and melodies, all placed on the audio clock rather than held
   by hand the way `Drone` is (a cadence needs its chords to follow each other to the beat).

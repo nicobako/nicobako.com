@@ -3,8 +3,10 @@ import Layout from "../../layouts/Layout.astro";
 import {
   DEFAULT_KEY,
   DEFAULT_OCTAVES,
+  DEFAULT_THINKING,
   KEYS,
   OCTAVES,
+  THINKING_TIMES,
   keyBySlug,
   octaveRange,
 } from "../../music/ear-training/ear-training.ts";
@@ -48,6 +50,13 @@ const DEFAULT_LABELS = "both";
     Switch <strong>accidentals</strong> on and the questions come from all twelve
     semitones rather than the seven of the key — an off-scale note answers to two names
     each way, the degree below it raised or the one above it lowered, and either counts.
+  </p>
+  <p>
+    <strong>Auto-play</strong> runs the whole thing hands-free, for practising somewhere
+    you cannot look at a screen. It plays the cadence, plays a note, waits while you name
+    it, and then answers out loud the only way sound can: it climbs the scale from the
+    tonic up to the note, so a run of <em>Do Re Mi Fa</em> tells you the note was
+    <em>Fa</em>. Then it asks the next one.
   </p>
 
   <form class="settings" id="settings" autocomplete="off">
@@ -107,9 +116,19 @@ const DEFAULT_LABELS = "both";
         </label>
       </div>
     </fieldset>
+
+    <div class="field">
+      <label for="thinking">Thinking time</label>
+      <select id="thinking" name="thinking">
+        {THINKING_TIMES.map((seconds) => (
+          <option value={seconds} selected={seconds === DEFAULT_THINKING}>{seconds} seconds</option>
+        ))}
+      </select>
+    </div>
   </form>
 
   <div class="transport">
+    <button id="auto-btn" type="button" class="toggle" aria-pressed="false">Auto-play</button>
     <button id="cadence-btn" type="button">Play cadence</button>
     <button id="new-note-btn" type="button" class="primary">New note</button>
     <button id="replay-btn" type="button" disabled>Replay</button>
@@ -144,14 +163,15 @@ const DEFAULT_LABELS = "both";
 
   <p id="score" class="score" aria-live="polite">No guesses yet.</p>
   <p class="hint">
-    Keyboard: the number row answers left to right, <kbd>C</kbd> cadence,
-    <kbd>N</kbd> new note, <kbd>R</kbd> replay.
+    Keyboard: the number row answers left to right, <kbd>A</kbd> auto-play,
+    <kbd>C</kbd> cadence, <kbd>N</kbd> new note, <kbd>R</kbd> replay.
   </p>
 </Layout>
 
 <script>
   import {
     DEFAULT_OCTAVES,
+    answerRun,
     cadenceChords,
     keyBySlug,
     notePool,
@@ -165,12 +185,14 @@ const DEFAULT_LABELS = "both";
   const keySelect = document.getElementById("key") as HTMLSelectElement;
   const octaveBoxes = [...document.querySelectorAll<HTMLInputElement>("input[name='octave']")];
   const accidentalsBox = document.getElementById("accidentals") as HTMLInputElement;
+  const thinkingSelect = document.getElementById("thinking") as HTMLSelectElement;
   const answersEl = document.getElementById("answers") as HTMLElement;
   const answerBtns = [...document.querySelectorAll<HTMLButtonElement>(".answer")];
   const feedbackEl = document.getElementById("feedback")!;
   const scoreEl = document.getElementById("score")!;
 
   const button = (id: string) => document.getElementById(id) as HTMLButtonElement;
+  const autoBtn = button("auto-btn");
   const cadenceBtn = button("cadence-btn");
   const newNoteBtn = button("new-note-btn");
   const replayBtn = button("replay-btn");
@@ -178,9 +200,15 @@ const DEFAULT_LABELS = "both";
 
   const synth = new ToneSynth();
 
+  /** How long one note of an answer run lasts, and the silence between parts of a round. */
+  const RUN_STEP = 0.32;
+  const GAP = 0.6;
+
   let key: Key = keyBySlug(keySelect.value);
   let pool: QuizNote[] = [];
   let current: QuizNote | null = null;
+  /** The last note asked, kept past the end of its question so the next one differs. */
+  let previous: QuizNote | null = null;
   /** The question has been counted — the first guess is in, or the answer was revealed. */
   let scored = false;
   /** The answer is known, so the buttons are done taking guesses. */
@@ -215,6 +243,11 @@ const DEFAULT_LABELS = "both";
     if (radio) radio.checked = true;
 
     if (params.has("acc")) accidentalsBox.checked = params.get("acc") === "1";
+
+    const thinking = params.get("think");
+    if (thinking && [...thinkingSelect.options].some((option) => option.value === thinking)) {
+      thinkingSelect.value = thinking;
+    }
   }
 
   function writeUrl(): void {
@@ -224,6 +257,7 @@ const DEFAULT_LABELS = "both";
     url.searchParams.set("octaves", selectedOctaves().join(","));
     url.searchParams.set("labels", labelMode());
     if (accidentalsBox.checked) url.searchParams.set("acc", "1");
+    url.searchParams.set("think", thinkingSelect.value);
     history.replaceState(null, "", url);
   }
 
@@ -306,9 +340,11 @@ const DEFAULT_LABELS = "both";
       asked === 0 ? "No guesses yet." : `${right} of ${asked} named on the first guess.`;
   }
 
-  function newQuestion(): void {
-    const note = pickNote(pool, current);
-    if (!note) return;
+  /** Ask one. Returns how long the note sounds for, in seconds. */
+  function newQuestion(): number {
+    const note = pickNote(pool, previous);
+    if (!note) return 0;
+    previous = note;
     current = note;
     scored = false;
     resolved = false;
@@ -319,7 +355,7 @@ const DEFAULT_LABELS = "both";
     replayBtn.disabled = false;
     revealBtn.disabled = false;
     feedbackEl.textContent = "Listening — which note is it?";
-    synth.playNote(note.freq);
+    return synth.playNote(note.freq);
   }
 
   function answerFor(offset: number): HTMLButtonElement | undefined {
@@ -352,9 +388,15 @@ const DEFAULT_LABELS = "both";
     }
   }
 
-  function reveal(): void {
-    if (!current || resolved) return;
-    if (!scored) {
+  /**
+   * Give the answer, on the page and out loud: the scale climbed from the tonic up to the
+   * note, which is the only way to name a note to someone who cannot look at a screen.
+   * Returns how long that run takes. Asking to be told counts as a miss; the auto-play
+   * loop running out of patience does not, since nobody may have been listening.
+   */
+  function reveal(count: boolean): number {
+    if (!current || resolved) return 0;
+    if (count && !scored) {
       scored = true;
       asked++;
       showScore();
@@ -368,6 +410,7 @@ const DEFAULT_LABELS = "both";
     for (const btn of answerBtns) btn.disabled = true;
     revealBtn.disabled = true;
     feedbackEl.textContent = `It was ${describe(current)}.`;
+    return synth.playMelody(answerRun(key, current, accidentalsBox.checked), RUN_STEP);
   }
 
   /**
@@ -375,8 +418,10 @@ const DEFAULT_LABELS = "both";
    * nothing. The message is a function so it is worded from the settings as they now are.
    */
   function settingsChanged(message: () => string): void {
+    setAuto(false);
     applySettings();
     resetScore();
+    previous = null;
     clearQuestion(message());
   }
 
@@ -405,6 +450,89 @@ const DEFAULT_LABELS = "both";
     });
   }
 
+  thinkingSelect.addEventListener("change", writeUrl);
+
+  /* ------------------------------------------------------------------ *
+   * Auto-play: the same round the buttons play, on a timer
+   * ------------------------------------------------------------------ */
+
+  let autoRunning = false;
+  let autoTimer: number | null = null;
+
+  /**
+   * Each part of a round is scheduled from the length of the one before it, which the
+   * synth reports, so the timer only ever waits for silence. The audio inside a part is
+   * still placed on the audio clock; `setTimeout` is only deciding when the next part
+   * begins, and is allowed to be a few milliseconds late about it.
+   */
+  function later(seconds: number, next: () => void): void {
+    autoTimer = window.setTimeout(() => {
+      if (autoRunning) next();
+    }, seconds * 1000);
+  }
+
+  function autoRound(): void {
+    if (!autoRunning) return;
+    clearQuestion(`${key.label} — here is the cadence.`);
+    const cadence = synth.playChords(cadenceChords(key, selectedOctaves()), 0.7);
+    later(cadence + GAP, () => {
+      const note = newQuestion();
+      later(note + Number(thinkingSelect.value), () => {
+        // A question already answered needs no run; the round just moves on.
+        later(reveal(false) + GAP, autoRound);
+      });
+    });
+  }
+
+  /**
+   * A screen wake lock, so a phone left running in a car does not lock itself and take
+   * the audio with it. Browsers may refuse it or not have it at all, which is fine — the
+   * loop runs either way — and it is dropped as soon as auto-play stops.
+   */
+  let wakeLock: WakeLockSentinel | null = null;
+
+  async function keepAwake(on: boolean): Promise<void> {
+    try {
+      if (on) {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => {
+          wakeLock = null;
+        });
+      } else if (wakeLock) {
+        await wakeLock.release();
+        wakeLock = null;
+      }
+    } catch {
+      wakeLock = null;
+    }
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    // A lock is lost whenever the page is hidden, so it has to be taken again on return.
+    if (autoRunning && !wakeLock && document.visibilityState === "visible") void keepAwake(true);
+  });
+
+  function setAuto(on: boolean): void {
+    if (on === autoRunning) return;
+    autoRunning = on;
+    autoBtn.classList.toggle("active", on);
+    autoBtn.setAttribute("aria-pressed", String(on));
+    autoBtn.textContent = on ? "Stop" : "Auto-play";
+    cadenceBtn.disabled = on;
+    newNoteBtn.disabled = on;
+    void keepAwake(on);
+
+    if (on) {
+      autoRound();
+      return;
+    }
+    if (autoTimer !== null) clearTimeout(autoTimer);
+    autoTimer = null;
+    clearQuestion("Stopped.");
+  }
+
+  autoBtn.addEventListener("click", () => setAuto(!autoRunning));
+
   cadenceBtn.addEventListener("click", () => {
     synth.playChords(cadenceChords(key, selectedOctaves()), 0.7);
     if (!current) feedbackEl.textContent = `That is ${key.label}. Now ask for a note.`;
@@ -414,7 +542,7 @@ const DEFAULT_LABELS = "both";
   replayBtn.addEventListener("click", () => {
     if (current) synth.playNote(current.freq);
   });
-  revealBtn.addEventListener("click", reveal);
+  revealBtn.addEventListener("click", () => reveal(true));
 
   for (const btn of answerBtns) {
     btn.addEventListener("click", () => guess(Number(btn.dataset.offset)));
@@ -443,6 +571,7 @@ const DEFAULT_LABELS = "both";
     }
 
     const shortcuts: Record<string, HTMLButtonElement> = {
+      a: autoBtn,
       c: cadenceBtn,
       n: newNoteBtn,
       r: replayBtn,
@@ -537,6 +666,16 @@ const DEFAULT_LABELS = "both";
   .transport button:hover:not(:disabled) {
     border-color: var(--accent);
     color: var(--accent);
+  }
+
+  .transport button.toggle {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .transport button.toggle.active {
+    background: var(--accent);
+    color: var(--accent-text);
   }
 
   .transport button.primary {

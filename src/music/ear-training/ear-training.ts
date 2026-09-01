@@ -222,9 +222,11 @@ export interface QuizNote {
   name: string;
   midi: number;
   freq: number;
+  /** The tonic this note was counted up from, which is where its answer run starts. */
+  runFrom: number;
 }
 
-function quizNote(tone: Tone, midi: number): QuizNote {
+function quizNote(tone: Tone, tonic: number, midi: number): QuizNote {
   // The sounding octave is read back off the MIDI number rather than assumed, because a
   // degree can sit an octave above its tonic: in A major the third of octave 4 is C♯5.
   const octave = Math.floor(midi / 12) - 1;
@@ -239,6 +241,7 @@ function quizNote(tone: Tone, midi: number): QuizNote {
       .join("/"),
     midi,
     freq: midiToFreq(midi),
+    runFrom: tonic,
   };
 }
 
@@ -255,11 +258,35 @@ export function notePool(key: Key, octaves: number[], accidentals: boolean): Qui
   const tones = accidentals ? key.tones : key.tones.filter((tone) => tone.diatonic);
   const notes: QuizNote[] = [];
   for (const octave of selected) {
-    for (const tone of tones) notes.push(quizNote(tone, tonicMidi(key, octave) + tone.offset));
+    const tonic = tonicMidi(key, octave);
+    for (const tone of tones) notes.push(quizNote(tone, tonic, tonic + tone.offset));
   }
-  notes.push(quizNote(key.tones[0]!, tonicMidi(key, selected[selected.length - 1]! + 1)));
+  // The closing tonic is counted from the octave below it, so its run is the whole scale
+  // rather than the single note that saying "it is the tonic" twice would come to.
+  const top = tonicMidi(key, selected[selected.length - 1]!);
+  notes.push(quizNote(key.tones[0]!, top, top + 12));
   return notes;
 }
+
+/**
+ * How the answer is given without words: the notes in play, climbed from the tonic up to
+ * the answer, which lands on it. Counting `Do Re Mi Fa` names the fourth degree without
+ * anyone having to look at a screen — and because the run steps through exactly the notes
+ * a question can be drawn from, its length is the answer's place in the row of buttons.
+ */
+export function answerRun(key: Key, note: QuizNote, accidentals: boolean): number[] {
+  const tones = accidentals ? key.tones : key.tones.filter((tone) => tone.diatonic);
+  const midis = tones
+    .map((tone) => note.runFrom + tone.offset)
+    .filter((midi) => midi <= note.midi);
+  if (midis[midis.length - 1] !== note.midi) midis.push(note.midi);
+  return midis.map(midiToFreq);
+}
+
+/** How long the listener is given to name the note, in seconds, in auto-play. */
+export const THINKING_TIMES = [3, 5, 8, 12] as const;
+
+export const DEFAULT_THINKING = 5;
 
 /** The bottom and top of an octave, for the label beside its checkbox — `C4–C5`. */
 export function octaveRange(key: Key, octave: number): string {
