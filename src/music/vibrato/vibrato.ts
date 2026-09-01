@@ -49,14 +49,16 @@ export interface Width {
  * A half step is 100 cents, and that is as wide as vibrato ever sensibly gets: on F it
  * reaches all the way down to E. Halving from there gives a quarter tone, and the narrow
  * end is where most playing actually sits — a normal singing vibrato is a few tens of
- * cents, not a semitone.
+ * cents, not a semitone. The wide end is spaced more finely than the narrow one because
+ * that is where the extremes live and where the difference between them is worth hearing.
  */
 export const WIDTHS: readonly Width[] = [
   { cents: 10, name: "Very narrow", gloss: "a tenth of a half step" },
   { cents: 20, name: "Narrow", gloss: "a fifth of a half step" },
   { cents: 35, name: "Medium", gloss: "about a third of a half step" },
   { cents: 50, name: "Wide", gloss: "a quarter tone — half of a half step" },
-  { cents: 100, name: "Very wide", gloss: "a whole half step, down to the note below" },
+  { cents: 75, name: "Very wide", gloss: "three quarters of a half step" },
+  { cents: 100, name: "Extremely wide", gloss: "a whole half step, down to the note below" },
 ];
 
 /** Moderate speed and medium width — recognisably vibrato, and neither extreme. */
