@@ -68,7 +68,7 @@ of presets trades directly against install size. Keep it short and deliberate.
 |---|---|
 | `/` | `src/pages/index.astro` |
 | `/games/`, `/games/classrooms-and-angry-teachers` | `src/pages/games/` |
-| `/music/`, `/music/metronome`, `/music/drone`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/`, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
+| `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/`, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/printables/`, and the sheets listed below | `src/pages/printables/` |
 | `/offline` | `src/pages/offline.astro` |
@@ -96,6 +96,17 @@ each (`compact`, `compact-2-pages`, …).
 
 - `src/music/metronome/metronome.ts` — `Metronome` class using the Web Audio API scheduler (look-ahead scheduling with `setInterval`). Accepts a `skipPercent` to randomly drop beats. Mounted by `metronome.astro`.
 - `src/music/drone/drone.ts` — `Drone` class and `NOTES` array (one octave C4–C5). Supports one-shot `pluck()` and sustained `startNote`/`stopNote`. Mounted by `drone.astro`, which also computes piano key layout in its frontmatter. The piano key colours are hardcoded (not CSS tokens) because the visual realism requires fixed white/black key colours regardless of theme.
+- `src/music/vibrato/vibrato.ts` — `Vibrato`, a sustained tone whose pitch swings *below*
+  the note and back up to it, plus the `SPEEDS` and `WIDTHS` preset tables. The note is the
+  ceiling of the swing rather than its centre, which is what vibrato actually is, so the
+  modulation is two nodes and not one: a sine LFO scaled to half the width plus a constant
+  offset of *minus* half the width, summed into `detune` so the swing lands in
+  `[-width, 0]` cents. Width is in cents for the same reason a finger's travel is a
+  distance: it means the same thing on every note. `vibrato.astro` builds its note buttons
+  at build time from `pitch.ts`, so the tables that reach the browser are only the two
+  preset lists; the pitch gauge is a CSS animation over two custom properties (`--cents`,
+  `--period`) rather than anything drawn per frame. Settings live in the query string, as
+  the ear trainer's do.
 - `src/music/violin/scales.ts` — the Carl Flesch fingering tables. Reference data only; `violin-3-octave-fingerings.astro` is a pure template over it.
 - `src/music/abc-track/abc-track.ts` — mounting logic for `components/AbcTrack.astro`, one
   self-contained tune: SVG notation plus abcjs's playback widget. Its only props are

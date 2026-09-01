@@ -1,0 +1,547 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { pitchesInRange } from "../../music/pitch.ts";
+import {
+  DEFAULT_SPEED,
+  DEFAULT_WIDTH,
+  SPEEDS,
+  WIDTHS,
+} from "../../music/vibrato/vibrato.ts";
+
+// Two octaves from the violin's bottom string up, which is where vibrato is actually
+// practised. The spelling is written in ASCII so the slugs stay URL-safe — the query
+// string carries one — and the labels are prettified for display.
+const SPELLING = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+const G3 = -5;
+const G5 = 19;
+
+const pretty = (name: string) => name.replace("#", "♯").replace("b", "♭");
+
+const NOTES = pitchesInRange(SPELLING, G3, G5).map((pitch) => ({
+  ...pitch,
+  label: pretty(pitch.name),
+  // A4 = 440 Hz, and middle C is nine semitones below it.
+  freq: 440 * Math.pow(2, (pitch.semitonesFromC4 - 9) / 12),
+  isNatural: !pitch.name.includes("#") && !pitch.name.includes("b"),
+}));
+
+const DEFAULT_NOTE = "a4";
+const defaultNote = NOTES.find((note) => note.slug === DEFAULT_NOTE)!;
+const defaultSpeed = SPEEDS[DEFAULT_SPEED]!;
+const defaultWidth = WIDTHS[DEFAULT_WIDTH]!;
+---
+
+<Layout
+  title="Vibrato — Nico Bako"
+  description="Hear vibrato at any speed and width: the note is the top of the swing, and the pitch rolls below it and back."
+>
+  <h1>Vibrato</h1>
+  <p>
+    Vibrato swings the pitch <strong>below</strong> the note and back up to it — it never
+    goes above. The note you are playing is the ceiling of the swing, which is why a
+    rolled-back finger still sounds in tune: the ear takes the top of each cycle as the
+    pitch. Switch the vibrato off while a note is sounding and you will hear that the
+    steady tone matches the top, not the middle.
+  </p>
+  <p>
+    Two things vary. <strong>Speed</strong> is how many oscillations happen per second —
+    around four is slow, around eight is fast, and everything worth playing is in between.
+    <strong>Width</strong> is how far below the note each swing reaches, measured in cents
+    (a half step is 100). A very wide vibrato on F really does dip all the way to E; most
+    playing lives nearer a fifth of that.
+  </p>
+
+  <fieldset class="notes" id="notes">
+    <legend>Note</legend>
+    <div class="note-grid">
+      {NOTES.map((note) => (
+        <button
+          type="button"
+          class="note"
+          data-slug={note.slug}
+          data-label={note.label}
+          data-freq={String(note.freq)}
+          data-natural={String(note.isNatural)}
+          aria-pressed={note.slug === DEFAULT_NOTE ? "true" : "false"}
+        >
+          {note.label}
+        </button>
+      ))}
+    </div>
+  </fieldset>
+
+  <div class="gauge-row">
+    <div class="gauge-col">
+      <div
+        class="gauge"
+        id="gauge"
+        style={`--cents: ${defaultWidth.cents}; --period: ${(1 / (2 * defaultSpeed.hz)).toFixed(4)}s;`}
+        aria-hidden="true"
+      >
+        <div class="track">
+          <div class="line ceiling"></div>
+          <div class="line floor"></div>
+          <div class="marker"></div>
+        </div>
+        <div class="gauge-labels">
+          <span class="gauge-label ceiling-label" id="ceiling-label">{defaultNote.label}</span>
+          <span class="gauge-label floor-label" id="floor-label">−{defaultWidth.cents} ¢</span>
+        </div>
+      </div>
+      <p class="gauge-caption">
+        Drawn to scale over a half step: the note on top, the swing hanging below it.
+      </p>
+    </div>
+
+    <div class="controls">
+      <div class="control">
+        <div class="control-head">
+          <label for="speed">Speed</label>
+          <span class="value" id="speed-value">
+            {defaultSpeed.name} — {defaultSpeed.hz} per second
+          </span>
+        </div>
+        <input
+          id="speed"
+          type="range"
+          min="0"
+          max={SPEEDS.length - 1}
+          step="1"
+          value={DEFAULT_SPEED}
+        />
+        <div class="ticks">
+          {SPEEDS.map((speed) => <span>{speed.hz}</span>)}
+        </div>
+      </div>
+
+      <div class="control">
+        <div class="control-head">
+          <label for="width">Width</label>
+          <span class="value" id="width-value">
+            {defaultWidth.name} — {defaultWidth.cents} ¢, {defaultWidth.gloss}
+          </span>
+        </div>
+        <input
+          id="width"
+          type="range"
+          min="0"
+          max={WIDTHS.length - 1}
+          step="1"
+          value={DEFAULT_WIDTH}
+        />
+        <div class="ticks">
+          {WIDTHS.map((width) => <span>{width.cents}</span>)}
+        </div>
+      </div>
+
+      <div class="transport">
+        <button id="play-stop" class="play-stop" type="button">Play</button>
+        <button id="vibrato-toggle" class="toggle active" type="button" aria-pressed="true">
+          Vibrato: on
+        </button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { SPEEDS, WIDTHS, Vibrato } from "../../music/vibrato/vibrato.ts";
+
+  const noteBtns = [...document.querySelectorAll<HTMLButtonElement>(".note")];
+  const speedInput = document.getElementById("speed") as HTMLInputElement;
+  const widthInput = document.getElementById("width") as HTMLInputElement;
+  const speedValue = document.getElementById("speed-value")!;
+  const widthValue = document.getElementById("width-value")!;
+  const gauge = document.getElementById("gauge")!;
+  const ceilingLabel = document.getElementById("ceiling-label")!;
+  const floorLabel = document.getElementById("floor-label")!;
+  const playBtn = document.getElementById("play-stop") as HTMLButtonElement;
+  const vibratoBtn = document.getElementById("vibrato-toggle") as HTMLButtonElement;
+
+  const vibrato = new Vibrato();
+  let note = noteBtns.find((btn) => btn.getAttribute("aria-pressed") === "true") ?? noteBtns[0]!;
+
+  const speed = () => SPEEDS[Number(speedInput.value)]!;
+  const width = () => WIDTHS[Number(widthInput.value)]!;
+  const vibratoOn = () => vibratoBtn.getAttribute("aria-pressed") === "true";
+
+  /**
+   * The settings are three values, so the query string is the whole store — a bookmark is
+   * a vibrato, the way it is a practice setup on the ear trainer.
+   */
+  function restoreFromUrl(): void {
+    const params = new URLSearchParams(location.search);
+
+    const wanted = params.get("note");
+    const btn = wanted ? noteBtns.find((candidate) => candidate.dataset.slug === wanted) : null;
+    if (btn) note = btn;
+
+    const speedIndex = SPEEDS.findIndex((entry) => String(entry.hz) === params.get("speed"));
+    if (speedIndex >= 0) speedInput.value = String(speedIndex);
+
+    const widthIndex = WIDTHS.findIndex((entry) => String(entry.cents) === params.get("width"));
+    if (widthIndex >= 0) widthInput.value = String(widthIndex);
+
+    if (params.get("vibrato") === "off") setVibrato(false);
+  }
+
+  function writeUrl(): void {
+    const url = new URL(location.href);
+    url.search = "";
+    url.searchParams.set("note", note.dataset.slug!);
+    url.searchParams.set("speed", String(speed().hz));
+    url.searchParams.set("width", String(width().cents));
+    if (!vibratoOn()) url.searchParams.set("vibrato", "off");
+    history.replaceState(null, "", url);
+  }
+
+  /**
+   * The gauge is two custom properties and nothing else: how far the swing travels and
+   * how long half a cycle takes. CSS animates the marker between them, so the drawing
+   * follows the sliders without any per-frame work here.
+   */
+  function drawGauge(): void {
+    const cents = vibratoOn() ? width().cents : 0;
+    gauge.style.setProperty("--cents", String(cents));
+    gauge.style.setProperty("--period", `${(1 / (2 * speed().hz)).toFixed(4)}s`);
+    ceilingLabel.textContent = note.dataset.label!;
+    floorLabel.textContent = cents === 0 ? "steady" : `−${cents} ¢`;
+  }
+
+  function showSpeed(): void {
+    const { name, hz } = speed();
+    speedValue.textContent = `${name} — ${hz} per second`;
+    speedInput.setAttribute("aria-valuetext", `${name}, ${hz} oscillations per second`);
+  }
+
+  function showWidth(): void {
+    const { name, cents, gloss } = width();
+    widthValue.textContent = `${name} — ${cents} ¢, ${gloss}`;
+    widthInput.setAttribute("aria-valuetext", `${name}, ${cents} cents below the note`);
+  }
+
+  function setVibrato(on: boolean): void {
+    vibratoBtn.setAttribute("aria-pressed", String(on));
+    vibratoBtn.classList.toggle("active", on);
+    vibratoBtn.textContent = on ? "Vibrato: on" : "Vibrato: off";
+    vibrato.setVibrato(on);
+  }
+
+  function selectNote(btn: HTMLButtonElement): void {
+    note.setAttribute("aria-pressed", "false");
+    note = btn;
+    note.setAttribute("aria-pressed", "true");
+    vibrato.setNote(Number(note.dataset.freq));
+    drawGauge();
+    writeUrl();
+  }
+
+  for (const btn of noteBtns) {
+    btn.addEventListener("click", () => selectNote(btn));
+  }
+
+  speedInput.addEventListener("input", () => {
+    vibrato.setSpeed(speed().hz);
+    showSpeed();
+    drawGauge();
+    writeUrl();
+  });
+
+  widthInput.addEventListener("input", () => {
+    vibrato.setWidth(width().cents);
+    showWidth();
+    drawGauge();
+    writeUrl();
+  });
+
+  vibratoBtn.addEventListener("click", () => {
+    setVibrato(!vibratoOn());
+    drawGauge();
+    writeUrl();
+  });
+
+  playBtn.addEventListener("click", () => {
+    if (vibrato.isPlaying) {
+      vibrato.stop();
+      playBtn.textContent = "Play";
+      playBtn.classList.remove("playing");
+      gauge.classList.remove("playing");
+    } else {
+      vibrato.start();
+      playBtn.textContent = "Stop";
+      playBtn.classList.add("playing");
+      gauge.classList.add("playing");
+    }
+  });
+
+  restoreFromUrl();
+  for (const btn of noteBtns) {
+    btn.setAttribute("aria-pressed", String(btn === note));
+  }
+  vibrato.setNote(Number(note.dataset.freq));
+  vibrato.setSpeed(speed().hz);
+  vibrato.setWidth(width().cents);
+  showSpeed();
+  showWidth();
+  drawGauge();
+  writeUrl();
+</script>
+
+<style>
+  .notes {
+    margin: 2rem 0 0;
+    padding: 1rem 1.25rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+
+  .notes legend {
+    padding: 0 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .note-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(3.25rem, 1fr));
+    gap: 0.4rem;
+  }
+
+  .note {
+    padding: 0.5rem 0.2rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      border-color 0.12s,
+      background 0.12s,
+      color 0.12s;
+  }
+
+  /* The accidentals are drawn as the notes between, the way the ear trainer draws the
+     notes outside its key. */
+  .note[data-natural="false"] {
+    border-style: dashed;
+    color: var(--muted);
+  }
+
+  .note:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .note[aria-pressed="true"] {
+    border-style: solid;
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .gauge-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  /*
+    The gauge is a picture of the swing: the note is the line at the top and the pitch
+    falls away from it. One cent is 0.08rem, so a half step is 8rem of travel and a very
+    narrow vibrato is visibly the sliver it sounds like.
+  */
+  .gauge {
+    --travel: calc(var(--cents) * 0.08rem);
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .gauge-col {
+    flex: 0 0 auto;
+    max-width: 100%;
+  }
+
+  .gauge .track {
+    position: relative;
+    width: 4.5rem;
+    height: 9rem;
+    /* A spine, so the empty room under a narrow swing reads as the rest of the half step
+       rather than as nothing. */
+    border-left: 2px solid var(--border);
+  }
+
+  .gauge .line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .gauge .ceiling {
+    top: 0;
+    border-top: 2px solid var(--accent);
+  }
+
+  .gauge .floor {
+    top: var(--travel);
+    border-top-style: dashed;
+    transition: top 0.12s;
+  }
+
+  .gauge .marker {
+    position: absolute;
+    top: 0;
+    left: 0.75rem;
+    right: 0.75rem;
+    height: 0.45rem;
+    margin-top: -0.225rem;
+    border-radius: 999px;
+    background: var(--accent);
+    animation: swing var(--period) ease-in-out infinite alternate;
+    animation-play-state: paused;
+  }
+
+  .gauge.playing .marker {
+    animation-play-state: running;
+  }
+
+  @keyframes swing {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(var(--travel));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gauge .marker {
+      animation: none;
+      transform: translateY(calc(var(--travel) / 2));
+    }
+  }
+
+  .gauge-labels {
+    position: relative;
+    width: 6rem;
+    height: 9rem;
+    font-size: 0.8rem;
+  }
+
+  .gauge-caption {
+    max-width: 11rem;
+    margin: 0.6rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+
+  .gauge-label {
+    position: absolute;
+    left: 0;
+    transform: translateY(-50%);
+    white-space: nowrap;
+  }
+
+  .ceiling-label {
+    top: 0;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .floor-label {
+    top: var(--travel);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    transition: top 0.12s;
+  }
+
+  .controls {
+    flex: 1 1 18rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .control-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .control-head label {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .control-head .value {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .control input[type="range"] {
+    width: 100%;
+    margin: 0.5rem 0 0;
+    accent-color: var(--accent);
+  }
+
+  .ticks {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .transport {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .play-stop,
+  .toggle {
+    min-width: 7rem;
+    padding: 0.6rem 1.25rem;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
+
+  .toggle {
+    border-color: var(--border);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .play-stop:hover,
+  .play-stop.playing {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .toggle.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>
