@@ -1,0 +1,114 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import {
+  GROUPS,
+  LADDERS,
+  describeSteps,
+  ladderHref,
+  ladderName,
+  ladderPar,
+  ladderSlug,
+} from "../../../games/word-steps/ladders.ts";
+
+// Par is worked out here, at build time, for the same reason the puzzle pages do it:
+// it is a property of the word list, not something a player changes.
+const groups = GROUPS.map((group) => ({
+  ...group,
+  ladders: LADDERS.filter((ladder) => ladder.start.length === group.length).map(
+    (ladder) => ({
+      slug: ladderSlug(ladder),
+      href: ladderHref(ladder),
+      name: ladderName(ladder),
+      steps: describeSteps(ladderPar(ladder)),
+    }),
+  ),
+}));
+---
+
+<Layout
+  title="Word Steps — a word game by Nico Bako"
+  description="A word ladder game for children: change one letter at a time to climb from one word to another. Sixteen puzzles, playable offline."
+>
+  <Breadcrumbs trail={[{ label: "Games", href: "/games/" }]} />
+  <h1>Word Steps</h1>
+  <p class="lede">
+    Climb from one word to another by changing a single letter at a time. Every step has
+    to be a real word — <strong>cat</strong>, <strong>cot</strong>,
+    <strong>dot</strong>, <strong>dog</strong>. There's no timer and no way to lose: if
+    you get stuck, ask for a hint.
+  </p>
+
+  {
+    groups.map((group) => (
+      <section>
+        <h2>{group.name}</h2>
+        <p>{group.description}</p>
+        <ul class="ladders">
+          {group.ladders.map((ladder) => (
+            <li data-slug={ladder.slug}>
+              <a href={ladder.href}>{ladder.name}</a>
+              <span class="steps">{ladder.steps}</span>
+              <span class="tick" hidden title="You finished this one">
+                ✓
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+
+  <h2>Where it comes from</h2>
+  <p>
+    Lewis Carroll invented this puzzle for two bored children at Christmas in 1877 and
+    called it <em>Doublets</em>. He set the first one himself: turn
+    <strong>head</strong> into <strong>tail</strong>.
+  </p>
+</Layout>
+
+<script>
+  // Ticking off finished ladders is the one thing this page cannot know at build time.
+  // The ticks are written as markup and only unhidden here — nothing is built from HTML.
+  import { solvedLadders } from "../../../games/word-steps/progress.ts";
+
+  const solved = solvedLadders();
+  for (const item of document.querySelectorAll<HTMLElement>(".ladders li[data-slug]")) {
+    if (solved.has(item.dataset.slug!)) {
+      item.querySelector<HTMLElement>(".tick")!.hidden = false;
+    }
+  }
+</script>
+
+<style>
+  .lede {
+    color: var(--muted);
+  }
+
+  .ladders {
+    list-style: none;
+    padding: 0;
+  }
+
+  .ladders li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-top: 0.4rem;
+  }
+
+  /* Wide enough for the longest name, so the step counts line up in a column. */
+  .ladders a {
+    min-width: 9rem;
+  }
+
+  .steps {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .tick {
+    color: var(--accent);
+    font-weight: 700;
+  }
+</style>

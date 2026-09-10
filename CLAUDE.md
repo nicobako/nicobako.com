@@ -67,7 +67,7 @@ of presets trades directly against install size. Keep it short and deliberate.
 | Route | File |
 |---|---|
 | `/` | `src/pages/index.astro` |
-| `/games/`, `/games/classrooms-and-angry-teachers` | `src/pages/games/` |
+| `/games/`, `/games/classrooms-and-angry-teachers`, `/games/word-steps/` and a page per ladder | `src/pages/games/` |
 | `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/`, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/printables/`, and the sheets listed below | `src/pages/printables/` |
@@ -85,10 +85,39 @@ each (`compact`, `compact-2-pages`, …).
 
 ### Game subsystem
 
-`src/games/classrooms-and-angry-teachers/` holds an entirely client-side game built with [Kaplay](https://kaplayjs.com/):
+`src/games/` holds two entirely client-side games, each a logic module (or three) imported
+by its page through a side-effect `<script>`.
+
+`classrooms-and-angry-teachers/`, built with [Kaplay](https://kaplayjs.com/):
 
 - `level.ts` — pure data: grid constants, tile types, spawn positions, item definitions.
 - `game.ts` — Kaplay initialisation and all game logic (immediate-mode rendering, per-frame update loop, input handling). Mounted into the `#game-root` div on the game page via a `<script>` import; Kaplay runs with `global: false` so it doesn't pollute the surrounding site.
+
+`word-steps/` — Lewis Carroll's word ladder, for children: climb from `cat` to `dog` by
+changing one letter at a time, every rung a real word. It leans on the same build-time
+habits as the printables rather than on a game engine.
+
+- `words.ts` — the two vocabularies (three- and four-letter), hand-picked rather than taken
+  from a dictionary. A dense list is what makes the game forgiving, since a stuck player
+  usually has several ways forward; hand-picking is what keeps a four-letter word list
+  suitable for a seven-year-old.
+- `ladders.ts` — the puzzles and the breadth-first search over the word graph. A puzzle is
+  declared as its two ends and nothing else: its par, its name, its slug and which group it
+  belongs to are all derived, so adding one is a line. Imported by the pages *and* the
+  browser, because the build walks the graph to check every puzzle is solvable (`ladderPar`
+  throws, failing the build, rather than shipping a page no child can finish) and the
+  browser walks it again to answer a hint.
+- `progress.ts` — which ladders have been finished, in `localStorage`. Kept separate so the
+  index can tick them off without pulling the word lists along with it.
+- `game.ts` — the browser half: judging typed words, and drawing the chain. The puzzle's two
+  ends and its par arrive as data attributes, and the start and target rungs are markup; the
+  played rungs are the only thing the script creates, and it builds them with
+  `document.createElement`.
+
+Each ladder is its own pre-rendered route (`[ladder].astro` + `getStaticPaths()`), so the
+list in `LADDERS` trades against install size exactly as the printable presets do. A hint
+searches with the words already played excluded, so what it offers is always a legal move
+and a player in a dead end is told so instead of being handed a word the game then rejects.
 
 ### Music subsystem
 
