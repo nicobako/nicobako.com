@@ -1,8 +1,8 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
 import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import { LANGUAGES, charactersOf } from "../../../games/word-steps/languages.ts";
 import {
-  GROUPS,
   LADDERS,
   describeSteps,
   ladderHref,
@@ -11,24 +11,40 @@ import {
   ladderSlug,
 } from "../../../games/word-steps/ladders.ts";
 
-// Par is worked out here, at build time, for the same reason the puzzle pages do it:
-// it is a property of the word list, not something a player changes.
-const groups = GROUPS.map((group) => ({
-  ...group,
-  ladders: LADDERS.filter((ladder) => ladder.start.length === group.length).map(
-    (ladder) => ({
-      slug: ladderSlug(ladder),
-      href: ladderHref(ladder),
-      name: ladderName(ladder),
-      steps: describeSteps(ladderPar(ladder)),
-    }),
-  ),
-}));
+// Par is worked out here, at build time, for the same reason the puzzle pages do it: it
+// is a property of the word list, not something a player changes. Walking every ladder
+// here also means a puzzle whose ends do not connect fails the build on this page too.
+const sections = Object.values(LANGUAGES)
+  .map((language) => ({
+    language,
+    groups: language.groups
+      .map((group) => ({
+        ...group,
+        ladders: LADDERS.filter(
+          (ladder) =>
+            ladder.language === language.slug &&
+            charactersOf(ladder.start).length === group.length,
+        ).map((ladder) => ({
+          slug: ladderSlug(ladder),
+          href: ladderHref(ladder),
+          name: ladderName(ladder),
+          gloss: ladder.gloss,
+          steps: describeSteps(ladderPar(ladder)),
+        })),
+      }))
+      .filter((group) => group.ladders.length > 0),
+  }))
+  .filter((section) => section.groups.length > 0);
+
+// Two ladders sharing a URL would mean one page quietly replacing the other.
+const slugs = LADDERS.map(ladderSlug);
+const clash = slugs.find((slug, index) => slugs.indexOf(slug) !== index);
+if (clash) throw new Error(`Word Steps: two ladders both want the URL "${clash}".`);
 ---
 
 <Layout
   title="Word Steps — a word game by Nico Bako"
-  description="A word ladder game for children: change one letter at a time to climb from one word to another. Sixteen puzzles, playable offline."
+  description="A word ladder game for children, in English and Japanese: change one letter at a time to climb from one word to another. Playable offline."
 >
   <Breadcrumbs trail={[{ label: "Games", href: "/games/" }]} />
   <h1>Word Steps</h1>
@@ -40,21 +56,33 @@ const groups = GROUPS.map((group) => ({
   </p>
 
   {
-    groups.map((group) => (
+    sections.map((section) => (
       <section>
-        <h2>{group.name}</h2>
-        <p>{group.description}</p>
-        <ul class="ladders">
-          {group.ladders.map((ladder) => (
-            <li data-slug={ladder.slug}>
-              <a href={ladder.href}>{ladder.name}</a>
-              <span class="steps">{ladder.steps}</span>
-              <span class="tick" hidden title="You finished this one">
-                ✓
-              </span>
-            </li>
-          ))}
-        </ul>
+        <h2>{section.language.name}</h2>
+        {section.language.keypad && (
+          <p class="note">
+            Written in hiragana, with the kana on screen to tap — no Japanese keyboard
+            needed.
+          </p>
+        )}
+        {section.groups.map((group) => (
+          <>
+            <h3>{group.name}</h3>
+            <p>{group.description}</p>
+            <ul class="ladders" lang={section.language.slug}>
+              {group.ladders.map((ladder) => (
+                <li data-slug={ladder.slug}>
+                  <a href={ladder.href}>{ladder.name}</a>
+                  {ladder.gloss && <span class="gloss">{ladder.gloss}</span>}
+                  <span class="steps">{ladder.steps}</span>
+                  <span class="tick" hidden title="You finished this one">
+                    ✓
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        ))}
       </section>
     ))
   }
@@ -85,6 +113,11 @@ const groups = GROUPS.map((group) => ({
     color: var(--muted);
   }
 
+  .note {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
   .ladders {
     list-style: none;
     padding: 0;
@@ -97,18 +130,34 @@ const groups = GROUPS.map((group) => ({
     margin-top: 0.4rem;
   }
 
-  /* Wide enough for the longest name, so the step counts line up in a column. */
+  /* Wide enough for the longest name, so what follows lines up in a column. */
   .ladders a {
     min-width: 9rem;
   }
 
+  .ladders[lang="ja"] a {
+    font-family: var(--font-jp);
+  }
+
+  .gloss,
   .steps {
     font-size: 0.85rem;
     color: var(--muted);
   }
 
+  .gloss {
+    min-width: 9rem;
+  }
+
   .tick {
     color: var(--accent);
     font-weight: 700;
+  }
+
+  @media (max-width: 30rem) {
+    .ladders a,
+    .gloss {
+      min-width: 0;
+    }
   }
 </style>

@@ -1,12 +1,14 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
 import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import { charactersOf, keypadFor } from "../../../games/word-steps/languages.ts";
 import {
   LADDERS,
   describeSteps,
   ladderName,
   ladderPar,
   ladderSlug,
+  languageOf,
   type Ladder,
 } from "../../../games/word-steps/ladders.ts";
 
@@ -26,13 +28,15 @@ interface Props {
 }
 
 const { ladder, par } = Astro.props;
-const { start, target } = ladder;
-const letters = start.length;
+const { start, target, gloss } = ladder;
+const language = languageOf(ladder);
+const length = charactersOf(start).length;
+const keypad = keypadFor(language, length);
 ---
 
 <Layout
   title={`Word Steps — ${ladderName(ladder)} — Nico Bako`}
-  description={`A word ladder puzzle for children: change one letter at a time to climb from ${start} to ${target}.`}
+  description={`A word ladder puzzle for children: change one ${language.unit} at a time to climb from ${start} to ${target}.`}
 >
   <Breadcrumbs
     trail={[
@@ -40,14 +44,19 @@ const letters = start.length;
       { label: "Word Steps", href: "/games/word-steps/" },
     ]}
   />
-  <h1>{ladderName(ladder)}</h1>
+  <h1 lang={language.slug}>{ladderName(ladder)}</h1>
+  {gloss && <p class="gloss">{gloss}</p>}
   <p class="lede">
-    Change <strong>one letter</strong> to make a new word, then do it again, until you
-    reach <strong>{target}</strong>. The shortest way is {describeSteps(par)}.
+    Change <strong>one {language.unit}</strong> to make a new word, then do it again,
+    until you reach <strong lang={language.slug}>{target}</strong>. The shortest way is {
+      describeSteps(par)
+    }.
   </p>
 
   <div
     id="word-steps"
+    lang={language.slug}
+    data-language={language.slug}
     data-start={start}
     data-target={target}
     data-slug={ladderSlug(ladder)}
@@ -55,7 +64,7 @@ const letters = start.length;
   >
     <div class="ladder">
       <div class="rung start">
-        {[...start].map((letter) => <span class="tile">{letter}</span>)}
+        {charactersOf(start).map((character) => <span class="tile">{character}</span>)}
       </div>
 
       {/* The played rungs are the one thing that cannot exist until someone plays. */}
@@ -67,8 +76,8 @@ const letters = start.length;
           <input
             id="next-word"
             type="text"
-            maxlength={letters}
-            size={letters}
+            maxlength={length}
+            size={length}
             autocomplete="off"
             autocorrect="off"
             autocapitalize="off"
@@ -80,7 +89,7 @@ const letters = start.length;
       </form>
 
       <div class="rung target">
-        {[...target].map((letter) => <span class="tile">{letter}</span>)}
+        {charactersOf(target).map((character) => <span class="tile">{character}</span>)}
       </div>
     </div>
 
@@ -91,14 +100,41 @@ const letters = start.length;
       <button type="button" data-action="undo">Undo</button>
       <button type="button" data-action="restart">Start over</button>
     </div>
+
+    {/* Below the buttons: the keypad is a screenful, and Hint should stay in reach. */}
+    {
+      keypad.length > 0 && (
+        <div class="keypad" aria-label="Hiragana keys">
+          {keypad.map((section) => (
+            <div class="keypad-section">
+              {section.flat().map((key) =>
+                key ? (
+                  <button type="button" data-key={key}>
+                    {key}
+                  </button>
+                ) : (
+                  <span class="keypad-gap" aria-hidden="true" />
+                ),
+              )}
+            </div>
+          ))}
+          <button type="button" class="erase" data-action="erase">
+            Erase
+          </button>
+        </div>
+      )
+    }
   </div>
 
   <section aria-label="How to play">
     <h2>How to play</h2>
     <ul>
-      <li>Each word must be a real word, and exactly {letters} letters long.</li>
-      <li>Only one letter may change from the word above it.</li>
+      <li>
+        Each word must be a real word, and exactly {length} {language.unitPlural} long.
+      </li>
+      <li>Only one {language.unit} may change from the word above it.</li>
       <li>You can't use the same word twice.</li>
+      {keypad.length > 0 && <li>Tap the kana to spell your word, or type them if you have a Japanese keyboard.</li>}
       <li>Stuck? <strong>Hint</strong> fills in a word that gets you closer.</li>
     </ul>
   </section>
@@ -114,14 +150,29 @@ const letters = start.length;
     color: var(--muted);
   }
 
-  /* The script toggles `hidden` on the entry form and the hint button, both of which are
-	   given a `display` below — without this the attribute would have no effect. */
+  .lede strong[lang] {
+    white-space: nowrap;
+  }
+
+  .gloss {
+    margin-top: -0.25rem;
+    color: var(--muted);
+  }
+
+  /* The script toggles `hidden` on the entry form, the keypad and the hint button, all of
+	   which are given a `display` below — without this the attribute would have no effect. */
   [hidden] {
     display: none !important;
   }
 
   #word-steps {
     margin-top: 2rem;
+  }
+
+  #word-steps[lang="ja"] :global(.tile),
+  #word-steps[lang="ja"] input,
+  #word-steps[lang="ja"] .keypad button {
+    font-family: var(--font-jp);
   }
 
   .ladder {
@@ -167,7 +218,7 @@ const letters = start.length;
     text-transform: uppercase;
   }
 
-  /* The letter that changed on this rung. Outlined rather than filled: the point is to
+  /* The character that changed on this rung. Outlined rather than filled: the point is to
 	   show what moved, not to score the guess. */
   .chain :global(.tile.changed) {
     border-color: var(--accent);
@@ -240,12 +291,34 @@ const letters = start.length;
     font-weight: 600;
   }
 
+  /* The gojūon, in the shape it is written: five vowels across, one consonant row down.
+	   The blanks are real cells, so every column stays under the one above it. */
+  .keypad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.25rem;
+  }
+
+  .keypad-section {
+    display: grid;
+    grid-template-columns: repeat(5, 2.2rem);
+    gap: 0.25rem;
+  }
+
+  .keypad-section button {
+    padding: 0;
+    height: 2.2rem;
+    font-size: 1.1rem;
+  }
+
   .actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
   }
 
   button {

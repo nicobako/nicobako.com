@@ -67,7 +67,7 @@ of presets trades directly against install size. Keep it short and deliberate.
 | Route | File |
 |---|---|
 | `/` | `src/pages/index.astro` |
-| `/games/`, `/games/classrooms-and-angry-teachers`, `/games/word-steps/` and a page per ladder | `src/pages/games/` |
+| `/games/`, `/games/classrooms-and-angry-teachers`, `/games/word-steps/` and a page per ladder (English and Japanese) | `src/pages/games/` |
 | `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/`, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/printables/`, and the sheets listed below | `src/pages/printables/` |
@@ -93,31 +93,51 @@ by its page through a side-effect `<script>`.
 - `level.ts` — pure data: grid constants, tile types, spawn positions, item definitions.
 - `game.ts` — Kaplay initialisation and all game logic (immediate-mode rendering, per-frame update loop, input handling). Mounted into the `#game-root` div on the game page via a `<script>` import; Kaplay runs with `global: false` so it doesn't pollute the surrounding site.
 
-`word-steps/` — Lewis Carroll's word ladder, for children: climb from `cat` to `dog` by
-changing one letter at a time, every rung a real word. It leans on the same build-time
-habits as the printables rather than on a game engine.
+`word-steps/` — Lewis Carroll's word ladder, for children, in **English and Japanese**:
+climb from `cat` to `dog`, or `ねこ` to `いぬ`, by changing one character at a time, every
+rung a real word. It leans on the same build-time habits as the printables rather than on a
+game engine, and nothing in it branches on the language — the words, the alphabet, the
+keypad and the nouns the game uses in its replies all come from one language record.
 
-- `words.ts` — the two vocabularies (three- and four-letter), hand-picked rather than taken
-  from a dictionary. A dense list is what makes the game forgiving, since a stuck player
-  usually has several ways forward; hand-picking is what keeps a four-letter word list
-  suitable for a seven-year-old.
+- `words/english.ts`, `words/japanese.ts` — the vocabularies, by word length, hand-picked
+  rather than taken from a dictionary. A dense list is what makes the game forgiving, since
+  a stuck player usually has several ways forward; hand-picking is what keeps a four-letter
+  word list suitable for a seven-year-old. **Every word has at least one neighbour**: a word
+  no other word is one character from can never be reached or played, so it would only pad a
+  vocabulary the game cannot use. Japanese leans on two families the language gives for free
+  — adjectives all end in `い`, plain verbs in `う` or `る` — which is what makes the
+  three-character list connect at all.
+- `kana.ts` — the gojūon as it is written (five vowels across, one consonant row down), plus
+  the romanisation that turns `ねこ → いぬ` into `/games/word-steps/neko-to-inu/`. A dakuten
+  mark makes a *different* character here, which is what makes `はし → はじ` one step; the
+  small kana `ゃゅょっ` are characters in their own right for the same reason. Neither needs a
+  rule of its own, because a rung only counts if it is a word in the list.
+- `languages.ts` — the two language records: word lists, difficulty tiers, what one square of
+  a word is called ("letter" / "character"), how a word becomes a URL, and the keypad. The
+  keypad is the one real asymmetry: any device can type Latin letters, so English declares
+  none, while hiragana needs an IME a family tablet has not got, so Japanese declares the
+  grid and the page draws it as buttons. `keypadFor` blanks any key no word of that length
+  uses, and drops a row that empties completely.
 - `ladders.ts` — the puzzles and the breadth-first search over the word graph. A puzzle is
-  declared as its two ends and nothing else: its par, its name, its slug and which group it
-  belongs to are all derived, so adding one is a line. Imported by the pages *and* the
-  browser, because the build walks the graph to check every puzzle is solvable (`ladderPar`
-  throws, failing the build, rather than shipping a page no child can finish) and the
-  browser walks it again to answer a hint.
+  declared as its language, its two ends, and (for Japanese) an English gloss no derivation
+  could supply; its par, name, slug and group are all derived, so adding one is a line.
+  Imported by the pages *and* the browser, because the build walks the graph to check every
+  puzzle is solvable (`ladderPar` throws, failing the build, rather than shipping a page no
+  child can finish) and the browser walks it again to answer a hint.
 - `progress.ts` — which ladders have been finished, in `localStorage`. Kept separate so the
   index can tick them off without pulling the word lists along with it.
-- `game.ts` — the browser half: judging typed words, and drawing the chain. The puzzle's two
-  ends and its par arrive as data attributes, and the start and target rungs are markup; the
-  played rungs are the only thing the script creates, and it builds them with
-  `document.createElement`.
+- `game.ts` — the browser half: judging entered words, drawing the chain, and typing from the
+  keypad. The puzzle's language, ends and par arrive as data attributes, and the start rung,
+  the target rung and the keypad are markup; the played rungs are the only thing the script
+  creates, and it builds them with `document.createElement`.
 
 Each ladder is its own pre-rendered route (`[ladder].astro` + `getStaticPaths()`), so the
-list in `LADDERS` trades against install size exactly as the printable presets do. A hint
-searches with the words already played excluded, so what it offers is always a legal move
-and a player in a dead end is told so instead of being handed a word the game then rejects.
+list in `LADDERS` trades against install size exactly as the printable presets do — and a
+Japanese page carries the kana grid as markup, which costs about 7 KB more than an English
+one. A hint searches with the words already played excluded, so what it offers is always a
+legal move and a player in a dead end is told so instead of being handed a word the game then
+rejects. The interface is in English throughout, including on the Japanese pages: the reader
+is a child learning the words, not one who already has them.
 
 ### Music subsystem
 
@@ -229,4 +249,7 @@ safe zone). Edit the SVG sources and re-render the PNGs if the mark changes.
 
 - All colours are CSS custom properties defined in `Layout.astro` (e.g. `--bg`, `--text`, `--muted`, `--border`, `--surface`, `--accent`, `--accent-text`), with `prefers-color-scheme: dark` overrides. Never hardcode colours in page or component files — consume the tokens.
 - `--measure: 46rem` is the shared max-width used by header, main, and footer.
+- `--font-jp` is the stack for Japanese text (the Word Steps hiragana ladders). It names
+  real faces before falling back, because a bare `system-ui` renders kana in whatever the
+  OS happens to pick.
 - Styles in page and component files are Astro-scoped by default; only `Layout.astro`'s `<style is:global>` affects the whole document.
