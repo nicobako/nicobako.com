@@ -1,0 +1,274 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import {
+  LADDERS,
+  describeSteps,
+  ladderName,
+  ladderPar,
+  ladderSlug,
+  type Ladder,
+} from "../../../games/word-steps/ladders.ts";
+
+// One statically generated page per puzzle. `ladderPar` walks the word list to find the
+// shortest answer, so a ladder whose two ends do not connect fails the build here rather
+// than shipping a page that cannot be finished.
+export function getStaticPaths() {
+  return LADDERS.map((ladder) => ({
+    params: { ladder: ladderSlug(ladder) },
+    props: { ladder, par: ladderPar(ladder) },
+  }));
+}
+
+interface Props {
+  ladder: Ladder;
+  par: number;
+}
+
+const { ladder, par } = Astro.props;
+const { start, target } = ladder;
+const letters = start.length;
+---
+
+<Layout
+  title={`Word Steps — ${ladderName(ladder)} — Nico Bako`}
+  description={`A word ladder puzzle for children: change one letter at a time to climb from ${start} to ${target}.`}
+>
+  <Breadcrumbs
+    trail={[
+      { label: "Games", href: "/games/" },
+      { label: "Word Steps", href: "/games/word-steps/" },
+    ]}
+  />
+  <h1>{ladderName(ladder)}</h1>
+  <p class="lede">
+    Change <strong>one letter</strong> to make a new word, then do it again, until you
+    reach <strong>{target}</strong>. The shortest way is {describeSteps(par)}.
+  </p>
+
+  <div
+    id="word-steps"
+    data-start={start}
+    data-target={target}
+    data-slug={ladderSlug(ladder)}
+    data-par={par}
+  >
+    <div class="ladder">
+      <div class="rung start">
+        {[...start].map((letter) => <span class="tile">{letter}</span>)}
+      </div>
+
+      {/* The played rungs are the one thing that cannot exist until someone plays. */}
+      <ol class="chain" aria-label="The words you have played"></ol>
+
+      <form class="entry">
+        <label for="next-word">Next word</label>
+        <div class="entry-row">
+          <input
+            id="next-word"
+            type="text"
+            maxlength={letters}
+            size={letters}
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            enterkeyhint="go"
+          />
+          <button type="submit">Add</button>
+        </div>
+      </form>
+
+      <div class="rung target">
+        {[...target].map((letter) => <span class="tile">{letter}</span>)}
+      </div>
+    </div>
+
+    <p class="message" role="status" aria-live="polite"></p>
+
+    <div class="actions">
+      <button type="button" data-action="hint">Hint</button>
+      <button type="button" data-action="undo">Undo</button>
+      <button type="button" data-action="restart">Start over</button>
+    </div>
+  </div>
+
+  <section aria-label="How to play">
+    <h2>How to play</h2>
+    <ul>
+      <li>Each word must be a real word, and exactly {letters} letters long.</li>
+      <li>Only one letter may change from the word above it.</li>
+      <li>You can't use the same word twice.</li>
+      <li>Stuck? <strong>Hint</strong> fills in a word that gets you closer.</li>
+    </ul>
+  </section>
+</Layout>
+
+<script>
+  // Side-effect import: finds #word-steps and runs the puzzle on it.
+  import "../../../games/word-steps/game.ts";
+</script>
+
+<style>
+  .lede {
+    color: var(--muted);
+  }
+
+  /* The script toggles `hidden` on the entry form and the hint button, both of which are
+	   given a `display` below — without this the attribute would have no effect. */
+  [hidden] {
+    display: none !important;
+  }
+
+  #word-steps {
+    margin-top: 2rem;
+  }
+
+  .ladder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .chain {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .chain :global(li) {
+    margin-top: 0;
+  }
+
+  .rung,
+  .chain :global(.rung) {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .tile,
+  .chain :global(.tile) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  /* The letter that changed on this rung. Outlined rather than filled: the point is to
+	   show what moved, not to score the guess. */
+  .chain :global(.tile.changed) {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg);
+  }
+
+  /* The goal sits at the foot of the ladder, drawn as an outline until it is reached. */
+  .rung.target .tile {
+    border-style: dashed;
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .rung.target.reached .tile {
+    border-style: solid;
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  /* Stacked rather than one row, so the input sits centred under the tile column
+	   instead of being pushed off to one side by the width of its label. */
+  .entry {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0.7rem 0;
+  }
+
+  .entry-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .entry label {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .entry input {
+    width: 6.5em;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .message {
+    min-height: 1.6em;
+    margin: 1rem 0 0;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .message[data-tone="error"] {
+    color: var(--text);
+  }
+
+  .message[data-tone="win"] {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  button {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  button:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  button:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .entry button {
+    padding: 0.55rem 1rem;
+  }
+</style>
