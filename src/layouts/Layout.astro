@@ -67,6 +67,10 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : As
 			'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
 		--font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
 			'Liberation Mono', monospace;
+		/* Kana and kanji, for the Japanese word ladders. Named faces first because a
+		   system-ui fallback renders Japanese in whatever the OS happens to pick. */
+		--font-jp: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', YuGothic,
+			Meiryo, 'Noto Sans JP', system-ui, sans-serif;
 
 		--bg: #fdfdfc;
 		--text: #1f1f1f;

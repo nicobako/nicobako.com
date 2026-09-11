@@ -1,103 +1,148 @@
 // Word Steps: the puzzles, and the search that proves each one has an answer.
 //
-// A ladder climbs from one word to another by changing a single letter at a time, and
+// A ladder climbs from one word to another by changing a single character at a time, and
 // every rung has to be a real word — `cat`, `cot`, `dot`, `dog`. The idea is Lewis
 // Carroll's, who called it Doublets and set the first one in 1877.
 //
-// A puzzle is declared as nothing but its two ends. Everything else about it — how many
-// steps the shortest answer takes, which group it belongs to, what it is called, where
-// it lives — is derived, so adding a puzzle is one line and cannot disagree with itself.
-// The one thing that is *not* derived is the order: they are listed easiest first,
-// because a seven-year-old picking from the index should meet the two-step ladders before
-// the five-step ones.
+// A puzzle is declared as its language and its two ends. Everything else about it — how
+// many steps the shortest answer takes, which group it belongs to, what it is called,
+// where it lives — is derived, so adding a puzzle is one line and cannot disagree with
+// itself. The exceptions are the order, which is easiest-first because a seven-year-old
+// picking from the index should meet the two-step ladders before the five-step ones, and
+// the gloss on a Japanese ladder, which no amount of derivation can supply.
 //
 // The search is here rather than in `game.ts` because both ends of the site need it: the
 // build walks it to check every puzzle is solvable and to work out its par, and the
 // browser walks it again when a stuck player asks for a hint.
 
-import { WORDS_3, WORDS_4 } from "./words.ts";
+import {
+  LANGUAGES,
+  charactersOf,
+  wordsFor,
+  type Language,
+  type LanguageSlug,
+} from "./languages.ts";
 
-/** A puzzle: climb from `start` to `target`, one letter at a time. */
+/** A puzzle: climb from `start` to `target`, one character at a time. */
 export interface Ladder {
+  language: LanguageSlug;
   start: string;
   target: string;
+  /** What the two ends mean, where the words alone will not say. */
+  gloss?: string;
 }
+
+const en = (start: string, target: string): Ladder => ({ language: "en", start, target });
+const ja = (start: string, target: string, gloss: string): Ladder => ({
+  language: "ja",
+  start,
+  target,
+  gloss,
+});
 
 /**
- * Every puzzle that gets a page, easiest first within each word length. Each one is a
- * real, precached page, so this list trades against install size the way the printable
- * presets do — keep it short, and prefer replacing a ladder to appending one.
+ * Every puzzle that gets a page, easiest first within each language and length. Each one
+ * is a real, precached page, so this list trades against install size the way the
+ * printable presets do — prefer replacing a ladder to appending one.
  */
 export const LADDERS: readonly Ladder[] = [
-  // Three letters: two to four steps.
-  { start: "hat", target: "cap" },
-  { start: "toy", target: "box" },
-  { start: "cat", target: "dog" },
-  { start: "sun", target: "sky" },
-  { start: "red", target: "hot" },
-  { start: "cow", target: "pig" },
-  { start: "mud", target: "pie" },
-  { start: "car", target: "bus" },
+  // English, three letters: two to four steps.
+  en("hat", "cap"),
+  en("toy", "box"),
+  en("pot", "pan"),
+  en("cat", "dog"),
+  en("sun", "sky"),
+  en("red", "hot"),
+  en("cow", "pig"),
+  en("mud", "pie"),
+  en("car", "bus"),
+  en("top", "bed"),
 
-  // Four letters: three to five steps.
-  { start: "cook", target: "food" },
-  { start: "bike", target: "ride" },
-  { start: "cold", target: "warm" },
-  { start: "milk", target: "cake" },
-  { start: "wood", target: "fire" },
-  { start: "corn", target: "farm" },
-  { start: "hand", target: "foot" },
-  { start: "king", target: "gold" },
+  // English, four letters: three to five steps.
+  en("cook", "food"),
+  en("bike", "ride"),
+  en("cold", "warm"),
+  en("milk", "cake"),
+  en("wood", "fire"),
+  en("corn", "farm"),
+  en("hand", "foot"),
+  en("king", "gold"),
+  en("lake", "pond"),
+  en("bird", "nest"),
+
+  // Japanese, two characters: two to four steps.
+  ja("やま", "うみ", "mountain → sea"),
+  ja("くち", "みみ", "mouth → ear"),
+  ja("ゆき", "あめ", "snow → rain"),
+  ja("かみ", "ほん", "paper → book"),
+  ja("ちち", "はは", "father → mother"),
+  ja("きた", "にし", "north → west"),
+  ja("ねこ", "いぬ", "cat → dog"),
+  ja("つき", "ほし", "moon → star"),
+  ja("あさ", "よる", "morning → night"),
+  ja("くも", "そら", "cloud → sky"),
+
+  // Japanese, three characters: two to four steps.
+  ja("はしる", "とまる", "to run → to stop"),
+  ja("あまい", "からい", "sweet → spicy"),
+  ja("わかい", "ふるい", "young → old"),
+  ja("あさい", "ふかい", "shallow → deep"),
+  ja("あつい", "さむい", "hot → cold"),
+  ja("ちかい", "とおい", "near → far"),
+  ja("あかい", "くろい", "red → black"),
+  ja("あける", "しめる", "to open → to close"),
 ];
 
-/** The two word lengths that get played, and how each group is introduced. */
-export const GROUPS = [
-  {
-    length: 3,
-    name: "Short ladders",
-    description: "Three letters. A good place to start.",
-  },
-  {
-    length: 4,
-    name: "Longer ladders",
-    description: "Four letters, and a few more steps to climb.",
-  },
-] as const;
-
-const WORDS_BY_LENGTH: Record<number, readonly string[]> = { 3: WORDS_3, 4: WORDS_4 };
-
-/** Every word a ladder of this length may pass through. */
-export function wordsOfLength(length: number): ReadonlySet<string> {
-  const words = WORDS_BY_LENGTH[length];
-  if (!words) throw new Error(`Word Steps has no ${length}-letter word list.`);
-  return new Set(words);
+/** The language a ladder is played in. */
+export function languageOf(ladder: Ladder): Language {
+  return LANGUAGES[ladder.language];
 }
 
-/** The word list a ladder plays in. */
-export function wordsFor(ladder: Ladder): ReadonlySet<string> {
-  return wordsOfLength(ladder.start.length);
+/** The words a ladder may pass through. */
+export function wordsForLadder(ladder: Ladder): ReadonlySet<string> {
+  return wordsFor(languageOf(ladder), charactersOf(ladder.start).length);
 }
 
-const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
-
-/** The words one letter away from `word` — the legal moves from it. */
-export function neighbours(word: string, words: ReadonlySet<string>): string[] {
+/** The words one character away from `word` — the legal moves from it. */
+export function neighbours(
+  word: string,
+  words: ReadonlySet<string>,
+  alphabet: ReadonlySet<string>,
+): string[] {
+  const characters = charactersOf(word);
   const found: string[] = [];
-  for (let i = 0; i < word.length; i++) {
-    for (const letter of ALPHABET) {
-      if (letter === word[i]) continue;
-      const candidate = word.slice(0, i) + letter + word.slice(i + 1);
+  for (let i = 0; i < characters.length; i++) {
+    const original = characters[i]!;
+    for (const character of alphabet) {
+      if (character === original) continue;
+      characters[i] = character;
+      const candidate = characters.join("");
       if (words.has(candidate)) found.push(candidate);
     }
+    characters[i] = original;
   }
   return found;
 }
 
-/** How many letters two words of the same length disagree on. */
-export function letterDistance(a: string, b: string): number {
+/**
+ * The characters any of these words is spelled with. Taken from the words themselves
+ * rather than declared, so the search never tries a letter no word could contain.
+ */
+export function alphabetOf(words: ReadonlySet<string>): ReadonlySet<string> {
+  const alphabet = new Set<string>();
+  for (const word of words) {
+    for (const character of charactersOf(word)) alphabet.add(character);
+  }
+  return alphabet;
+}
+
+/** How many positions two words of the same length disagree on. */
+export function characterDistance(a: string, b: string): number {
+  const left = charactersOf(a);
+  const right = charactersOf(b);
   let differences = 0;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) differences++;
+  for (let i = 0; i < left.length; i++) {
+    if (left[i] !== right[i]) differences++;
   }
   return differences;
 }
@@ -119,6 +164,7 @@ export function shortestLadder(
 ): string[] | null {
   if (!words.has(from) || !words.has(to)) return null;
 
+  const alphabet = alphabetOf(words);
   const cameFrom = new Map<string, string | null>([[from, null]]);
   const queue = [from];
 
@@ -131,7 +177,7 @@ export function shortestLadder(
       }
       return route.reverse();
     }
-    for (const next of neighbours(word, words)) {
+    for (const next of neighbours(word, words, alphabet)) {
       if (cameFrom.has(next) || avoid.has(next)) continue;
       cameFrom.set(next, word);
       queue.push(next);
@@ -147,19 +193,20 @@ export function shortestLadder(
  * shipping a page no child can finish.
  */
 export function ladderPar(ladder: Ladder): number {
-  const route = shortestLadder(ladder.start, ladder.target, wordsFor(ladder));
+  const route = shortestLadder(ladder.start, ladder.target, wordsForLadder(ladder));
   if (!route) {
     throw new Error(
       `Word Steps: no ladder connects "${ladder.start}" to "${ladder.target}". ` +
-        `Either pick different words or add the missing rungs to words.ts.`,
+        `Either pick different words or add the missing rungs to the word list.`,
     );
   }
   return route.length - 1;
 }
 
-/** URL segment for a ladder — `cat-to-dog`. */
+/** URL segment for a ladder — `cat-to-dog`, `neko-to-inu`. */
 export function ladderSlug(ladder: Ladder): string {
-  return `${ladder.start}-to-${ladder.target}`;
+  const language = languageOf(ladder);
+  return `${language.slugFor(ladder.start)}-to-${language.slugFor(ladder.target)}`;
 }
 
 /** URL for a ladder's page. */
@@ -167,16 +214,12 @@ export function ladderHref(ladder: Ladder): string {
   return `/games/word-steps/${ladderSlug(ladder)}/`;
 }
 
-/** A ladder's name, for titles and links — "Cat to Dog". */
+/** A ladder's name, for titles and links — "Cat to Dog", "ねこ → いぬ". */
 export function ladderName(ladder: Ladder): string {
-  return `${titleCase(ladder.start)} to ${titleCase(ladder.target)}`;
+  return languageOf(ladder).nameFor(ladder.start, ladder.target);
 }
 
 /** How a ladder's length is described — "3 steps". */
 export function describeSteps(steps: number): string {
   return steps === 1 ? "1 step" : `${steps} steps`;
-}
-
-function titleCase(word: string): string {
-  return word.charAt(0).toUpperCase() + word.slice(1);
 }
