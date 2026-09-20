@@ -81,7 +81,10 @@ Printables: `blank-sheet-music`, `speed-reading`, `scribal-abbreviations`,
 widening it multiplies real, precached pages, so keep it small. `blank-sheet-music`
 works the same way, over two axes: `SIZES` × `PAGE_COUNTS` in `staff-paper.ts` is
 expanded into `SHEETS`, and `blank-sheet-music/[sheet].astro` generates a page for
-each (`compact`, `compact-2-pages`, …).
+each (`compact`, `compact-2-pages`, …). `weekly-activity-planner` has one axis,
+`PLANS` in `activity-planner.ts` — the school week at the bare path and the full
+week under it — so the picker is a single row of links and the pages carry no
+script at all.
 
 ### Game subsystem
 

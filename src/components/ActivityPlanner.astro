@@ -1,0 +1,254 @@
+---
+import {
+  BANDS,
+  type Plan,
+} from "../printables/activity-planner/activity-planner.ts";
+
+interface Props {
+  /** The week being printed — its days are the columns. */
+  plan: Plan;
+}
+
+const { plan } = Astro.props;
+const days = plan.days;
+
+// A seven-day sheet fits two more columns into the same paper, so the left-hand
+// column gives up some width to them. It is the one dimension that varies, and it
+// resolves here and travels down as a custom property, leaving the CSS to read as
+// one layout for both weeks.
+const bandColumn = days.length > 5 ? "6.5rem" : "8.5rem";
+---
+
+<div class="sheet" style={`--bandcol: ${bandColumn};`}>
+  <div class="sheet-head">
+    Weekly Activity Planner
+    <span class="blanks">
+      <span class="blank">Name</span>
+      <span class="blank">Week of</span>
+    </span>
+  </div>
+
+  <div class="planner-scroll">
+    <table class="planner">
+      <thead>
+        <tr>
+          <th class="bandcol" scope="col">Activity</th>
+          {
+            days.map((day) => (
+              <th class="daycol" scope="col">
+                <span class="dayname">{day}</span>
+                <span class="dateline" />
+              </th>
+            ))
+          }
+        </tr>
+      </thead>
+      {
+        BANDS.map((band) => (
+          <tbody class="band">
+            {Array.from({ length: band.rows }, (_, row) => (
+              <tr class={band.tick ? "choice" : "lesson"}>
+                {row === 0 && (
+                  <th class="bandlabel" scope="rowgroup" rowspan={band.rows}>
+                    <span class="bandname">{band.name}</span>
+                    <span class="bandhint">{band.hint}</span>
+                  </th>
+                )}
+                {days.map(() => (
+                  <td class="cell">{band.tick && <span class="tick" />}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        ))
+      }
+    </table>
+  </div>
+
+  <p class="grid-note">
+    Write what you picked in a box, then tick it when it is finished.
+  </p>
+
+  <div class="notes">
+    <span class="notes-label">Notes</span>
+    <div class="notes-lines">
+      <span /><span />
+    </div>
+  </div>
+</div>
+
+<style>
+  .sheet-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  .sheet-head .blanks {
+    display: flex;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    min-width: 0;
+  }
+
+  /* Both blanks want 11rem and give it up rather than push the sheet wider than
+     the screen; on paper there is always room for the full width. */
+  .sheet-head .blank {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    flex: 1 1 8rem;
+    max-width: 11rem;
+  }
+
+  /* On screen the site's text measure is narrower than a landscape sheet, so the
+     table keeps a floor width and scrolls rather than squeezing its columns to
+     nothing. On paper there is no scrolling and the page is wider than the
+     floor, so the sheet prints exactly as laid out. */
+  @media screen {
+    .planner-scroll {
+      overflow-x: auto;
+    }
+
+    .planner {
+      min-width: 38rem;
+    }
+  }
+
+  .planner {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.8rem;
+  }
+
+  .planner th,
+  .planner td {
+    border: 1px solid var(--border);
+  }
+
+  .planner thead th {
+    background: var(--surface);
+    padding: 0.3rem 0.25rem;
+    text-align: center;
+    font-weight: 600;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .planner .bandcol {
+    width: var(--bandcol);
+  }
+
+  /* Day name over a rule for the date, the way a school sheet dates its columns.
+     Stacked rather than side by side because seven columns cannot hold both on
+     one line: laying them out this way is what keeps the two weeks identical
+     apart from their column count, and gives the date a wider rule besides. */
+  .dayname {
+    display: block;
+  }
+
+  .dateline {
+    display: block;
+    width: 70%;
+    margin: 0.2rem auto 0.1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* The band label spans its rows, so the left column reads as three sections
+     rather than as fourteen unrelated lines. */
+  .planner .bandlabel {
+    background: var(--surface);
+    vertical-align: middle;
+    text-align: center;
+    padding: 0.3rem 0.4rem;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .bandname {
+    display: block;
+    font-weight: 600;
+  }
+
+  .bandhint {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  /* Empty write-in cells. The heights are what is left once the heading, the
+     note and the notes lines have taken theirs: both weeks have to clear a
+     single A4 landscape page with enough margin that a different font on a
+     different machine cannot push them onto a second one. */
+  .planner tr.choice .cell {
+    height: 2rem;
+  }
+
+  .planner tr.lesson .cell {
+    height: 2.5rem;
+  }
+
+  /* A tick box in the top-right corner of each choice cell: it leaves the rest
+     of the cell clear to write in, and prints as a plain outline. */
+  .cell {
+    text-align: right;
+    vertical-align: top;
+  }
+
+  .tick {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    margin: 0.15rem 0.15rem 0 0;
+    border: 1px solid var(--border);
+  }
+
+  .grid-note {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin: 0.4rem 0 0;
+  }
+
+  .notes {
+    margin-top: 0.75rem;
+  }
+
+  .notes-label {
+    display: block;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .notes-lines span {
+    display: block;
+    height: 1.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  @media print {
+    .planner th,
+    .planner td,
+    .sheet-head .blank,
+    .dateline,
+    .tick,
+    .notes-lines span {
+      border-color: #000;
+    }
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 1.2cm;
+  }
+</style>
