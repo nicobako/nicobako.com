@@ -75,13 +75,16 @@ of presets trades directly against install size. Keep it short and deliberate.
 
 Printables: `blank-sheet-music`, `speed-reading`, `scribal-abbreviations`,
 `weekly-time-tracker`, `daily-practice-schedule`, `weekly-practice-schedule`,
-`weekly-schedule`, plus
+`weekly-schedule`, `weekly-activity-planner`, plus
 `year-calendar` and `bookmark-calendar`, which each also generate a page per year
 (`year-calendar/[year].astro`). `src/printables/calendar/years.ts` sets that range —
 widening it multiplies real, precached pages, so keep it small. `blank-sheet-music`
 works the same way, over two axes: `SIZES` × `PAGE_COUNTS` in `staff-paper.ts` is
 expanded into `SHEETS`, and `blank-sheet-music/[sheet].astro` generates a page for
-each (`compact`, `compact-2-pages`, …).
+each (`compact`, `compact-2-pages`, …). `weekly-activity-planner` has one axis,
+`PLANS` in `activity-planner.ts` — the school week at the bare path and the full
+week under it — so the picker is a single row of links and the pages carry no
+script at all.
 
 ### Game subsystem
 

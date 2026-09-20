@@ -1,0 +1,47 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import ActivityPlanner from "../../components/ActivityPlanner.astro";
+import ActivityPlannerPicker from "../../components/ActivityPlannerPicker.astro";
+import {
+  DEFAULT_PLAN,
+  describePlan,
+} from "../../printables/activity-planner/activity-planner.ts";
+
+// The bare path shows the school week; the longer week has its own page under
+// `weekly-activity-planner/[plan]`, reached through the picker's links.
+const plan = DEFAULT_PLAN;
+---
+
+<Layout
+  title="Weekly Activity Planner — Nico Bako"
+  description="A printable weekly planner for children: a column for each day, bands for study choices, fun choices, and lessons."
+>
+  <div class="controls no-print">
+    <h1>Weekly Activity Planner</h1>
+    <ActivityPlannerPicker plan={plan} />
+    <p>
+      A blank weekly planner for a child to print and fill in by hand. {
+        plan.description
+      } The rows are grouped into bands rather than clock times, so the child picks
+      the order within a day. Print A4 landscape.
+    </p>
+    <p class="hint">{describePlan(plan)}</p>
+  </div>
+
+  <ActivityPlanner plan={plan} />
+</Layout>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

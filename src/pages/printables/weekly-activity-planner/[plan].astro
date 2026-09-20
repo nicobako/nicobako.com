@@ -1,0 +1,59 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import ActivityPlanner from "../../../components/ActivityPlanner.astro";
+import ActivityPlannerPicker from "../../../components/ActivityPlannerPicker.astro";
+import {
+  describePlan,
+  subPagePlans,
+  type Plan,
+} from "../../../printables/activity-planner/activity-planner.ts";
+
+// One statically generated page per week length, minus the school week, which
+// lives at the bare `/printables/weekly-activity-planner` path.
+export function getStaticPaths() {
+  return subPagePlans().map((plan) => ({
+    params: { plan: plan.slug },
+    props: { plan },
+  }));
+}
+
+interface Props {
+  plan: Plan;
+}
+
+const { plan } = Astro.props;
+---
+
+<Layout
+  title={`Weekly Activity Planner — ${plan.name} — Nico Bako`}
+  description={`A printable weekly planner for children. ${plan.description}`}
+>
+  <div class="controls no-print">
+    <h1>Weekly Activity Planner</h1>
+    <ActivityPlannerPicker plan={plan} />
+    <p>
+      A blank weekly planner for a child to print and fill in by hand. {
+        plan.description
+      } The rows are grouped into bands rather than clock times, so the child picks
+      the order within a day. Print A4 landscape.
+    </p>
+    <p class="hint">{describePlan(plan)}</p>
+  </div>
+
+  <ActivityPlanner plan={plan} />
+</Layout>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

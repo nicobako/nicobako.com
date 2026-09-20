@@ -1,0 +1,77 @@
+---
+import {
+  PLANS,
+  planHref,
+  type Plan,
+} from "../printables/activity-planner/activity-planner.ts";
+
+interface Props {
+  /** The plan currently being shown. */
+  plan: Plan;
+}
+
+const { plan } = Astro.props;
+
+// One axis, so one row of links between pre-rendered pages — no control that
+// rebuilds the sheet in the browser, and no script on the page at all.
+const options = PLANS.map((option) => ({
+  label: option.name,
+  title: option.description,
+  href: planHref(option),
+  current: option.slug === plan.slug,
+}));
+---
+
+<div class="plan-picker no-print">
+  <span class="legend">Week</span>
+  {
+    options.map((option) =>
+      option.current ? (
+        <span class="option current" aria-current="page">
+          {option.label}
+        </span>
+      ) : (
+        <a class="option" href={option.href} title={option.title}>
+          {option.label}
+        </a>
+      ),
+    )
+  }
+</div>
+
+<style>
+  .plan-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .legend {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .option {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .current {
+    background: var(--bg);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  a.option:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>
