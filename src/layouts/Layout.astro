@@ -269,6 +269,68 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : As
 	}
 
 	/* ------------------------------------------------------------------ *
+	 * Timer widgets — shared by src/pages/timers/*. Each page keeps its
+	 * own scoped overrides for the sizes that genuinely vary (min-width,
+	 * padding, font-size); the rest is identical across all five pages.
+	 * ------------------------------------------------------------------ */
+	.timer-display {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+		color: var(--text);
+	}
+
+	.timer-controls button {
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		background: var(--surface);
+		color: var(--text);
+		font-size: 1rem;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.timer-controls button:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.timer-controls button.primary {
+		border-color: var(--accent);
+		background: transparent;
+		color: var(--accent);
+		transition:
+			background 0.12s,
+			color 0.12s;
+	}
+
+	.timer-controls button.primary:hover {
+		background: var(--accent);
+		color: var(--accent-text);
+	}
+
+	.timer-status {
+		min-height: 1.4em;
+		font-weight: 600;
+		color: var(--accent);
+	}
+
+	.number-input {
+		text-align: center;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		background: var(--bg);
+		color: var(--text);
+		padding: 0.35rem 0.5rem;
+		-moz-appearance: textfield;
+	}
+
+	.number-input::-webkit-outer-spin-button,
+	.number-input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+	}
+
+	/* ------------------------------------------------------------------ *
 	 * Print — hide site chrome so printable pages fill the sheet.
 	 * Elements opt out of printing with the `.no-print` class.
 	 * ------------------------------------------------------------------ */

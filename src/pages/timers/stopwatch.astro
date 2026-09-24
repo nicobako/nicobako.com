@@ -9,9 +9,9 @@ import Layout from "../../layouts/Layout.astro";
   <h1>Stopwatch</h1>
 
   <div class="stopwatch">
-    <div id="display" class="display" aria-live="polite">00:00.00</div>
+    <div id="display" class="timer-display display" aria-live="polite">00:00.00</div>
 
-    <div class="controls">
+    <div class="controls timer-controls">
       <button id="start-pause" class="primary">Start</button>
       <button id="lap" disabled>Lap</button>
       <button id="reset" disabled>Reset</button>
@@ -95,11 +95,7 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .display {
-    font-family: var(--font-mono);
     font-size: clamp(2.75rem, 11vw, 4.5rem);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    color: var(--text);
   }
 
   .controls {
@@ -110,32 +106,6 @@ import Layout from "../../layouts/Layout.astro";
   .controls button {
     min-width: 6rem;
     padding: 0.6rem 1.25rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .controls button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .controls button.primary {
-    border-color: var(--accent);
-    background: transparent;
-    color: var(--accent);
-    transition:
-      background 0.12s,
-      color 0.12s;
-  }
-
-  .controls button.primary:hover {
-    background: var(--accent);
-    color: var(--accent-text);
   }
 
   .laps {

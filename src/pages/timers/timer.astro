@@ -9,16 +9,16 @@ import Layout from "../../layouts/Layout.astro";
   <h1>Timer</h1>
 
   <div class="timer">
-    <div id="display" class="display" aria-live="polite">05:00</div>
+    <div id="display" class="timer-display display" aria-live="polite">05:00</div>
 
     <div id="duration-row" class="duration-row">
       <label>
         <span>Min</span>
-        <input id="minutes" type="number" min="0" max="180" value="5" />
+        <input id="minutes" class="number-input" type="number" min="0" max="180" value="5" />
       </label>
       <label>
         <span>Sec</span>
-        <input id="seconds" type="number" min="0" max="59" value="0" />
+        <input id="seconds" class="number-input" type="number" min="0" max="59" value="0" />
       </label>
     </div>
 
@@ -30,12 +30,12 @@ import Layout from "../../layouts/Layout.astro";
       <button data-minutes="30">30m</button>
     </div>
 
-    <div class="controls">
+    <div class="controls timer-controls">
       <button id="start-pause" class="primary">Start</button>
       <button id="reset">Reset</button>
     </div>
 
-    <p id="status" class="status" role="status"></p>
+    <p id="status" class="timer-status" role="status"></p>
   </div>
 </Layout>
 
@@ -139,11 +139,7 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .display {
-    font-family: var(--font-mono);
     font-size: clamp(3rem, 12vw, 5rem);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    color: var(--text);
   }
 
   .display.done {
@@ -172,18 +168,6 @@ import Layout from "../../layouts/Layout.astro";
 
   .duration-row input {
     width: 4.5rem;
-    text-align: center;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text);
-    padding: 0.35rem 0.5rem;
-    -moz-appearance: textfield;
-  }
-
-  .duration-row input::-webkit-outer-spin-button,
-  .duration-row input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
   }
 
   .presets {
@@ -216,32 +200,5 @@ import Layout from "../../layouts/Layout.astro";
   .controls button {
     min-width: 7rem;
     padding: 0.6rem 1.5rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .controls button.primary {
-    border-color: var(--accent);
-    background: transparent;
-    color: var(--accent);
-    transition:
-      background 0.12s,
-      color 0.12s;
-  }
-
-  .controls button.primary:hover {
-    background: var(--accent);
-    color: var(--accent-text);
-  }
-
-  .status {
-    min-height: 1.4em;
-    font-weight: 600;
-    color: var(--accent);
   }
 </style>

@@ -10,7 +10,7 @@ import Layout from "../../layouts/Layout.astro";
 
   <div class="interval-timer">
     <p id="phase-name" class="phase-name">Ready</p>
-    <div id="display" class="display" aria-live="polite">00:30</div>
+    <div id="display" class="timer-display display" aria-live="polite">00:30</div>
     <p id="progress" class="progress"></p>
     <p id="up-next" class="up-next"></p>
 
@@ -18,13 +18,13 @@ import Layout from "../../layouts/Layout.astro";
       <div id="steps-list" class="steps-list">
         <div class="step-row">
           <input type="text" class="step-name" value="Work" aria-label="Interval name" />
-          <input type="number" class="step-seconds" min="1" max="3600" value="30" aria-label="Seconds" />
+          <input type="number" class="step-seconds number-input" min="1" max="3600" value="30" aria-label="Seconds" />
           <span class="unit">sec</span>
           <button type="button" class="remove-step" aria-label="Remove interval">✕</button>
         </div>
         <div class="step-row">
           <input type="text" class="step-name" value="Rest" aria-label="Interval name" />
-          <input type="number" class="step-seconds" min="1" max="3600" value="15" aria-label="Seconds" />
+          <input type="number" class="step-seconds number-input" min="1" max="3600" value="15" aria-label="Seconds" />
           <span class="unit">sec</span>
           <button type="button" class="remove-step" aria-label="Remove interval">✕</button>
         </div>
@@ -34,17 +34,17 @@ import Layout from "../../layouts/Layout.astro";
 
       <label class="rounds-row">
         <span>Rounds</span>
-        <input id="rounds" type="number" min="1" max="99" value="4" />
+        <input id="rounds" class="number-input" type="number" min="1" max="99" value="4" />
       </label>
     </div>
 
-    <div class="controls">
+    <div class="controls timer-controls">
       <button id="start-pause" class="primary">Start</button>
       <button id="skip">Skip</button>
       <button id="reset">Reset</button>
     </div>
 
-    <p id="status" class="status" role="status"></p>
+    <p id="status" class="timer-status" role="status"></p>
   </div>
 </Layout>
 
@@ -111,7 +111,7 @@ import Layout from "../../layouts/Layout.astro";
 
     const secondsInput = document.createElement("input");
     secondsInput.type = "number";
-    secondsInput.className = "step-seconds";
+    secondsInput.className = "step-seconds number-input";
     secondsInput.min = "1";
     secondsInput.max = "3600";
     secondsInput.value = String(seconds);
@@ -266,11 +266,7 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .display {
-    font-family: var(--font-mono);
     font-size: clamp(3rem, 12vw, 5rem);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    color: var(--text);
     margin-top: 0.25rem;
   }
 
@@ -313,23 +309,12 @@ import Layout from "../../layouts/Layout.astro";
     gap: 0.5rem;
   }
 
-  .step-row input,
-  .step-row .unit {
+  .step-row .step-name {
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--bg);
     color: var(--text);
     padding: 0.35rem 0.5rem;
-  }
-
-  .step-row .step-seconds {
-    text-align: center;
-    -moz-appearance: textfield;
-  }
-
-  .step-row .step-seconds::-webkit-outer-spin-button,
-  .step-row .step-seconds::-webkit-inner-spin-button {
-    -webkit-appearance: none;
   }
 
   .step-row .unit {
@@ -388,18 +373,6 @@ import Layout from "../../layouts/Layout.astro";
 
   .rounds-row input {
     width: 4.5rem;
-    text-align: center;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text);
-    padding: 0.35rem 0.5rem;
-    -moz-appearance: textfield;
-  }
-
-  .rounds-row input::-webkit-outer-spin-button,
-  .rounds-row input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
   }
 
   .controls {
@@ -411,37 +384,5 @@ import Layout from "../../layouts/Layout.astro";
   .controls button {
     min-width: 6rem;
     padding: 0.6rem 1.25rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .controls button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .controls button.primary {
-    border-color: var(--accent);
-    background: transparent;
-    color: var(--accent);
-    transition:
-      background 0.12s,
-      color 0.12s;
-  }
-
-  .controls button.primary:hover {
-    background: var(--accent);
-    color: var(--accent-text);
-  }
-
-  .status {
-    min-height: 1.4em;
-    font-weight: 600;
-    color: var(--accent);
   }
 </style>
