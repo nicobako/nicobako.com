@@ -72,7 +72,7 @@ const bandColumn = days.length > 5 ? "6.5rem" : "8.5rem";
   <div class="notes">
     <span class="notes-label">Notes</span>
     <div class="notes-lines">
-      <span /><span />
+      <span />
     </div>
   </div>
 </div>
@@ -163,7 +163,7 @@ const bandColumn = days.length > 5 ? "6.5rem" : "8.5rem";
   }
 
   /* The band label spans its rows, so the left column reads as three sections
-     rather than as fourteen unrelated lines. */
+     rather than as fifteen unrelated lines. */
   .planner .bandlabel {
     background: var(--surface);
     vertical-align: middle;
@@ -187,15 +187,16 @@ const bandColumn = days.length > 5 ? "6.5rem" : "8.5rem";
   }
 
   /* Empty write-in cells. The heights are what is left once the heading, the
-     note and the notes lines have taken theirs: both weeks have to clear a
+     note and the notes line have taken theirs: both weeks have to clear a
      single A4 landscape page with enough margin that a different font on a
-     different machine cannot push them onto a second one. */
+     different machine cannot push them onto a second one. A lesson row stays
+     the taller of the two, because a lesson carries a time as well as a name. */
   .planner tr.choice .cell {
     height: 2rem;
   }
 
   .planner tr.lesson .cell {
-    height: 2.5rem;
+    height: 2.2rem;
   }
 
   /* A tick box in the top-right corner of each choice cell: it leaves the rest

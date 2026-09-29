@@ -21,8 +21,10 @@ export interface Band {
 }
 
 /**
- * The bands, top to bottom. Row counts are chosen together so the whole sheet
- * lands on one A4 landscape page — adding rows here takes them from the notes.
+ * The bands, top to bottom. Every band gets the same number of rows, so no band
+ * is the one the sheet is mostly about. Row counts are chosen together so the
+ * whole sheet lands on one A4 landscape page — adding rows here takes them from
+ * the row heights and the notes.
  *
  * Only the child's own choices get a tick box: the lessons band is filled in by
  * a grown-up, and those are not the child's to tick off.
@@ -31,19 +33,19 @@ export const BANDS: Band[] = [
   {
     name: "My Study Choices",
     hint: "reading, writing, numbers",
-    rows: 8,
+    rows: 5,
     tick: true,
   },
   {
     name: "My Fun Choices",
     hint: "outside, making, music",
-    rows: 4,
+    rows: 5,
     tick: true,
   },
   {
     name: "Lessons & Events",
     hint: "with a grown-up",
-    rows: 2,
+    rows: 5,
     tick: false,
   },
 ];
