@@ -68,7 +68,7 @@ of presets trades directly against install size. Keep it short and deliberate.
 |---|---|
 | `/` | `src/pages/index.astro` |
 | `/games/`, `/games/classrooms-and-angry-teachers`, `/games/word-steps/` and a page per ladder (English and Japanese) | `src/pages/games/` |
-| `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/`, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
+| `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/` (including a page per ascending-on-string variant), `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/printables/`, and the sheets listed below | `src/pages/printables/` |
 | `/offline` | `src/pages/offline.astro` |
@@ -171,6 +171,35 @@ is a child learning the words, not one who already has them.
   and subtracts it back out of the MIDI, so the synth gets a matching `midiTranspose`.
   Playback fetches soundfonts from abcjs's CDN at first Play, so it is the one part of the
   site that needs the network even though the page itself is precached.
+- `src/music/etudes/ascending-on-string.ts` — climbing one string through the positions:
+  the four fingers played in a chosen order in first position, a shift up a step, the same
+  order again, all the way up. Two facts collapse the whole family into tables. The notes
+  are consecutive scale degrees above the open string — finger `f` in position `p` sounds
+  the `(p - 1) + f`th degree — so a note is one integer and the score is written as degrees
+  rather than pitches. And played in the major scale rooted on the open string, the shape is
+  identical on all four strings, so one source is generated on C and handed to abcjs with a
+  `transposition`, exactly as `single-octave-single-string.ts` does; the four strings come
+  out in G, D, A and E major, which is how a violinist plays them anyway. `buildAbc` writes
+  a subdivision ladder per position — the pattern as half, quarter, eighth and sixteenth
+  notes, each stage filling the same two bars, so it is stated once, twice, four and eight
+  times — and every slur is half a bar whatever the note value, which is what keeps the bow
+  at one speed while the notes accelerate. The shift bar carries `fingers[0]` up one degree,
+  which lands it exactly on the first note of the next position's block, for every one of
+  the twenty-four finger orders. Rendered by `components/AscendingEtude.astro` with
+  `components/AscendingPicker.astro` as three rows of links, in the `SheetMusicPicker`
+  idiom. The pages carry no script beyond the shared `AbcTrack` mount.
+
+  **The preset count is the thing to watch here.** Four strings × 24 finger orders × 2
+  position spans is 192 real, precached pages (~3.2 MB, taking the precache from 5.7 to
+  8.9 MB). The 24 orders are the exercise itself and the four strings are not negotiable,
+  so the span list is where the restraint went: there are only two because a span starting
+  at first position is already contained in the longer one — each position is its own block
+  of systems, so "first through fifth" is the first five blocks of `1-7`, read and stopped
+  early. Only `5-10` is a genuinely different exercise (different register, entered by a
+  shift rather than from the open hand). Adding a third span costs 96 pages to print
+  something a reader can already stop early on. Violin only; viola would be a second table
+  of open strings plus the alto clef.
+
 - `src/music/circle-of-fifths/circle.ts` — the twelve keys plus the wheel's SVG geometry, all resolved at build time into `SEGMENTS`. The page maps that to static SVG and ships **no** JavaScript: each wedge is an `<a href="#key-N">` and the matching panel is revealed by `:target`.
 - `src/music/ear-training/` — `ear-training.ts` derives the twenty-four keys from a tonic
   letter plus an accidental plus a mode (so a key is three values, not seven spellings),
@@ -239,8 +268,9 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site (~1.8 MB) is precached, so every page works offline after the
-first visit. Caching is network-first for navigations, cache-first for hashed
+The whole site (~8.9 MB across ~570 files, most of it the generated etude and
+printable variants) is precached, so every page works offline after the first
+visit. `npm run build` prints the file count; check it when adding presets. Caching is network-first for navigations, cache-first for hashed
 `/_astro/` assets, and stale-while-revalidate for everything else same-origin.
 A navigation to a page that was never cached falls back to `src/pages/offline.astro`.
 

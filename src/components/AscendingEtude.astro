@@ -1,0 +1,50 @@
+---
+// The body of an ascending-on-string page: the picker, a line saying what this variant
+// asks for, and the score.
+//
+// It exists because two routes render it — the default variant at the bare path and the
+// other 191 under `[etude]` — and the body is the part worth keeping identical between
+// them.
+import AbcTrack from "./AbcTrack.astro";
+import AscendingPicker from "./AscendingPicker.astro";
+import {
+  buildAbc,
+  describeEtude,
+  type AscendingEtude,
+} from "../music/etudes/ascending-on-string.ts";
+
+interface Props {
+  etude: AscendingEtude;
+}
+
+const { etude } = Astro.props;
+
+// Resolved here, at build time. The source is written with the open string as C4 and abcjs
+// is handed the offset, which is what makes one written shape serve all four strings.
+const abcText = buildAbc(etude);
+const transposition = etude.string.semitonesFromC4;
+---
+
+<AscendingPicker etude={etude} />
+
+<p class="summary">{describeEtude(etude)}</p>
+<p class="hint">
+  Each position gets four systems — the same four notes as half, quarter, eighth and
+  sixteenth notes — and then one bar that shifts the first finger up a step into the next
+  position. Every slur is half a bar long, so the bow keeps one speed while the notes
+  underneath it double in pace.
+</p>
+
+<AbcTrack abcText={abcText} transposition={transposition} />
+
+<style>
+  .summary {
+    margin: 0 0 0.5rem;
+  }
+
+  .hint {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin: 0 0 1.5rem;
+  }
+</style>

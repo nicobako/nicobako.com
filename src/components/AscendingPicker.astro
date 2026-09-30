@@ -1,0 +1,161 @@
+---
+// Three rows of links between pre-rendered pages: each row swaps its own axis and keeps
+// the other two, exactly as `SheetMusicPicker` does over the staff paper's two axes.
+//
+// The finger row is 24 links wide, which is the whole point of the etude — every order the
+// four fingers can come in — so it is a grid rather than a wrapped line, and the slugs
+// double as the labels.
+import {
+  FINGER_PATTERNS,
+  SPANS,
+  STRINGS,
+  etudeFor,
+  etudeHref,
+  type AscendingEtude,
+} from "../music/etudes/ascending-on-string.ts";
+
+interface Props {
+  /** The etude currently being shown. */
+  etude: AscendingEtude;
+}
+
+const { etude } = Astro.props;
+
+const stringOptions = STRINGS.map((string) => ({
+  label: string.name.replace(" string", ""),
+  title: `Open ${string.openPitch}, so the etude is in ${string.key}`,
+  target: etudeFor(string.slug, etude.span.slug, etude.pattern.slug),
+  current: string.slug === etude.string.slug,
+}));
+
+const spanOptions = SPANS.map((span) => ({
+  label: span.name,
+  title: `Climb from the ${span.from} to the ${span.to} position`,
+  target: etudeFor(etude.string.slug, span.slug, etude.pattern.slug),
+  current: span.slug === etude.span.slug,
+}));
+
+// No tooltip on these: the label already *is* the finger order, and 24 of them repeated
+// across 192 precached pages is real weight for a caption that says nothing new.
+const fingerOptions = FINGER_PATTERNS.map((pattern) => ({
+  label: pattern.slug,
+  title: undefined,
+  target: etudeFor(etude.string.slug, etude.span.slug, pattern.slug),
+  current: pattern.slug === etude.pattern.slug,
+}));
+
+const rows = [
+  { legend: "String", options: stringOptions, wide: false },
+  { legend: "Positions", options: spanOptions, wide: false },
+  { legend: "Fingers", options: fingerOptions, wide: true },
+];
+---
+
+<div class="picker no-print">
+  {
+    rows.map((row) => (
+      <div class:list={["row", { wide: row.wide }]}>
+        <span class="legend">{row.legend}</span>
+        <div class:list={["options", { grid: row.wide }]}>
+          {row.options.map((option) =>
+            option.current ? (
+              <span class="option current" aria-current="page">
+                {option.label}
+              </span>
+            ) : (
+              <a class="option" href={etudeHref(option.target)} title={option.title}>
+                {option.label}
+              </a>
+            ),
+          )}
+        </div>
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .legend {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    /* Fixed width so every row of options starts on the same left edge. */
+    width: 5.5rem;
+    flex-shrink: 0;
+  }
+
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  /* The 24 finger orders read as a table of equal cells rather than a ragged paragraph. */
+  .options.grid {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 0.3rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .option {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    line-height: 1;
+    text-decoration: none;
+    text-align: center;
+  }
+
+  .options.grid .option {
+    padding: 0.35rem 0.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+
+  .current {
+    background: var(--bg);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  a.option:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* On a phone the legend sits above its own row so the options keep their full width. */
+  @media (max-width: 30rem) {
+    .row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.3rem;
+    }
+
+    .legend {
+      width: auto;
+    }
+
+    .options.grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+</style>
