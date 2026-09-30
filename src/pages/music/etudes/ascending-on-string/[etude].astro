@@ -1,0 +1,43 @@
+---
+import Layout from "../../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../../components/Breadcrumbs.astro";
+import AscendingEtudeBody from "../../../../components/AscendingEtude.astro";
+import {
+  describeEtude,
+  etudeName,
+  etudeSlug,
+  subPageEtudes,
+  type AscendingEtude,
+} from "../../../../music/etudes/ascending-on-string.ts";
+
+// One statically generated page per string, span of positions and finger order, minus the
+// default, which lives at the bare `/music/etudes/ascending-on-string` path.
+export function getStaticPaths() {
+  return subPageEtudes().map((etude) => ({
+    params: { etude: etudeSlug(etude) },
+    props: { etude },
+  }));
+}
+
+interface Props {
+  etude: AscendingEtude;
+}
+
+const { etude } = Astro.props;
+---
+
+<Layout
+  title={`Ascending on String — ${etudeName(etude)} — Nico Bako`}
+  description={describeEtude(etude)}
+>
+  <Breadcrumbs
+    trail={[
+      { label: "Music", href: "/music/" },
+      { label: "Etudes", href: "/music/etudes/" },
+      { label: "Ascending on String", href: "/music/etudes/ascending-on-string/" },
+    ]}
+  />
+  <h1>Ascending on String</h1>
+
+  <AscendingEtudeBody etude={etude} />
+</Layout>

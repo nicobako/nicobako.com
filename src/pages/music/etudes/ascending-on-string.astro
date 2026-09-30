@@ -1,0 +1,32 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import AscendingEtude from "../../../components/AscendingEtude.astro";
+import { DEFAULT_ETUDE } from "../../../music/etudes/ascending-on-string.ts";
+
+// The bare path shows the G string, first through seventh, fingers 1234; every other
+// string, span and finger order has its own page under `ascending-on-string/[etude]`,
+// reached through the picker's links.
+const etude = DEFAULT_ETUDE;
+---
+
+<Layout
+  title="Ascending on String — Nico Bako"
+  description="Climb one violin string through the positions, playing the four fingers in any order, with the shift between each position written out."
+>
+  <Breadcrumbs
+    trail={[
+      { label: "Music", href: "/music/" },
+      { label: "Etudes", href: "/music/etudes/" },
+    ]}
+  />
+  <h1>Ascending on String</h1>
+  <p>
+    Stay on one string. Play the four fingers in the order you have picked, shift up a step
+    into the next position, and play the same order again — all the way up. What it drills
+    is the shift and the hand shape, so the finger order is the exercise and every one of
+    the twenty-four is here.
+  </p>
+
+  <AscendingEtude etude={etude} />
+</Layout>
