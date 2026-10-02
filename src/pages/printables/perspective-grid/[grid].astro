@@ -1,0 +1,56 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import PerspectiveGrid from "../../../components/PerspectiveGrid.astro";
+import PerspectiveGridPicker from "../../../components/PerspectiveGridPicker.astro";
+import {
+  describeGrid,
+  gridName,
+  gridSlug,
+  subPageGrids,
+  type Grid,
+} from "../../../printables/perspective-grid/perspective-grid.ts";
+
+// One statically generated page per perspective and layout, minus centred
+// one-point, which lives at the bare `/printables/perspective-grid` path.
+export function getStaticPaths() {
+  return subPageGrids().map((grid) => ({
+    params: { grid: gridSlug(grid) },
+    props: { grid },
+  }));
+}
+
+interface Props {
+  grid: Grid;
+}
+
+const { grid } = Astro.props;
+---
+
+<Layout
+  title={`Perspective Grids — ${gridName(grid)} — Nico Bako`}
+  description={`A printable ${grid.perspective.name.toLowerCase()} perspective drawing grid. ${grid.variant.description}`}
+>
+  <div class="controls no-print">
+    <h1>Perspective Grids</h1>
+    <PerspectiveGridPicker grid={grid} />
+    <p>{grid.perspective.description} {grid.variant.description}</p>
+    <p class="hint">{describeGrid(grid)}</p>
+  </div>
+
+  <PerspectiveGrid layout={grid.variant.layout} />
+</Layout>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

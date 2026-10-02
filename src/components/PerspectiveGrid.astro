@@ -1,0 +1,135 @@
+---
+import {
+  FRAME,
+  PAGE_HEIGHT_MM,
+  PAGE_WIDTH_MM,
+  drawLayout,
+  type Layout,
+  type Stroke,
+} from "../printables/perspective-grid/perspective-grid.ts";
+
+interface Props {
+  layout: Layout;
+}
+
+const { layout } = Astro.props;
+
+// Every stroke is resolved at build time; the SVG is static markup with no
+// script. One user unit is one millimetre, so the sheet prints at true size.
+const drawing = drawLayout(layout);
+
+const n = (value: number) => Number(value.toFixed(2));
+
+const pathOf = (stroke: Stroke) =>
+  stroke.kind === "line"
+    ? `M${n(stroke.from.x)} ${n(stroke.from.y)}L${n(stroke.to.x)} ${n(stroke.to.y)}`
+    : `M${n(stroke.from.x)} ${n(stroke.from.y)}A${n(stroke.radius)} ${n(stroke.radius)} 0 ${
+        stroke.large ? 1 : 0
+      } ${stroke.sweep ? 1 : 0} ${n(stroke.to.x)} ${n(stroke.to.y)}`;
+
+// Strokes are grouped by tone so each group is styled once, faintest first, so
+// the heavier lines sit on top where they cross.
+const tones = (["minor", "ray", "major"] as const).map((tone) => ({
+  tone,
+  paths: drawing.strokes.filter((stroke) => stroke.tone === tone).map(pathOf),
+}));
+---
+
+<div class="pg-wrap">
+  <svg
+    class="pg-sheet"
+    viewBox={`0 0 ${PAGE_WIDTH_MM} ${PAGE_HEIGHT_MM}`}
+    xmlns="http://www.w3.org/2000/svg"
+    role="img"
+    aria-label="Perspective drawing grid"
+  >
+    <defs>
+      <clipPath id="pg-frame">
+        <rect x={FRAME.x} y={FRAME.y} width={FRAME.width} height={FRAME.height} />
+      </clipPath>
+    </defs>
+    <g clip-path="url(#pg-frame)" fill="none" stroke-linecap="round">
+      {
+        tones.map(({ tone, paths }) => (
+          <g class={`pg-${tone}`}>
+            {paths.map((d) => (
+              <path d={d} />
+            ))}
+          </g>
+        ))
+      }
+      {
+        drawing.circle && (
+          <circle
+            class="pg-major"
+            cx={n(drawing.circle.centre.x)}
+            cy={n(drawing.circle.centre.y)}
+            r={n(drawing.circle.radius)}
+          />
+        )
+      }
+      <g class="pg-major">
+        {
+          drawing.vanishingPoints.map((point) => (
+            <circle cx={n(point.x)} cy={n(point.y)} r="1.4" />
+          ))
+        }
+      </g>
+    </g>
+    <rect
+      class="pg-major"
+      x={FRAME.x}
+      y={FRAME.y}
+      width={FRAME.width}
+      height={FRAME.height}
+      fill="none"
+    />
+  </svg>
+</div>
+
+<style>
+  /* On screen the sheet scales to the column, keeping its A4 proportions; on
+     paper it is exactly one A4 landscape page. */
+  .pg-sheet {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 297 / 210;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    box-sizing: border-box;
+  }
+
+  .pg-minor {
+    stroke: var(--muted);
+    stroke-width: 0.1;
+    stroke-opacity: 0.6;
+  }
+
+  .pg-ray {
+    stroke: var(--muted);
+    stroke-width: 0.15;
+  }
+
+  .pg-major {
+    stroke: var(--text);
+    stroke-width: 0.35;
+    fill: none;
+  }
+
+  @media print {
+    .pg-sheet {
+      width: 297mm;
+      height: 210mm;
+      border: none;
+      /* Never paint the page fill — with background graphics enabled, the dark
+         theme's --bg would print as a solid sheet. */
+      background: none;
+    }
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+</style>

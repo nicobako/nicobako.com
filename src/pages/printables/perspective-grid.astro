@@ -1,0 +1,42 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import PerspectiveGrid from "../../components/PerspectiveGrid.astro";
+import PerspectiveGridPicker from "../../components/PerspectiveGridPicker.astro";
+import {
+  DEFAULT_GRID,
+  describeGrid,
+} from "../../printables/perspective-grid/perspective-grid.ts";
+
+// The bare path shows centred one-point; every other perspective and layout has
+// its own page under `perspective-grid/[grid]`, reached through the picker's links.
+const grid = DEFAULT_GRID;
+---
+
+<Layout
+  title="Perspective Grids — Nico Bako"
+  description="Printable perspective drawing grids on A4 landscape: one, two, three, four and five-point."
+>
+  <div class="controls no-print">
+    <h1>Perspective Grids</h1>
+    <PerspectiveGridPicker grid={grid} />
+    <p>{grid.perspective.description} {grid.variant.description}</p>
+    <p class="hint">{describeGrid(grid)}</p>
+  </div>
+
+  <PerspectiveGrid layout={grid.variant.layout} />
+</Layout>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>
