@@ -84,7 +84,9 @@ expanded into `SHEETS`, and `blank-sheet-music/[sheet].astro` generates a page f
 each (`compact`, `compact-2-pages`, …). `weekly-activity-planner` has one axis,
 `PLANS` in `activity-planner.ts` — the school week at the bare path and the full
 week under it — so the picker is a single row of links and the pages carry no
-script at all.
+script at all. `perspective-grid` is one-, two-, three-, four- and five-point
+perspective, each with its own short list of layouts (`PERSPECTIVES` in
+`perspective-grid.ts`), one page per layout under the bare path.
 
 ### Game subsystem
 
@@ -246,6 +248,17 @@ is a child learning the words, not one who already has them.
 
 - `staff-paper/staff-paper.ts` — staff geometry maths plus the two preset axes: `SIZES` (four staff sizes) and `PAGE_COUNTS` (`1`, and `2` for printing double-sided onto one sheet of paper). `SHEETS` is their cross product, so the page count is a variant like any other rather than a stepper. A size is declared as "this many staves, this rastral size"; the gap between staves is *derived* so the staves fill the printable area exactly, which is what lets a preset be one line of data. Rendered by `components/SheetMusic.astro` (pure props, no state) with `components/SheetMusicPicker.astro` as two rows of links — each row swaps one axis and keeps the other. This page used to expose six sliders and rebuild itself in the browser; it is now eight static pages and the only script left is `window.print()`. Adding a size means adding an entry to `SIZES`, which costs one page per page count.
 - `calendar/calendar.ts` — ISO-8601 week maths and the grid/row builders; `calendar/years.ts` decides which years get pages. Rendered by `components/YearGrid.astro` and `components/BookmarkTable.astro`.
+- `perspective-grid/perspective-grid.ts` — perspective drawing grids on A4 landscape.
+  A layout is declared as where its vanishing points sit, in fractions of the frame
+  (values outside 0–1 put a point off the sheet), and the module resolves it into
+  strokes in millimetres: straight lines for one, two and three-point, circular arcs
+  for the curvilinear four and five-point grids. Strokes are allowed to run far past
+  the sheet — `PerspectiveGrid.astro` clips them to the frame in SVG — so no code works
+  out where a line meets the border. Each arc fan is spaced by the angle its arcs leave
+  a vanishing point at, which is what makes curves fan out of a point the way straight
+  rays do. Rendered by `components/PerspectiveGrid.astro` (static SVG, one unit per
+  millimetre) with `components/PerspectiveGridPicker.astro` as two rows of links: the
+  perspective, and the layouts of that perspective.
 - `speed-reading/speed-reading.ts` — line wrapping and column dealing. The one page that must re-render in the browser: where a line breaks depends on the reader's actual font metrics, so the build uses `estimateWidth` for first paint and the browser re-runs the layout with canvas measurements.
 
 ### PWA subsystem
