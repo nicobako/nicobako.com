@@ -107,7 +107,6 @@ const sheetStyle = sheetStyleAttr(DEFAULT_OPTIONS);
       </label>
       <button type="button" id="reroll" hidden>Re-roll words</button>
       <button type="button" id="focus" class="primary">Practise</button>
-      <button type="button" id="print">Print</button>
     </div>
 
     <p class="summary" id="summary">{describeSheet(DEFAULT_OPTIONS, measure, pxPerMm)}</p>
@@ -406,8 +405,6 @@ const sheetStyle = sheetStyleAttr(DEFAULT_OPTIONS);
   // sheet has to be rebuilt to paper's terms for the print, then handed back.
   window.addEventListener("beforeprint", () => render("print"));
   window.addEventListener("afterprint", () => render("screen"));
-
-  document.getElementById("print")!.addEventListener("click", () => window.print());
 
   const exitFocus = document.getElementById("exit-focus") as HTMLButtonElement;
 
