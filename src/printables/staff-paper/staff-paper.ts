@@ -2,7 +2,7 @@
 //
 // This module holds numbers only — no markup. Every sheet is a named, hand-picked
 // preset: nothing here is configured in the browser, so all of it resolves at build
-// time and the pages ship no JavaScript beyond `window.print()`.
+// time and the pages ship no JavaScript of their own.
 
 /** The dimensions that define how one page of staff paper looks. */
 export interface StaffGeometry {

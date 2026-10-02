@@ -53,16 +53,7 @@ const variantOptions = grid.perspective.variants.map((variant) => ({
       </div>
     ))
   }
-
-  <button type="button" class="print-button">Print</button>
 </div>
-
-<script>
-  // The only script these pages need: printing has no declarative equivalent.
-  for (const button of document.querySelectorAll(".print-button")) {
-    button.addEventListener("click", () => window.print());
-  }
-</script>
 
 <style>
   .grid-picker {
@@ -88,8 +79,7 @@ const variantOptions = grid.perspective.variants.map((variant) => ({
     width: 4rem;
   }
 
-  .option,
-  .print-button {
+  .option {
     padding: 0.35rem 0.7rem;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -105,14 +95,7 @@ const variantOptions = grid.perspective.variants.map((variant) => ({
     color: var(--accent);
   }
 
-  .print-button {
-    cursor: pointer;
-    font: inherit;
-    margin-top: 0.25rem;
-  }
-
-  a.option:hover,
-  .print-button:hover {
+  a.option:hover {
     border-color: var(--accent);
     color: var(--accent);
   }

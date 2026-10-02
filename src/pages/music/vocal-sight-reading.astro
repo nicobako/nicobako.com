@@ -97,7 +97,6 @@ const KEY_GROUPS = [
     <button id="cadence-btn" type="button">Play cadence</button>
     <button id="new-line-btn" type="button" class="primary">New line</button>
     <button id="play-btn" type="button">Play the line</button>
-    <button id="print-btn" type="button">Print</button>
   </div>
 
   <div class="notation-wrap">
@@ -252,10 +251,6 @@ const KEY_GROUPS = [
     if (!melody) return;
     synth.playMelody(melody.freqs, 60 / TEMPO);
     say("Here it is — how close were you?");
-  });
-
-  document.getElementById("print-btn")!.addEventListener("click", () => {
-    window.print();
   });
 
   for (const control of [keySelect, leapSelect, barsSelect, ...octaveBoxes]) {

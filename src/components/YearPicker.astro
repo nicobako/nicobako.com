@@ -38,16 +38,7 @@ const { prev, next } = adjacentYears(year);
       </a>
     )
   }
-
-  <button type="button" class="print-button">Print</button>
 </div>
-
-<script>
-  // The only script these pages need: printing has no declarative equivalent.
-  for (const button of document.querySelectorAll(".print-button")) {
-    button.addEventListener("click", () => window.print());
-  }
-</script>
 
 <style>
   .year-picker {
@@ -57,8 +48,7 @@ const { prev, next } = adjacentYears(year);
   }
 
   .step,
-  .current,
-  .print-button {
+  .current {
     padding: 0.35rem 0.7rem;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -75,13 +65,7 @@ const { prev, next } = adjacentYears(year);
     text-align: center;
   }
 
-  .print-button {
-    cursor: pointer;
-    font: inherit;
-  }
-
-  a.step:hover,
-  .print-button:hover {
+  a.step:hover {
     border-color: var(--accent);
     color: var(--accent);
   }

@@ -21,8 +21,8 @@ C C G G | A A G2 | F F E E | D D C2 |]
     Write tunes in <a href="https://abcnotation.com/wiki/abc:standard:v2.1" target="_blank" rel="noopener">ABC notation</a>.
     Each <code>X:</code> header starts a new track — separate tunes with a blank
     line and every one gets its own sheet music, player, and downloads below.
-    This page's URL updates as you type too — copy it to share or bookmark the
-    current tune.
+    This page's URL updates as you type too — use Share › Copy link in the header
+    to share or bookmark the current tune.
   </p>
 
   <div class="abc-editor">
@@ -45,7 +45,6 @@ C C G G | A A G2 | F F E E | D D C2 |]
     <div class="abc-controls no-print">
       <button id="upload-abc-btn" type="button">Upload .abc</button>
       <input id="upload-abc-input" class="visually-hidden" type="file" accept=".abc,text/plain" />
-      <button id="print-btn" type="button">Print</button>
     </div>
 
     <p id="upload-status" class="abc-download-status no-print" aria-live="polite"></p>
@@ -186,10 +185,6 @@ C C G G | A A G2 | F F E E | D D C2 |]
       .finally(() => {
         uploadInput.value = "";
       });
-  });
-
-  document.getElementById("print-btn")!.addEventListener("click", () => {
-    window.print();
   });
 </script>
 
