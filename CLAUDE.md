@@ -23,7 +23,7 @@ Requires Node `>=22.12.0`.
 
 - `src/layouts/Layout.astro` — the HTML document shell. Accepts `title` and `description` props (with defaults). Composes `Header` + `Footer`, exposes `<slot />` for page content. Owns **all global CSS** via `<style is:global>`, including the design-token `:root` custom properties and their `prefers-color-scheme: dark` overrides.
 - `src/pages/*.astro` — each file is a route. Pages import `Layout` and pass content into its slot. Data-driven sections (e.g., focus cards, stack tags on the home page) are defined as arrays in the page's frontmatter `---` block and mapped to markup — edit the arrays to change content rather than duplicating markup.
-- `src/components/` — shared UI pieces. `Header.astro` drives the primary navigation (nav links are an array in its frontmatter). `Footer.astro` renders the copyright line. `SimpleLink.astro` and `Link.astro` are small link primitives.
+- `src/components/` — shared UI pieces. `Header.astro` drives the primary navigation (nav links are an array in its frontmatter). It also carries a Share menu (Share…, Copy link, Print) on every page, because an installed PWA has no browser toolbar to do any of the three; Share… only appears where `navigator.share` exists. `Footer.astro` renders the copyright line. `SimpleLink.astro` and `Link.astro` are small link primitives.
 
 ### How pages are built
 

@@ -34,6 +34,22 @@ const externalLinks: SimpleLinkProps[] = [
           </ul>
         </details>
       </li>
+      <li>
+        <details class="menu">
+          <summary>Share</summary>
+          <ul class="menu-list page-actions">
+            <li hidden data-needs-share>
+              <button type="button" data-action="share">Share…</button>
+            </li>
+            <li>
+              <button type="button" data-action="copy">Copy link</button>
+            </li>
+            <li>
+              <button type="button" data-action="print">Print</button>
+            </li>
+          </ul>
+        </details>
+      </li>
       {
         externalLinks.map((link) => (
           <li>
@@ -50,11 +66,12 @@ const externalLinks: SimpleLinkProps[] = [
 </header>
 
 <script>
-  // Close a <details class="menu"> when a link inside it is clicked, or
-  // when the user clicks anywhere outside of it.
+  // Close a <details class="menu"> when a link or button inside it is
+  // clicked, or when the user clicks anywhere outside of it. Copy link is the
+  // exception: it stays open to say whether the copy worked.
   document.querySelectorAll<HTMLDetailsElement>(".menu").forEach((menu) => {
     menu.addEventListener("click", (event) => {
-      if (event.target instanceof Element && event.target.closest("a")) {
+      if (event.target instanceof Element && event.target.closest('a, button:not([data-action="copy"])')) {
         menu.open = false;
       }
     });
@@ -65,6 +82,59 @@ const externalLinks: SimpleLinkProps[] = [
       }
     });
   });
+</script>
+
+<script>
+  // Share, copy and print the current page. An installed PWA runs without
+  // the browser's toolbar, so these are the only way to do any of the three
+  // there; in a browser tab they are a shortcut. The URL is shared whole,
+  // query string included, because several music tools keep their settings
+  // there.
+  const actions = document.querySelector(".page-actions");
+  if (actions) {
+    const shareItem = actions.querySelector<HTMLElement>("[data-needs-share]");
+    if (shareItem && "share" in navigator) shareItem.hidden = false;
+
+    const menu = actions.closest("details");
+    const copyButton = actions.querySelector<HTMLButtonElement>('[data-action="copy"]');
+    const copyLabel = copyButton?.textContent ?? "";
+    let copyTimer: number | undefined;
+    const flashCopy = (label: string) => {
+      if (!copyButton) return;
+      copyButton.textContent = label;
+      window.clearTimeout(copyTimer);
+      copyTimer = window.setTimeout(() => {
+        copyButton.textContent = copyLabel;
+        if (menu) menu.open = false;
+      }, 1200);
+    };
+
+    actions.addEventListener("click", async (event) => {
+      const button = event.target instanceof Element && event.target.closest("button");
+      if (!button) return;
+      const url = location.href;
+      switch (button.dataset.action) {
+        case "share":
+          try {
+            await navigator.share({ title: document.title, url });
+          } catch {
+            // Dismissing the share sheet rejects too; there is nothing to do.
+          }
+          break;
+        case "copy":
+          try {
+            await navigator.clipboard.writeText(url);
+            flashCopy("Link copied");
+          } catch {
+            flashCopy("Couldn't copy");
+          }
+          break;
+        case "print":
+          window.print();
+          break;
+      }
+    });
+  }
 </script>
 
 <style>
@@ -160,6 +230,27 @@ const externalLinks: SimpleLinkProps[] = [
   .menu-list :global(a):hover {
     background: var(--surface);
     text-decoration: none;
+  }
+
+  .page-actions {
+    left: auto;
+    right: 0;
+  }
+
+  .page-actions button {
+    display: block;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--accent);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .page-actions button:hover {
+    background: var(--surface);
   }
 
   .menu-list :global(a[aria-current="page"]) {
