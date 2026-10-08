@@ -1,0 +1,90 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import TCutBooklet from "../../../components/TCutBooklet.astro";
+import {
+  BOOKLETS,
+  type Booklet,
+} from "../../../printables/booklet/booklets.ts";
+
+export function getStaticPaths() {
+  return BOOKLETS.map((booklet) => ({
+    params: { booklet: booklet.slug },
+    props: { booklet },
+  }));
+}
+
+interface Props {
+  booklet: Booklet;
+}
+
+const { booklet } = Astro.props;
+---
+
+<Layout title={`${booklet.name} — Nico Bako`} description={booklet.description}>
+  <div class="controls no-print">
+    <h1>{booklet.name}</h1>
+    <p>
+      {booklet.description} Sixteen pages from one sheet of US Letter, printed on
+      one side and folded into a T-cut booklet — no staples. Print at actual size
+      (100%), portrait, with no margins.
+    </p>
+    <ol class="steps">
+      <li>
+        Fold the sheet in half both ways, then in quarters both ways, so it is
+        creased into sixteen panels.
+      </li>
+      <li>
+        Cut the solid lines. The easiest way: fold the sheet in half top to
+        bottom, printing outside. From the folded edge, cut up the middle to the
+        centre crease, then along that crease across the middle two panels — a
+        T. Then cut along the folded edge itself, one panel's width in from each
+        side.
+      </li>
+      <li>
+        Unfold, and crease each line the way its mark says: <span class="key"
+          >— · —</span
+        > folds away from you, printing outside; <span class="key">- - -</span>
+        folds towards you, printing inside.
+      </li>
+      <li>
+        Collapse it along those creases, so the pages run in order with the
+        front cover on top, and press the spine flat.
+      </li>
+    </ol>
+    <p class="hint">Try it once on scrap paper: it is easier done than read.</p>
+  </div>
+
+  <TCutBooklet booklet={booklet} />
+</Layout>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .controls p,
+  .steps {
+    margin: 0;
+  }
+
+  .steps {
+    padding-left: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .key {
+    font-family: ui-monospace, monospace;
+    white-space: nowrap;
+    color: var(--muted);
+  }
+
+  .hint {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

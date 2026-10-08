@@ -1,0 +1,418 @@
+---
+// One page of a booklet, drawn the right way up. `TCutBooklet.astro` places it
+// on the sheet and turns it over where the layout needs it upside down.
+//
+// Every length here is a fraction of `--in`, one printed inch, which the sheet
+// defines from its own width — so the page is drawn at its real size on paper
+// and to scale on screen.
+import type { BookletPage } from "../printables/booklet/booklets.ts";
+
+interface Props {
+  page: BookletPage;
+  /** Page number, printed small in the outer bottom corner. */
+  number: number;
+}
+
+const { page, number } = Astro.props;
+
+// A dot every 3/16 inch, about the 5 mm of a dot-grid notebook, over the space
+// a page has left once its title is in.
+const DOT_STEP = 0.1875;
+const dotColumns = 10;
+const dotRows = 12;
+const dots = Array.from({ length: dotRows }, (_, row) =>
+  Array.from({ length: dotColumns }, (_, column) => ({
+    cx: column * DOT_STEP,
+    cy: row * DOT_STEP,
+  })),
+).flat();
+
+const lines = (count: number) => Array.from({ length: count }, (_, i) => i);
+const initials = ["M", "T", "W", "T", "F", "S", "S"];
+const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// Odd pages are right-hand pages, so their number goes on the right.
+const recto = number % 2 === 1;
+---
+
+<div class:list={["bp", page.kind]}>
+  {
+    page.kind === "cover" && (
+      <>
+        <p class="cover-title">{page.title}</p>
+        <p class="blank">Week of</p>
+        <p class="blank">Name</p>
+        <div class="box">
+          <span class="label">This week's focus</span>
+        </div>
+      </>
+    )
+  }
+
+  {
+    page.kind === "glance" && (
+      <>
+        <p class="title">{page.title}</p>
+        <div class="rows">
+          {weekdays.map((day) => (
+            <span class="row">
+              <span class="label">{day}</span>
+            </span>
+          ))}
+        </div>
+      </>
+    )
+  }
+
+  {
+    page.kind === "priorities" && (
+      <>
+        <p class="title">{page.title}</p>
+        <div class="rows priorities">
+          {lines(page.count).map((i) => (
+            <span class="row">
+              <span class="label">{i + 1}</span>
+              <span class="tick" />
+            </span>
+          ))}
+        </div>
+        <p class="subtitle">{page.linesTitle}</p>
+        <div class="rows">
+          {lines(5).map(() => (
+            <span class="row" />
+          ))}
+        </div>
+      </>
+    )
+  }
+
+  {
+    page.kind === "day" && (
+      <>
+        <p class="title day-title">
+          {page.day}
+          <span class="date" />
+        </p>
+        <p class="subtitle">Must do</p>
+        <div class="rows tasks">
+          {lines(page.tasks).map(() => (
+            <span class="row">
+              <span class="tick" />
+            </span>
+          ))}
+        </div>
+        <div class="rows">
+          {lines(7).map(() => (
+            <span class="row" />
+          ))}
+        </div>
+      </>
+    )
+  }
+
+  {
+    page.kind === "habits" && (
+      <>
+        <p class="title">{page.title}</p>
+        <div class="habits-grid">
+          <span />
+          {initials.map((initial) => (
+            <span class="label day-initial">{initial}</span>
+          ))}
+          {lines(page.rows).map(() => (
+            <>
+              <span class="habit-name" />
+              {initials.map(() => (
+                <span class="habit-box" />
+              ))}
+            </>
+          ))}
+        </div>
+      </>
+    )
+  }
+
+  {
+    page.kind === "budget" && (
+      <>
+        <p class="title">{page.title}</p>
+        <p class="blank">Budget</p>
+        <div class="ledger">
+          <span class="label">Item</span>
+          <span class="label amount">Amount</span>
+          {lines(page.rows).map(() => (
+            <>
+              <span class="cell" />
+              <span class="cell amount" />
+            </>
+          ))}
+        </div>
+        <p class="blank">Spent</p>
+        <p class="blank">Left</p>
+      </>
+    )
+  }
+
+  {
+    page.kind === "checklist" && (
+      <>
+        <p class="title">{page.title}</p>
+        <div class="rows">
+          {lines(page.rows).map(() => (
+            <span class="row">
+              <span class="tick" />
+            </span>
+          ))}
+        </div>
+      </>
+    )
+  }
+
+  {
+    page.kind === "dots" && (
+      <>
+        <p class="title">{page.title}</p>
+        <svg
+          class="dots"
+          viewBox={`-0.02 -0.02 ${(dotColumns - 1) * DOT_STEP + 0.04} ${(dotRows - 1) * DOT_STEP + 0.04}`}
+          aria-hidden="true"
+        >
+          {dots.map((dot) => (
+            <circle cx={dot.cx} cy={dot.cy} r="0.012" />
+          ))}
+        </svg>
+      </>
+    )
+  }
+
+  {
+    page.kind === "prompts" && (
+      <>
+        <p class="title">{page.title}</p>
+        {page.prompts.map((prompt) => (
+          <>
+            <p class="subtitle">{prompt}</p>
+            <div class="rows">
+              {lines(3).map(() => (
+                <span class="row" />
+              ))}
+            </div>
+          </>
+        ))}
+      </>
+    )
+  }
+
+  {page.kind === "back" && <p class="mark">nicobako.com</p>}
+
+  {
+    page.kind !== "cover" && page.kind !== "back" && (
+      <span class:list={["folio", { recto }]}>{number}</span>
+    )
+  }
+</div>
+
+<style>
+  .bp {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--in) * 0.05);
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    font-size: calc(var(--in) * 0.085);
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  .bp p {
+    margin: 0;
+  }
+
+  .title {
+    font-size: calc(var(--in) * 0.12);
+    font-weight: 600;
+    padding-bottom: calc(var(--in) * 0.03);
+    border-bottom: calc(var(--in) * 0.012) solid var(--text);
+  }
+
+  .subtitle,
+  .label {
+    color: var(--muted);
+  }
+
+  .subtitle {
+    margin-top: calc(var(--in) * 0.04) !important;
+  }
+
+  /* Ruled lines share whatever height their block has, so a page fills to its
+     foot whatever else is on it. */
+  .rows {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .row {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: calc(var(--in) * 0.05);
+    border-bottom: calc(var(--in) * 0.006) solid var(--muted);
+    padding-bottom: calc(var(--in) * 0.02);
+  }
+
+  .row .label {
+    width: calc(var(--in) * 0.22);
+  }
+
+  /* Short blocks of tick rows take a fixed height, so the free lines under them
+     get the rest of the page. */
+  .tasks,
+  .priorities {
+    flex: none;
+  }
+
+  .tasks .row,
+  .priorities .row {
+    flex: none;
+    height: calc(var(--in) * 0.2);
+  }
+
+  .tick {
+    flex: none;
+    width: calc(var(--in) * 0.08);
+    height: calc(var(--in) * 0.08);
+    border: calc(var(--in) * 0.008) solid var(--text);
+  }
+
+  .priorities .tick {
+    margin-left: auto;
+  }
+
+  .blank {
+    display: flex;
+    gap: calc(var(--in) * 0.05);
+    color: var(--muted);
+  }
+
+  .blank::after {
+    content: "";
+    flex: 1;
+    border-bottom: calc(var(--in) * 0.006) solid var(--muted);
+  }
+
+  /* The cover. */
+  .cover-title {
+    font-size: calc(var(--in) * 0.2);
+    font-weight: 700;
+    line-height: 1.1;
+    margin: calc(var(--in) * 0.15) 0 calc(var(--in) * 0.15) !important;
+  }
+
+  .cover .blank {
+    margin-bottom: calc(var(--in) * 0.06) !important;
+  }
+
+  .box {
+    flex: 1;
+    margin-top: calc(var(--in) * 0.06);
+    padding: calc(var(--in) * 0.04);
+    border: calc(var(--in) * 0.008) solid var(--muted);
+    border-radius: calc(var(--in) * 0.04);
+  }
+
+  /* A day: its name with a rule for the date beside it. */
+  .day-title {
+    display: flex;
+    align-items: baseline;
+    gap: calc(var(--in) * 0.08);
+  }
+
+  .date {
+    flex: 1;
+    border-bottom: calc(var(--in) * 0.006) solid var(--muted);
+  }
+
+  /* Habits: a write-in name, then a box per day. */
+  .habits-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr repeat(7, calc(var(--in) * 0.12));
+    grid-template-rows: auto;
+    grid-auto-rows: 1fr;
+    gap: calc(var(--in) * 0.035);
+    align-items: end;
+  }
+
+  .day-initial {
+    text-align: center;
+  }
+
+  .habit-name {
+    align-self: stretch;
+    border-bottom: calc(var(--in) * 0.006) solid var(--muted);
+  }
+
+  .habit-box {
+    aspect-ratio: 1;
+    border: calc(var(--in) * 0.008) solid var(--text);
+  }
+
+  /* Budget: an item column and a narrow amount column, ruled. */
+  .ledger {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr calc(var(--in) * 0.45);
+    grid-template-rows: auto;
+    grid-auto-rows: 1fr;
+  }
+
+  .ledger .label {
+    padding-bottom: calc(var(--in) * 0.02);
+    border-bottom: calc(var(--in) * 0.008) solid var(--text);
+  }
+
+  .ledger .cell {
+    border-bottom: calc(var(--in) * 0.006) solid var(--muted);
+  }
+
+  .ledger .amount {
+    border-left: calc(var(--in) * 0.006) solid var(--muted);
+    padding-left: calc(var(--in) * 0.03);
+  }
+
+  .budget .blank {
+    margin-top: calc(var(--in) * 0.03);
+  }
+
+  .dots {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    fill: var(--muted);
+  }
+
+  .back {
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .mark {
+    font-size: calc(var(--in) * 0.07);
+    color: var(--muted);
+  }
+
+  .folio {
+    position: absolute;
+    bottom: calc(var(--in) * -0.13);
+    left: 0;
+    font-size: calc(var(--in) * 0.065);
+    color: var(--muted);
+  }
+
+  .folio.recto {
+    left: auto;
+    right: 0;
+  }
+</style>

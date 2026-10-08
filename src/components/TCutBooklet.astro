@@ -1,0 +1,149 @@
+---
+// A T-cut booklet laid out on one US Letter sheet: sixteen pages in a 4 × 4
+// grid, with the cuts drawn solid and the folds marked by kind. The layout and
+// the folds come from `t-cut.ts`; this component only places them.
+import BookletPage from "./BookletPage.astro";
+import type { Booklet } from "../printables/booklet/booklets.ts";
+import {
+  COLUMNS,
+  EDGES,
+  PANELS,
+  ROWS,
+} from "../printables/booklet/t-cut.ts";
+
+interface Props {
+  booklet: Booklet;
+}
+
+const { booklet } = Astro.props;
+
+// US Letter portrait, in inches; the lines are drawn in the same units.
+const SHEET_WIDTH = 8.5;
+const SHEET_HEIGHT = 11;
+const panelWidth = SHEET_WIDTH / COLUMNS;
+const panelHeight = SHEET_HEIGHT / ROWS;
+
+const edges = EDGES.map((edge) => ({
+  ...edge,
+  x1: edge.x1 * panelWidth,
+  y1: edge.y1 * panelHeight,
+  x2: edge.x2 * panelWidth,
+  y2: edge.y2 * panelHeight,
+}));
+---
+
+<div class="tcut-frame">
+  <div
+    class="tcut-sheet"
+    style={`--sheet-w: ${SHEET_WIDTH}; --sheet-h: ${SHEET_HEIGHT};`}
+  >
+    {
+      PANELS.map((panel) => (
+        <div class:list={["panel", { inverted: panel.inverted }]}>
+          <BookletPage page={booklet.pages[panel.page - 1]} number={panel.page} />
+        </div>
+      ))
+    }
+    <svg
+      class="tcut-lines"
+      viewBox={`0 0 ${SHEET_WIDTH} ${SHEET_HEIGHT}`}
+      aria-hidden="true"
+    >
+      {
+        edges.map((edge) => (
+          <line
+            class={edge.kind}
+            x1={edge.x1}
+            y1={edge.y1}
+            x2={edge.x2}
+            y2={edge.y2}
+          />
+        ))
+      }
+    </svg>
+  </div>
+</div>
+
+<style>
+  /* The frame is the container the sheet measures itself against: one printed
+     inch, `--in`, is a fixed share of its width. On screen that scales the
+     sheet to the column; on paper the frame is exactly the sheet. */
+  .tcut-frame {
+    container-type: inline-size;
+    width: 100%;
+  }
+
+  .tcut-sheet {
+    --in: calc(100cqw / var(--sheet-w));
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    width: 100cqw;
+    aspect-ratio: 8.5 / 11;
+    box-sizing: border-box;
+    background: var(--bg);
+    outline: 1px solid var(--border);
+  }
+
+  /* The padding keeps writing off the creases, and off the edge of the sheet
+     where most printers cannot reach. */
+  .panel {
+    min-width: 0;
+    min-height: 0;
+    padding: calc(var(--in) * 0.2);
+    overflow: hidden;
+  }
+
+  .panel.inverted {
+    transform: rotate(180deg);
+  }
+
+  .tcut-lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* Cuts are what must not be missed, so they are the only solid, dark lines.
+     Folds are faint: once folded they sit on the edge of a page. */
+  .cut {
+    stroke: var(--text);
+    stroke-width: 0.014;
+  }
+
+  .valley,
+  .mountain {
+    stroke: var(--muted);
+    stroke-width: 0.006;
+  }
+
+  .valley {
+    stroke-dasharray: 0.06 0.04;
+  }
+
+  .mountain {
+    stroke-dasharray: 0.1 0.03 0.015 0.03;
+  }
+
+  @media print {
+    .tcut-frame {
+      width: 8.5in;
+    }
+
+    .tcut-sheet {
+      height: 11in;
+      outline: none;
+      /* Never paint the page fill — with background graphics enabled, the dark
+         theme's --bg would print as a solid sheet. */
+      background: none;
+    }
+  }
+
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+</style>

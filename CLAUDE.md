@@ -87,6 +87,9 @@ week under it — so the picker is a single row of links and the pages carry no
 script at all. `perspective-grid` is one-, two-, three-, four- and five-point
 perspective, each with its own short list of layouts (`PERSPECTIVES` in
 `perspective-grid.ts`), one page per layout under the bare path.
+Booklets live under `/printables/booklets/[booklet]`, one page per entry in
+`BOOKLETS` (`booklets.ts`); there is no bare path, and so far one booklet,
+`weekly-planner`.
 
 ### Game subsystem
 
@@ -259,6 +262,20 @@ is a child learning the words, not one who already has them.
   rays do. Rendered by `components/PerspectiveGrid.astro` (static SVG, one unit per
   millimetre) with `components/PerspectiveGridPicker.astro` as two rows of links: the
   perspective, and the layouts of that perspective.
+- `booklet/` — T-cut booklets: sixteen pages printed on one side of a US Letter sheet,
+  folded into a 4 × 4 grid, cut along eight panel edges and collapsed into a booklet
+  with no staples. `t-cut.ts` declares only the page layout (which page is in which
+  panel, and which are upside down); the folds, the cuts and each fold's direction are
+  *derived*, because the paper is a single ring running through the pages in reading
+  order — neighbouring panels are joined exactly when their pages are consecutive, a
+  leaf (odd → even, and the covers) folds printing-out, a spread folds printing-in. The
+  module throws, failing the build, if a layout cannot form that ring. That set of cuts
+  is the only one a one-sided 16-page sheet can have; folded in half it is the T.
+  `booklets.ts` holds the contents as a list of sixteen typed page descriptions; a new
+  booklet is a new entry, and a new kind of page is a new branch in
+  `components/BookletPage.astro`. `components/TCutBooklet.astro` places the pages and
+  draws the lines, sizing everything from one printed inch (`--in`), measured against
+  the sheet's container, so the sheet is real size on paper and to scale on screen.
 - `speed-reading/speed-reading.ts` — line wrapping and column dealing. The one page that must re-render in the browser: where a line breaks depends on the reader's actual font metrics, so the build uses `estimateWidth` for first paint and the browser re-runs the layout with canvas measurements.
 
 ### PWA subsystem
