@@ -1,0 +1,69 @@
+---
+// Ruled write-in lines. By default they share whatever height is left on the
+// page, so a page fills to its foot whatever else is on it; `fixed` gives each
+// line a set height instead, for a short block with free lines under it.
+interface Props {
+  count: number;
+  /** A tick box at the start of each line, or at the end. */
+  tick?: "start" | "end";
+  /** Number the lines from 1. */
+  numbered?: boolean;
+  fixed?: boolean;
+}
+
+const { count, tick, numbered = false, fixed = false } = Astro.props;
+const lines = Array.from({ length: count }, (_, i) => i + 1);
+---
+
+<div class:list={["lines", { fixed }]}>
+  {
+    lines.map((n) => (
+      <span class="line">
+        {tick === "start" && <span class="tick" />}
+        {numbered && <span class="number">{n}</span>}
+        {tick === "end" && <span class="tick end" />}
+      </span>
+    ))
+  }
+</div>
+
+<style>
+  .lines {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .line {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5em;
+    padding-bottom: 0.2em;
+    border-bottom: 0.06em solid var(--muted);
+  }
+
+  .fixed {
+    flex: none;
+  }
+
+  .fixed .line {
+    flex: none;
+    height: 2.4em;
+  }
+
+  .tick {
+    flex: none;
+    width: 1em;
+    height: 1em;
+    border: 0.08em solid var(--text);
+  }
+
+  .end {
+    margin-left: auto;
+  }
+
+  .number {
+    color: var(--muted);
+  }
+</style>

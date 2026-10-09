@@ -87,9 +87,8 @@ week under it — so the picker is a single row of links and the pages carry no
 script at all. `perspective-grid` is one-, two-, three-, four- and five-point
 perspective, each with its own short list of layouts (`PERSPECTIVES` in
 `perspective-grid.ts`), one page per layout under the bare path.
-Booklets live under `/printables/booklets/[booklet]`, one page per entry in
-`BOOKLETS` (`booklets.ts`); there is no bare path, and so far one booklet,
-`weekly-planner`.
+Booklets live under `/printables/booklets/`, one page file per booklet (so far
+`weekly-planner`); there is no index page.
 
 ### Game subsystem
 
@@ -262,19 +261,29 @@ is a child learning the words, not one who already has them.
   rays do. Rendered by `components/PerspectiveGrid.astro` (static SVG, one unit per
   millimetre) with `components/PerspectiveGridPicker.astro` as two rows of links: the
   perspective, and the layouts of that perspective.
-- `booklet/` — mini zines: eight pages printed on one side of a landscape US Letter
+- `booklet/mini-zine.ts` — the eight-page mini zine: one side of a landscape US Letter
   sheet, folded into a 2 × 4 grid with one slit along the middle crease, and collapsed
-  into a booklet with no staples. `mini-zine.ts` declares only the page layout (which
-  page is in which panel, and which are upside down); the folds, the cut and each
-  fold's direction are *derived*, because the paper is a single ring running through
-  the pages in reading order — neighbouring panels are joined exactly when their pages
-  are consecutive, a leaf (odd → even, and the covers) folds printing-out, a spread
-  folds printing-in. The module throws, failing the build, if a layout cannot form
-  that ring. `booklets.ts` holds the contents as a list of eight typed page
-  descriptions; a new booklet is a new entry, and a new kind of page is a new branch
-  in `components/BookletPage.astro`. `components/MiniZine.astro` places the pages and
-  draws the lines, sizing everything from one printed inch (`--in`), measured against
-  the sheet's container, so the sheet is real size on paper and to scale on screen.
+  into a booklet with no staples. It declares only the page layout (which page is in
+  which panel, and which are upside down); the folds, the cut and each fold's
+  direction are *derived*, because the paper is a single ring running through the
+  pages in reading order — neighbouring panels are joined exactly when their pages are
+  consecutive, a leaf (odd → even, and the covers) folds printing-out, a spread folds
+  printing-in. The module throws, failing the build, if a layout cannot form that ring.
+
+  A booklet is composed from components rather than described as data, so a new one is
+  a new page file and nothing else. `components/MiniZine.astro` is the sheet: eight
+  named slots, `page-1` to `page-8`, in reading order and written the right way up; it
+  places them (through `MiniZinePanel.astro`), turns over the upside-down ones, numbers
+  the inside pages and draws the cut. It knows nothing about what is on the pages.
+  `MiniZineSteps.astro` is the screen-only folding instructions. What goes in the slots
+  comes from `components/paper/`: `Page`, `Section` (shares a page's height with its
+  siblings), `Heading`, `Label`, `Blank`, `Box`, `Lines`, `CheckGrid`, `Ledger`, and
+  `Day`, which is the first composition of them. They are sized in `em` — the sheet sets
+  a panel's font size to a tenth of a printed inch — so they also work on any other
+  printable that sets a font size. Keep each one's props short; a part that would need
+  a long list of options is two parts. Astro only accepts static slot names, on both
+  sides, which is why the eight panels and each booklet's pages are written out rather
+  than mapped.
 - `speed-reading/speed-reading.ts` — line wrapping and column dealing. The one page that must re-render in the browser: where a line breaks depends on the reader's actual font metrics, so the build uses `estimateWidth` for first paint and the browser re-runs the layout with canvas measurements.
 
 ### PWA subsystem

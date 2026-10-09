@@ -1,21 +1,27 @@
 ---
 // A mini zine laid out on one landscape US Letter sheet: eight pages in a 2 × 4
-// grid, with the cut drawn solid and the folds marked by kind. The layout and
-// the folds come from `mini-zine.ts`; this component only places them.
-import BookletPage from "./BookletPage.astro";
-import type { Booklet } from "../printables/booklet/booklets.ts";
-import {
-  COLUMNS,
-  EDGES,
-  PANELS,
-  ROWS,
-} from "../printables/booklet/mini-zine.ts";
+// grid, with the cut drawn solid and the folds faint. The layout and the folds
+// come from `printables/booklet/mini-zine.ts`; this component places them and
+// knows nothing about what is on the pages.
+//
+// Each page is a named slot, `page-1` to `page-8`, in reading order, written
+// the right way up — the sheet turns over the ones that print upside down and
+// numbers the pages itself. The parts in `components/paper/` are made to go in
+// them:
+//
+//   <MiniZine>
+//     <Page slot="page-1">…</Page>
+//     …
+//   </MiniZine>
+import MiniZinePanel from "./MiniZinePanel.astro";
+import { COLUMNS, EDGES, ROWS } from "../printables/booklet/mini-zine.ts";
 
 interface Props {
-  booklet: Booklet;
+  /** Print page numbers on the inside pages. The covers never carry one. */
+  numbered?: boolean;
 }
 
-const { booklet } = Astro.props;
+const { numbered = true } = Astro.props;
 
 // US Letter landscape, in inches; the lines are drawn in the same units.
 const SHEET_WIDTH = 11;
@@ -32,22 +38,37 @@ const edges = EDGES.map((edge) => ({
 }));
 ---
 
+
 <div class="zine-frame">
   <div
     class="zine-sheet"
     style={`--sheet-w: ${SHEET_WIDTH}; --sheet-h: ${SHEET_HEIGHT};`}
   >
-    {
-      PANELS.map((panel) => (
-        <div class:list={["panel", { inverted: panel.inverted }]}>
-          <BookletPage
-            page={booklet.pages[panel.page - 1]}
-            number={panel.page}
-            folio={panel.page !== 1 && panel.page !== booklet.pages.length}
-          />
-        </div>
-      ))
-    }
+    {/* Slot names have to be written out: Astro will not take one built in a loop. */}
+    <MiniZinePanel page={1} numbered={numbered}>
+      <slot name="page-1" />
+    </MiniZinePanel>
+    <MiniZinePanel page={2} numbered={numbered}>
+      <slot name="page-2" />
+    </MiniZinePanel>
+    <MiniZinePanel page={3} numbered={numbered}>
+      <slot name="page-3" />
+    </MiniZinePanel>
+    <MiniZinePanel page={4} numbered={numbered}>
+      <slot name="page-4" />
+    </MiniZinePanel>
+    <MiniZinePanel page={5} numbered={numbered}>
+      <slot name="page-5" />
+    </MiniZinePanel>
+    <MiniZinePanel page={6} numbered={numbered}>
+      <slot name="page-6" />
+    </MiniZinePanel>
+    <MiniZinePanel page={7} numbered={numbered}>
+      <slot name="page-7" />
+    </MiniZinePanel>
+    <MiniZinePanel page={8} numbered={numbered}>
+      <slot name="page-8" />
+    </MiniZinePanel>
     <svg
       class="zine-lines"
       viewBox={`0 0 ${SHEET_WIDTH} ${SHEET_HEIGHT}`}
@@ -88,19 +109,6 @@ const edges = EDGES.map((edge) => ({
     box-sizing: border-box;
     background: var(--bg);
     outline: 1px solid var(--border);
-  }
-
-  /* The padding keeps writing off the creases, and off the edge of the sheet
-     where most printers cannot reach. */
-  .panel {
-    min-width: 0;
-    min-height: 0;
-    padding: calc(var(--in) * 0.2);
-    overflow: hidden;
-  }
-
-  .panel.inverted {
-    transform: rotate(180deg);
   }
 
   .zine-lines {

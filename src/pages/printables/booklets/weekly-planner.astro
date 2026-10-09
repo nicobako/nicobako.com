@@ -1,0 +1,98 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import MiniZineSteps from "../../../components/MiniZineSteps.astro";
+import Page from "../../../components/paper/Page.astro";
+import Day from "../../../components/paper/Day.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Label from "../../../components/paper/Label.astro";
+import Lines from "../../../components/paper/Lines.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import CheckGrid from "../../../components/paper/CheckGrid.astro";
+import Ledger from "../../../components/paper/Ledger.astro";
+
+const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
+---
+
+<Layout
+  title="Weekly Planner Booklet — Nico Bako"
+  description="A pocket planner for one week, folded from one sheet: the days, a habit tracker, a budget and a shopping list."
+>
+  <h1 class="no-print">Weekly Planner Booklet</h1>
+  <p class="no-print">
+    A pocket planner for one week: the days, a habit tracker, a budget and a
+    shopping list.
+  </p>
+  <MiniZineSteps />
+
+  <MiniZine>
+    <Page slot="page-1">
+      <p class="cover-title">Weekly Planner</p>
+      <Blank label="Week of" />
+      <Blank label="Name" />
+      <Box label="This week's focus" />
+    </Page>
+
+    <Page slot="page-2">
+      <Heading text="Top 3 this week" />
+      <Lines count={3} numbered tick="end" fixed />
+      <Label text="Don't forget" />
+      <Lines count={8} />
+    </Page>
+
+    {
+      /* Two days to a page, and the weekend sharing one with Friday, with
+         fewer must-dos there so each day keeps some free lines. */
+    }
+    <Page slot="page-3">
+      <Day day="Monday" tasks={2} lines={3} />
+      <Day day="Tuesday" tasks={2} lines={3} />
+    </Page>
+
+    <Page slot="page-4">
+      <Day day="Wednesday" tasks={2} lines={3} />
+      <Day day="Thursday" tasks={2} lines={3} />
+    </Page>
+
+    <Page slot="page-5">
+      <Day day="Friday" tasks={1} lines={3} />
+      <Day day="Saturday" tasks={1} lines={3} />
+      <Day day="Sunday" tasks={1} lines={3} />
+    </Page>
+
+    <Page slot="page-6">
+      <Heading text="Habits" />
+      <CheckGrid columns={WEEK} rows={8} />
+    </Page>
+
+    <Page slot="page-7">
+      <Heading text="Budget" />
+      <Blank label="Budget" />
+      <Ledger
+        columns={[{ label: "Item" }, { label: "Amount", width: 6 }]}
+        rows={14}
+      />
+      <Blank label="Spent" />
+      <Blank label="Left" />
+    </Page>
+
+    {
+      /* The back cover is the one page seen without opening the booklet,
+         which is where a shopping list wants to be. */
+    }
+    <Page slot="page-8">
+      <Heading text="Shopping" />
+      <Lines count={18} tick="start" />
+    </Page>
+  </MiniZine>
+</Layout>
+
+<style>
+  .cover-title {
+    font-size: 2.6em;
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0.6em 0;
+  }
+</style>

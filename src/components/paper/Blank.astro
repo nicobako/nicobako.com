@@ -1,0 +1,25 @@
+---
+// A labelled write-in rule: "Week of ______".
+interface Props {
+  label: string;
+}
+
+const { label } = Astro.props;
+---
+
+<p class="blank">{label}</p>
+
+<style>
+  .blank {
+    display: flex;
+    gap: 0.5em;
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .blank::after {
+    content: "";
+    flex: 1;
+    border-bottom: 0.06em solid var(--muted);
+  }
+</style>

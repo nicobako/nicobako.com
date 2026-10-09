@@ -1,0 +1,68 @@
+---
+// A ruled table with headed columns: an expense log, a reading list with
+// dates. The first column takes the spare width; the rest are as wide as
+// declared.
+interface Column {
+  label: string;
+  /** Width in `em`. Omit for the first column, which takes what is left. */
+  width?: number;
+}
+
+interface Props {
+  columns: Column[];
+  rows: number;
+}
+
+const { columns, rows } = Astro.props;
+const template = columns
+  .map((column) => (column.width ? `${column.width}em` : "1fr"))
+  .join(" ");
+const rowList = Array.from({ length: rows }, (_, i) => i);
+---
+
+<div class="ledger" style={`grid-template-columns: ${template};`}>
+  {
+    columns.map((column, i) => (
+      <span class:list={["head", { first: i === 0 }]}>{column.label}</span>
+    ))
+  }
+  {
+    rowList.map(() => (
+      <>
+        {columns.map((_, i) => (
+          <span class:list={["cell", { first: i === 0 }]} />
+        ))}
+      </>
+    ))
+  }
+</div>
+
+<style>
+  .ledger {
+    flex: 1;
+    display: grid;
+    grid-template-rows: auto;
+    grid-auto-rows: 1fr;
+  }
+
+  .head,
+  .cell {
+    padding-left: 0.3em;
+  }
+
+  .head {
+    padding-bottom: 0.2em;
+    color: var(--muted);
+    border-bottom: 0.08em solid var(--text);
+  }
+
+  .cell {
+    border-bottom: 0.06em solid var(--muted);
+  }
+
+  /* A rule between columns, but not before the first. */
+  .head:not(.first),
+  .cell:not(.first) {
+    border-left: 0.06em solid var(--muted);
+  }
+</style>

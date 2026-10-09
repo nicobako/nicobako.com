@@ -1,0 +1,34 @@
+---
+// A page or section heading over a rule, optionally with a blank for the date
+// beside it.
+interface Props {
+  text: string;
+  /** Draw a write-in rule for the date after the text. */
+  dated?: boolean;
+}
+
+const { text, dated = false } = Astro.props;
+---
+
+<p class="heading">
+  {text}
+  {dated && <span class="date" />}
+</p>
+
+<style>
+  .heading {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6em;
+    margin: 0;
+    font-size: 1.4em;
+    font-weight: 600;
+    padding-bottom: 0.2em;
+    border-bottom: 0.09em solid var(--text);
+  }
+
+  .date {
+    flex: 1;
+    border-bottom: 0.04em solid var(--muted);
+  }
+</style>

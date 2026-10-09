@@ -1,0 +1,17 @@
+---
+// A small muted caption above a block: "Don't forget", "Must do".
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+---
+
+<p class="label">{text}</p>
+
+<style>
+  .label {
+    margin: 0.4em 0 0;
+    color: var(--muted);
+  }
+</style>
