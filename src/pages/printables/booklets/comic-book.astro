@@ -1,0 +1,40 @@
+---
+import BookletLayout from "../../../components/BookletLayout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import Page from "../../../components/paper/Page.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import Lines from "../../../components/paper/Lines.astro";
+import Panels from "../../../components/paper/Panels.astro";
+
+// One booklet with the layout changing from page to page, rather than a
+// booklet per layout: a story wants a big panel for the big moment and small
+// ones for quick back-and-forth, and a child should not have to choose which
+// sheet to print before they know what happens.
+---
+
+<BookletLayout slug="comic-book">
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Comic" />
+      <Blank label="Title" />
+      <Blank label="By" />
+      <Box />
+    </Page>
+
+    <Page slot="page-2"><Panels rows={[1, 2]} /></Page>
+    <Page slot="page-3"><Panels rows={[2, 2]} /></Page>
+    <Page slot="page-4"><Panels rows={[1, 1, 1]} /></Page>
+    <Page slot="page-5"><Panels rows={[2, 1]} /></Page>
+    <Page slot="page-6"><Panels rows={[2, 2, 2]} /></Page>
+    <Page slot="page-7"><Panels rows={[1, 2, 1]} /></Page>
+
+    <Page slot="page-8">
+      <Heading text="About the author" />
+      <Box label="Draw yourself" />
+      <Lines count={5} />
+    </Page>
+  </MiniZine>
+</BookletLayout>

@@ -1,0 +1,70 @@
+---
+import BookletLayout from "../../../components/BookletLayout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import Page from "../../../components/paper/Page.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Label from "../../../components/paper/Label.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import Lines from "../../../components/paper/Lines.astro";
+import Ledger from "../../../components/paper/Ledger.astro";
+import Grid from "../../../components/paper/Grid.astro";
+
+// One idea from the first sentence to the next step: what it is for, two pages
+// to sketch it (dots for drawing, squares for anything with a measurement),
+// what to do next and what came of it. The parking lot on the back catches
+// what does not belong yet.
+---
+
+<BookletLayout slug="project-notebook">
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Project" />
+      <Blank label="Name" />
+      <Blank label="Started" />
+      <Box label="The idea in one sentence" />
+    </Page>
+
+    <Page slot="page-2">
+      <Heading text="The problem" />
+      <Lines count={6} />
+      <Label text="Who it's for" />
+      <Lines count={3} />
+      <Label text="Done looks like" />
+      <Lines count={3} />
+    </Page>
+
+    <Page slot="page-3">
+      <Heading text="Sketch" />
+      <Grid kind="dots" />
+    </Page>
+
+    <Page slot="page-4">
+      <Heading text="Design" />
+      <Grid kind="squares" />
+    </Page>
+
+    <Page slot="page-5">
+      <Heading text="Next steps" />
+      <Lines count={16} tick="start" />
+    </Page>
+
+    <Page slot="page-6">
+      <Heading text="Questions" />
+      <Lines count={8} />
+      <Label text="Found out" />
+      <Lines count={6} />
+    </Page>
+
+    <Page slot="page-7">
+      <Heading text="Log" />
+      <Ledger columns={[{ label: "Date", width: 4 }, { label: "Progress" }]} rows={15} />
+    </Page>
+
+    <Page slot="page-8">
+      <Heading text="Parking lot" />
+      <Lines count={16} />
+    </Page>
+  </MiniZine>
+</BookletLayout>

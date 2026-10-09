@@ -1,0 +1,43 @@
+---
+import BookletLayout from "../../../components/BookletLayout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import Page from "../../../components/paper/Page.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import Lines from "../../../components/paper/Lines.astro";
+import Ledger from "../../../components/paper/Ledger.astro";
+import WritingSquares from "../../../components/paper/WritingSquares.astro";
+
+// Five pages of writing squares, one character to a box, then words to learn.
+// Six squares across leaves each one big enough for a child's hand; a page
+// takes one character down each column, written over and over.
+---
+
+<BookletLayout slug="kana-practice">
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Kana Practice" />
+      <Blank label="Name" />
+      <Blank label="Started" />
+      <Box label="Characters I know" />
+    </Page>
+
+    <Page slot="page-2"><Heading text="Practice" dated /><WritingSquares columns={6} rows={8} /></Page>
+    <Page slot="page-3"><Heading text="Practice" dated /><WritingSquares columns={6} rows={8} /></Page>
+    <Page slot="page-4"><Heading text="Practice" dated /><WritingSquares columns={6} rows={8} /></Page>
+    <Page slot="page-5"><Heading text="Practice" dated /><WritingSquares columns={6} rows={8} /></Page>
+    <Page slot="page-6"><Heading text="Practice" dated /><WritingSquares columns={6} rows={8} /></Page>
+
+    <Page slot="page-7">
+      <Heading text="Words" />
+      <Ledger columns={[{ label: "Japanese" }, { label: "English" }]} rows={15} />
+    </Page>
+
+    <Page slot="page-8">
+      <Heading text="Words to learn" />
+      <Lines count={16} tick="start" />
+    </Page>
+  </MiniZine>
+</BookletLayout>

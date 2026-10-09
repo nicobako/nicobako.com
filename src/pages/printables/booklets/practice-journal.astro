@@ -1,0 +1,75 @@
+---
+import BookletLayout from "../../../components/BookletLayout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import Page from "../../../components/paper/Page.astro";
+import Section from "../../../components/paper/Section.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Label from "../../../components/paper/Label.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import Lines from "../../../components/paper/Lines.astro";
+import Ledger from "../../../components/paper/Ledger.astro";
+import CheckGrid from "../../../components/paper/CheckGrid.astro";
+
+// A week at the instrument, written for the violin but true of any: the
+// teacher's assignments, then every day the same four lines in the order a
+// practice session goes, so a week's progress reads straight down the pages.
+// Scales get their own grid, ticked per day, beside the fingering chart and
+// the metronome elsewhere on the site.
+const SESSION = ["Scales", "Etude", "Piece", "Mins"];
+const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
+---
+
+<BookletLayout slug="practice-journal">
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Practice Journal" />
+      <Blank label="Week of" />
+      <Blank label="Name" />
+      <Box label="This week's goal" />
+    </Page>
+
+    <Page slot="page-2">
+      <Heading text="Assignments" />
+      <Ledger columns={[{ label: "Piece, etude or scale" }, { label: "♩ =", width: 3.5 }]} rows={8} />
+      <Label text="Questions for my teacher" />
+      <Lines count={5} />
+    </Page>
+
+    <Page slot="page-3">
+      <Section><Heading text="Monday" dated /><Lines labels={SESSION} /></Section>
+      <Section><Heading text="Tuesday" dated /><Lines labels={SESSION} /></Section>
+    </Page>
+
+    <Page slot="page-4">
+      <Section><Heading text="Wednesday" dated /><Lines labels={SESSION} /></Section>
+      <Section><Heading text="Thursday" dated /><Lines labels={SESSION} /></Section>
+    </Page>
+
+    <Page slot="page-5">
+      <Section><Heading text="Friday" dated /><Lines labels={SESSION} /></Section>
+      <Section><Heading text="Saturday" dated /><Lines labels={SESSION} /></Section>
+    </Page>
+
+    <Page slot="page-6">
+      <Section><Heading text="Sunday" dated /><Lines labels={SESSION} /></Section>
+      <Section>
+        <Heading text="This week" />
+        <Blank label="Minutes" />
+        <Lines count={3} />
+      </Section>
+    </Page>
+
+    <Page slot="page-7">
+      <Heading text="Scales" />
+      <CheckGrid columns={WEEK} rows={10} />
+    </Page>
+
+    <Page slot="page-8">
+      <Heading text="Lesson notes" />
+      <Blank label="Lesson" />
+      <Lines count={14} />
+    </Page>
+  </MiniZine>
+</BookletLayout>

@@ -1,0 +1,31 @@
+---
+// The page around a booklet: its name and description from `booklets.ts`, the
+// trail back to the booklets index, and the folding steps — so a booklet's
+// page file holds nothing but its `MiniZine`.
+import Layout from "../layouts/Layout.astro";
+import Breadcrumbs from "./Breadcrumbs.astro";
+import MiniZineSteps from "./MiniZineSteps.astro";
+import { booklet } from "../printables/booklet/booklets.ts";
+
+interface Props {
+  slug: string;
+}
+
+const info = booklet(Astro.props.slug);
+---
+
+<Layout
+  title={`${info.name} — Nico Bako`}
+  description={`A printable mini zine, folded from one sheet. ${info.description}`}
+>
+  <Breadcrumbs
+    trail={[
+      { label: "Printables", href: "/printables/" },
+      { label: "Booklets", href: "/printables/booklets/" },
+    ]}
+  />
+  <h1 class="no-print">{info.name}</h1>
+  <p class="no-print">{info.description}</p>
+  <MiniZineSteps />
+  <slot />
+</Layout>

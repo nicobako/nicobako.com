@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { BOOKLET_GROUPS } from "../../printables/booklet/booklets.ts";
 ---
 
 <Layout title="Printables — Nico Bako">
@@ -26,14 +27,25 @@ import Layout from "../../layouts/Layout.astro";
     <li><a href="/printables/speed-reading">Speed Reading Practice</a></li>
     <li><a href="/printables/blank-sheet-music">Blank Sheet Music</a></li>
     <li><a href="/printables/perspective-grid">Perspective Grids</a></li>
-    <li>
-      <a href="/printables/booklets/weekly-planner">Weekly Planner Booklet</a>
-    </li>
-    <li>
-      <a href="/printables/booklets/monthly-planner">Monthly Planner Booklet</a>
-    </li>
-    <li>
-      <a href="/printables/booklets/year-planner">Year Planner Booklet</a>
-    </li>
   </ul>
+
+  <h2><a href="/printables/booklets/">Booklets</a></h2>
+  <p>
+    Eight-page pocket booklets, each folded from one sheet with one cut and no
+    staples.
+  </p>
+  {
+    BOOKLET_GROUPS.map((group) => (
+      <>
+        <h3>{group.name}</h3>
+        <ul>
+          {group.booklets.map((booklet) => (
+            <li>
+              <a href={`/printables/booklets/${booklet.slug}`}>{booklet.name}</a>
+            </li>
+          ))}
+        </ul>
+      </>
+    ))
+  }
 </Layout>

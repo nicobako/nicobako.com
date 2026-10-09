@@ -1,7 +1,6 @@
 ---
-import Layout from "../../../layouts/Layout.astro";
+import BookletLayout from "../../../components/BookletLayout.astro";
 import MiniZine from "../../../components/MiniZine.astro";
-import MiniZineSteps from "../../../components/MiniZineSteps.astro";
 import Page from "../../../components/paper/Page.astro";
 import CoverTitle from "../../../components/paper/CoverTitle.astro";
 import Day from "../../../components/paper/Day.astro";
@@ -16,17 +15,7 @@ import Ledger from "../../../components/paper/Ledger.astro";
 const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
 ---
 
-<Layout
-  title="Weekly Planner Booklet — Nico Bako"
-  description="A pocket planner for one week, folded from one sheet: the days, a habit tracker, a budget and a shopping list."
->
-  <h1 class="no-print">Weekly Planner Booklet</h1>
-  <p class="no-print">
-    A pocket planner for one week: the days, a habit tracker, a budget and a
-    shopping list.
-  </p>
-  <MiniZineSteps />
-
+<BookletLayout slug="weekly-planner">
   <MiniZine>
     <Page slot="page-1">
       <CoverTitle text="Weekly Planner" />
@@ -87,4 +76,4 @@ const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
       <Lines count={18} tick="start" />
     </Page>
   </MiniZine>
-</Layout>
+</BookletLayout>

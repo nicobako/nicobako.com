@@ -1,0 +1,37 @@
+---
+import BookletLayout from "../../../components/BookletLayout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import BookEntry from "../../../components/booklets/BookEntry.astro";
+import Page from "../../../components/paper/Page.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import Lines from "../../../components/paper/Lines.astro";
+
+// A page per book, so a finished book gets a picture as well as a tick. The
+// list on the back is seen without opening the booklet, at the library.
+---
+
+<BookletLayout slug="reading-log">
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Reading Log" />
+      <Blank label="Reader" />
+      <Blank label="Started" />
+      <Box label="My favourite book ever" />
+    </Page>
+
+    <Page slot="page-2"><BookEntry /></Page>
+    <Page slot="page-3"><BookEntry /></Page>
+    <Page slot="page-4"><BookEntry /></Page>
+    <Page slot="page-5"><BookEntry /></Page>
+    <Page slot="page-6"><BookEntry /></Page>
+    <Page slot="page-7"><BookEntry /></Page>
+
+    <Page slot="page-8">
+      <Heading text="Books to read next" />
+      <Lines count={16} tick="start" />
+    </Page>
+  </MiniZine>
+</BookletLayout>

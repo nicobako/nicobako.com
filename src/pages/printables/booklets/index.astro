@@ -1,0 +1,66 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import {
+  BOOKLETS,
+  BOOKLET_GROUPS,
+} from "../../../printables/booklet/booklets.ts";
+
+// Every listed booklet must have its page beside this one, or the indexes
+// would link to nothing; failing the build says so before a reader finds out.
+const pageFiles = Object.keys(import.meta.glob("./*.astro"));
+for (const { slug } of BOOKLETS) {
+  if (!pageFiles.includes(`./${slug}.astro`)) {
+    throw new Error(`Booklet "${slug}" is listed but has no page file`);
+  }
+}
+---
+
+<Layout
+  title="Booklets — Nico Bako"
+  description="Printable mini zines: eight-page booklets folded from one sheet of paper with one cut and no staples — planners, trackers, practice journals and books for kids."
+>
+  <Breadcrumbs trail={[{ label: "Printables", href: "/printables/" }]} />
+  <h1>Booklets</h1>
+  <p>
+    Pocket booklets you print on one side of a sheet of US Letter and fold into
+    eight pages, with one cut and no staples. Every booklet page explains the
+    folding; it takes a minute once you have done it once.
+  </p>
+
+  {
+    BOOKLET_GROUPS.map((group) => (
+      <section>
+        <h2>{group.name}</h2>
+        <dl>
+          {group.booklets.map((booklet) => (
+            <>
+              <dt>
+                <a href={`/printables/booklets/${booklet.slug}`}>
+                  {booklet.name}
+                </a>
+              </dt>
+              <dd>{booklet.description}</dd>
+            </>
+          ))}
+        </dl>
+      </section>
+    ))
+  }
+</Layout>
+
+<style>
+  dl {
+    margin: 0;
+  }
+
+  dt {
+    margin-top: 0.75rem;
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0.15rem 0 0;
+    color: var(--muted);
+  }
+</style>
