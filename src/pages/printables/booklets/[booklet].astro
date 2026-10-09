@@ -1,6 +1,6 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
-import TCutBooklet from "../../../components/TCutBooklet.astro";
+import MiniZine from "../../../components/MiniZine.astro";
 import {
   BOOKLETS,
   type Booklet,
@@ -24,37 +24,29 @@ const { booklet } = Astro.props;
   <div class="controls no-print">
     <h1>{booklet.name}</h1>
     <p>
-      {booklet.description} Sixteen pages from one sheet of US Letter, printed on
-      one side and folded into a T-cut booklet — no staples. Print at actual size
-      (100%), portrait, with no margins.
+      {booklet.description} Eight pages from one sheet of US Letter, printed on
+      one side and folded into a mini zine — one cut, no staples. Print at actual
+      size (100%), landscape, with no margins.
     </p>
     <ol class="steps">
       <li>
-        Fold the sheet in half both ways, then in quarters both ways, so it is
-        creased into sixteen panels.
+        Fold the sheet in half, then in half again, then once more, so it is
+        creased into eight panels.
       </li>
       <li>
-        Cut the solid lines. The easiest way: fold the sheet in half top to
-        bottom, printing outside. From the folded edge, cut up the middle to the
-        centre crease, then along that crease across the middle two panels — a
-        T. Then cut along the folded edge itself, one panel's width in from each
-        side.
+        Fold it in half side to side. From the folded edge, cut along the middle
+        crease as far as the next crease — the solid line.
       </li>
       <li>
-        Unfold, and crease each line the way its mark says: <span class="key"
-          >— · —</span
-        > folds away from you, printing outside; <span class="key">- - -</span>
-        folds towards you, printing inside.
+        Unfold it, then fold it in half the long way with the printing outside.
+        Push the two ends towards each other so the cut opens into a diamond,
+        and keep pushing until it folds flat.
       </li>
-      <li>
-        Collapse it along those creases, so the pages run in order with the
-        front cover on top, and press the spine flat.
-      </li>
+      <li>Wrap the pages round so the front cover is on top.</li>
     </ol>
-    <p class="hint">Try it once on scrap paper: it is easier done than read.</p>
   </div>
 
-  <TCutBooklet booklet={booklet} />
+  <MiniZine booklet={booklet} />
 </Layout>
 
 <style>
@@ -75,16 +67,5 @@ const { booklet } = Astro.props;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-  }
-
-  .key {
-    font-family: ui-monospace, monospace;
-    white-space: nowrap;
-    color: var(--muted);
-  }
-
-  .hint {
-    font-size: 0.9rem;
-    color: var(--muted);
   }
 </style>

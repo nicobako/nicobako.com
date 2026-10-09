@@ -1,37 +1,32 @@
-// The T-cut booklet: sixteen pages from one side of one sheet of paper.
+// The mini zine: eight pages from one side of one sheet of paper.
 //
-// The sheet is folded into a 4 × 4 grid of panels, eight of the panel edges are
-// cut, and what is left is a single ring of sixteen panels that collapses into a
-// booklet with no staples. Printing is one-sided: every panel's back is blank,
-// and each leaf of the booklet is two panels folded blank side to blank side.
+// The sheet is folded into a 2 × 4 grid of panels, one slit is cut along the
+// middle crease across the centre two panels, and what is left is a single ring
+// of eight panels that collapses into a booklet with no staples. Printing is
+// one-sided: every panel's back is blank, and each leaf of the booklet is two
+// panels folded blank side to blank side.
 //
 // Only the page layout is declared. Which edges are folds, which are cuts, and
 // which way each fold goes all follow from it, because the ring runs through the
 // pages in reading order:
 //
 // - two panels side by side on the sheet are joined exactly when their pages are
-//   consecutive (16 and 1 count as consecutive: the covers meet at the spine);
+//   consecutive (8 and 1 count as consecutive: the covers meet at the spine);
 //   every other shared edge is cut;
 // - an odd page and the even page after it are the two sides of one leaf, folded
 //   with the printing outside — a mountain fold, seen from the printed side;
 // - an even page and the odd page after it face each other across a spread, so
 //   the printing goes inside — a valley fold. The exception is the covers, which
-//   fold round the outside of the booklet, so 16 → 1 is a mountain again.
+//   fold round the outside of the booklet, so 8 → 1 is a mountain again.
 //
-// Working through every way sixteen pages can be laid on a 4 × 4 sheet under
-// those rules, there is only one set of cuts, up to where page 1 sits. Folded in
-// half along the middle, it is the T the booklet is named for — up the centre
-// from the folded edge, then along the middle crease across the centre two
-// panels — plus a snip along the fold, one panel in from each side edge.
-//
-// This module holds numbers only; `TCutBooklet.astro` turns them into a sheet.
+// This module holds numbers only; `MiniZine.astro` turns them into a sheet.
 
-export const ROWS = 4;
+export const ROWS = 2;
 export const COLUMNS = 4;
 
 /** One panel of the sheet. */
 export interface Panel {
-  /** Booklet page printed in this panel, 1–16. */
+  /** Booklet page printed in this panel, 1–8. */
   page: number;
   /** Whether the page is printed upside down on the sheet. */
   inverted: boolean;
@@ -40,15 +35,13 @@ export interface Panel {
 }
 
 /**
- * The page layout, row by row from the top of the sheet. A minus sign marks a
- * page printed upside down. The front cover sits bottom right, upright, with the
- * back cover beside it — the same corner the eight-page mini zine puts it in.
+ * The page layout, row by row from the top of the landscape sheet. A minus sign
+ * marks a page printed upside down. The front cover sits bottom right, upright,
+ * with the back cover beside it, as on every mini zine template.
  */
 const LAYOUT: number[][] = [
-  [-9, -8, -7, -6],
-  [10, 11, 4, 5],
-  [-13, -12, -3, -2],
-  [14, 15, 16, 1],
+  [-5, -4, -3, -2],
+  [6, 7, 8, 1],
 ];
 
 export const PANELS: Panel[] = LAYOUT.flatMap((cells, row) =>
@@ -82,7 +75,7 @@ function at(row: number, column: number): Panel {
 // A layout that does not form the ring cannot be folded, so a mistake in
 // `LAYOUT` fails the build instead of printing a sheet that will not close.
 function fail(a: Panel, b: Panel, why: string): never {
-  throw new Error(`T-cut layout: pages ${a.page} and ${b.page} ${why}`);
+  throw new Error(`Mini zine layout: pages ${a.page} and ${b.page} ${why}`);
 }
 
 /**
@@ -135,9 +128,9 @@ export const EDGES: Edge[] = PANELS.flatMap(({ row, column }) => [
     : []),
 ]);
 
-// Sixteen folds and eight cuts is a single ring: with every page joined to both
+// Eight folds is a single ring: with every page joined to both
 // of its neighbours in reading order, nothing is loose and nothing is closed.
 const folds = EDGES.filter((edge) => edge.kind !== "cut").length;
 if (folds !== PAGE_COUNT) {
-  throw new Error(`T-cut layout: ${folds} folds, where a ring needs ${PAGE_COUNT}`);
+  throw new Error(`Mini zine layout: ${folds} folds, where a ring needs ${PAGE_COUNT}`);
 }
