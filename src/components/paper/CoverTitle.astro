@@ -1,0 +1,19 @@
+---
+// A booklet's name, large, at the top of its front cover.
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+---
+
+<p class="cover-title">{text}</p>
+
+<style>
+  .cover-title {
+    font-size: 2.6em;
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0.6em 0;
+  }
+</style>

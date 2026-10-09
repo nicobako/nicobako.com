@@ -1,0 +1,60 @@
+---
+// One panel of a `MiniZine` sheet: finds where its page sits in the layout,
+// places itself there on the sheet's grid, turns itself over if the page prints
+// upside down, and numbers the page.
+import { PANELS } from "../printables/booklet/mini-zine.ts";
+
+interface Props {
+  page: number;
+  numbered: boolean;
+}
+
+const { page, numbered } = Astro.props;
+const panel = PANELS.find((p) => p.page === page);
+if (!panel) throw new Error(`Mini zine has no page ${page}`);
+// The covers never carry a number.
+const folio = numbered && page !== 1 && page !== PANELS.length;
+---
+
+<div
+  class:list={["panel", { inverted: panel.inverted }]}
+  style={`grid-area: ${panel.row + 1} / ${panel.column + 1};`}
+>
+  <slot />
+  {
+    folio && (
+      <span class:list={["folio", { recto: page % 2 === 1 }]}>{page}</span>
+    )
+  }
+</div>
+
+<style>
+  /* The padding keeps writing off the creases, and off the edge of the sheet
+     where most printers cannot reach. */
+  .panel {
+    position: relative;
+    font-size: calc(var(--in) * 0.1);
+    min-width: 0;
+    min-height: 0;
+    padding: calc(var(--in) * 0.2);
+    overflow: hidden;
+  }
+
+  .panel.inverted {
+    transform: rotate(180deg);
+  }
+
+  /* Odd pages are right-hand pages, so their number goes on the right. */
+  .folio {
+    position: absolute;
+    bottom: calc(var(--in) * 0.07);
+    left: calc(var(--in) * 0.2);
+    font-size: calc(var(--in) * 0.08);
+    color: var(--muted);
+  }
+
+  .folio.recto {
+    left: auto;
+    right: calc(var(--in) * 0.2);
+  }
+</style>

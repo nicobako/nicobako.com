@@ -1,0 +1,53 @@
+---
+// A tracker: a write-in name on each row and a box under each column heading —
+// habits against the days of the week, chores against the people doing them.
+interface Props {
+  columns: string[];
+  rows: number;
+}
+
+const { columns, rows } = Astro.props;
+const rowList = Array.from({ length: rows }, (_, i) => i);
+---
+
+<div class="grid" style={`--columns: ${columns.length};`}>
+  <span />
+  {columns.map((column) => <span class="heading">{column}</span>)}
+  {
+    rowList.map(() => (
+      <>
+        <span class="name" />
+        {columns.map(() => (
+          <span class="box" />
+        ))}
+      </>
+    ))
+  }
+</div>
+
+<style>
+  .grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr repeat(var(--columns), 1.6em);
+    grid-template-rows: auto;
+    grid-auto-rows: 1fr;
+    gap: 0.35em;
+    align-items: end;
+  }
+
+  .heading {
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .name {
+    align-self: stretch;
+    border-bottom: 0.06em solid var(--muted);
+  }
+
+  .box {
+    aspect-ratio: 1;
+    border: 0.08em solid var(--text);
+  }
+</style>

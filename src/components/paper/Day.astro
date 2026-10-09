@@ -1,0 +1,23 @@
+---
+// One day: its name with a blank for the date, a few must-dos with tick boxes,
+// then free lines. A section, so the days on a page share its height.
+import Section from "./Section.astro";
+import Heading from "./Heading.astro";
+import Lines from "./Lines.astro";
+
+interface Props {
+  day: string;
+  /** Must-do lines, each with a tick box. */
+  tasks: number;
+  /** Free lines under the must-dos. */
+  lines: number;
+}
+
+const { day, tasks, lines } = Astro.props;
+---
+
+<Section>
+  <Heading text={day} dated />
+  <Lines count={tasks} tick="start" fixed />
+  <Lines count={lines} />
+</Section>

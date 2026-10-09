@@ -1,0 +1,156 @@
+---
+// A mini zine laid out on one landscape US Letter sheet: eight pages in a 2 × 4
+// grid, with the cut drawn solid and the folds faint. The layout and the folds
+// come from `printables/booklet/mini-zine.ts`; this component places them and
+// knows nothing about what is on the pages.
+//
+// Each page is a named slot, `page-1` to `page-8`, in reading order, written
+// the right way up — the sheet turns over the ones that print upside down and
+// numbers the pages itself. The parts in `components/paper/` are made to go in
+// them:
+//
+//   <MiniZine>
+//     <Page slot="page-1">…</Page>
+//     …
+//   </MiniZine>
+import MiniZinePanel from "./MiniZinePanel.astro";
+import { COLUMNS, EDGES, ROWS } from "../printables/booklet/mini-zine.ts";
+
+interface Props {
+  /** Print page numbers on the inside pages. The covers never carry one. */
+  numbered?: boolean;
+}
+
+const { numbered = true } = Astro.props;
+
+// US Letter landscape, in inches; the lines are drawn in the same units.
+const SHEET_WIDTH = 11;
+const SHEET_HEIGHT = 8.5;
+const panelWidth = SHEET_WIDTH / COLUMNS;
+const panelHeight = SHEET_HEIGHT / ROWS;
+
+const edges = EDGES.map((edge) => ({
+  ...edge,
+  x1: edge.x1 * panelWidth,
+  y1: edge.y1 * panelHeight,
+  x2: edge.x2 * panelWidth,
+  y2: edge.y2 * panelHeight,
+}));
+---
+
+
+<div class="zine-frame">
+  <div
+    class="zine-sheet"
+    style={`--sheet-w: ${SHEET_WIDTH}; --sheet-h: ${SHEET_HEIGHT};`}
+  >
+    {/* Slot names have to be written out: Astro will not take one built in a loop. */}
+    <MiniZinePanel page={1} numbered={numbered}>
+      <slot name="page-1" />
+    </MiniZinePanel>
+    <MiniZinePanel page={2} numbered={numbered}>
+      <slot name="page-2" />
+    </MiniZinePanel>
+    <MiniZinePanel page={3} numbered={numbered}>
+      <slot name="page-3" />
+    </MiniZinePanel>
+    <MiniZinePanel page={4} numbered={numbered}>
+      <slot name="page-4" />
+    </MiniZinePanel>
+    <MiniZinePanel page={5} numbered={numbered}>
+      <slot name="page-5" />
+    </MiniZinePanel>
+    <MiniZinePanel page={6} numbered={numbered}>
+      <slot name="page-6" />
+    </MiniZinePanel>
+    <MiniZinePanel page={7} numbered={numbered}>
+      <slot name="page-7" />
+    </MiniZinePanel>
+    <MiniZinePanel page={8} numbered={numbered}>
+      <slot name="page-8" />
+    </MiniZinePanel>
+    <svg
+      class="zine-lines"
+      viewBox={`0 0 ${SHEET_WIDTH} ${SHEET_HEIGHT}`}
+      aria-hidden="true"
+    >
+      {
+        edges.map((edge) => (
+          <line
+            class={edge.kind}
+            x1={edge.x1}
+            y1={edge.y1}
+            x2={edge.x2}
+            y2={edge.y2}
+          />
+        ))
+      }
+    </svg>
+  </div>
+</div>
+
+<style>
+  /* The frame is the container the sheet measures itself against: one printed
+     inch, `--in`, is a fixed share of its width. On screen that scales the
+     sheet to the column; on paper the frame is exactly the sheet. */
+  .zine-frame {
+    container-type: inline-size;
+    width: 100%;
+  }
+
+  .zine-sheet {
+    --in: calc(100cqw / var(--sheet-w));
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    width: 100cqw;
+    aspect-ratio: 11 / 8.5;
+    box-sizing: border-box;
+    background: var(--bg);
+    outline: 1px solid var(--border);
+  }
+
+  .zine-lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* The cut is what must not be missed, so it is the only solid, dark line.
+     Folds are faint: once folded they sit on the edge of a page. Which way each
+     one goes is not marked, because the steps on the page fold them all. */
+  .cut {
+    stroke: var(--text);
+    stroke-width: 0.014;
+  }
+
+  .valley,
+  .mountain {
+    stroke: var(--muted);
+    stroke-width: 0.006;
+    stroke-dasharray: 0.06 0.04;
+  }
+
+
+  @media print {
+    .zine-frame {
+      width: 11in;
+    }
+
+    .zine-sheet {
+      height: 8.5in;
+      outline: none;
+      /* Never paint the page fill — with background graphics enabled, the dark
+         theme's --bg would print as a solid sheet. */
+      background: none;
+    }
+  }
+
+  @page {
+    size: letter landscape;
+    margin: 0;
+  }
+</style>

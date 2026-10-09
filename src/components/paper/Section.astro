@@ -1,0 +1,21 @@
+---
+// A part of a page that takes an equal share of its height with its sibling
+// sections, however many a page holds — three days on one page get a third
+// each.
+---
+
+<section class="section"><slot /></section>
+
+<style>
+  .section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+    min-height: 0;
+  }
+
+  .section + .section {
+    margin-top: 0.3em;
+  }
+</style>

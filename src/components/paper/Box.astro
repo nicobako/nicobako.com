@@ -1,0 +1,24 @@
+---
+// An open box that fills the space left on its page, with an optional caption
+// in its corner.
+interface Props {
+  label?: string;
+}
+
+const { label } = Astro.props;
+---
+
+<div class="box">{label && <span class="label">{label}</span>}</div>
+
+<style>
+  .box {
+    flex: 1;
+    padding: 0.4em;
+    border: 0.08em solid var(--muted);
+    border-radius: 0.4em;
+  }
+
+  .label {
+    color: var(--muted);
+  }
+</style>

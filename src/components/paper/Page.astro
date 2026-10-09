@@ -1,0 +1,24 @@
+---
+// A page to write on: its contents stacked top to bottom, filling the page's
+// height, with whatever grows (ruled lines, a box, a grid) taking the space
+// the rest leaves.
+//
+// Every component in this folder is sized in `em`, so a page is drawn at
+// whatever scale its font size sets — `MiniZine` sets one tenth of a printed
+// inch — and the same parts work on any printable that sets a font size.
+---
+
+<div class="page"><slot /></div>
+
+<style>
+  .page {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    line-height: 1.2;
+    color: var(--text);
+  }
+</style>
