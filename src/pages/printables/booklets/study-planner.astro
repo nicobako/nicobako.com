@@ -1,0 +1,70 @@
+---
+import BookletLayout from "../../../components/BookletLayout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import Page from "../../../components/paper/Page.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Day from "../../../components/paper/Day.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import Lines from "../../../components/paper/Lines.astro";
+import Ledger from "../../../components/paper/Ledger.astro";
+
+// What there is to learn, when it is due, when it gets studied, what got
+// covered, and a quiz to check it went in. A day's must-dos are its study
+// blocks, ticked as they are done.
+---
+
+<BookletLayout slug="study-planner">
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Study Planner" />
+      <Blank label="Week of" />
+      <Blank label="Name" />
+      <Box label="This week I want to understand" />
+    </Page>
+
+    <Page slot="page-2">
+      <Heading text="Subjects & topics" />
+      <Ledger columns={[{ label: "Subject", width: 7 }, { label: "Topics" }]} rows={14} />
+    </Page>
+
+    <Page slot="page-3">
+      <Heading text="Tests & due dates" />
+      <Ledger
+        columns={[{ label: "Date", width: 4 }, { label: "What" }, { label: "✓", width: 2 }]}
+        rows={14}
+      />
+    </Page>
+
+    <Page slot="page-4">
+      <Day day="Monday" tasks={3} lines={1} />
+      <Day day="Tuesday" tasks={3} lines={1} />
+      <Day day="Wednesday" tasks={3} lines={1} />
+    </Page>
+
+    <Page slot="page-5">
+      <Day day="Thursday" tasks={3} lines={1} />
+      <Day day="Friday" tasks={3} lines={1} />
+      <Day day="Weekend" tasks={3} lines={1} />
+    </Page>
+
+    <Page slot="page-6">
+      <Heading text="What I covered" />
+      <Ledger
+        columns={[{ label: "Date", width: 3.5 }, { label: "Topic" }, { label: "Min", width: 3 }]}
+        rows={14}
+      />
+    </Page>
+
+    <Page slot="page-7">
+      <Heading text="Quiz yourself" />
+      <Ledger columns={[{ label: "Question" }, { label: "Answer" }]} rows={12} />
+    </Page>
+
+    <Page slot="page-8">
+      <Heading text="Questions to ask" />
+      <Lines count={15} tick="start" />
+    </Page>
+  </MiniZine>
+</BookletLayout>

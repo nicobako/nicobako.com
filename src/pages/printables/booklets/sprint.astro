@@ -1,0 +1,76 @@
+---
+import BookletLayout from "../../../components/BookletLayout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import Page from "../../../components/paper/Page.astro";
+import Section from "../../../components/paper/Section.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Label from "../../../components/paper/Label.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import Lines from "../../../components/paper/Lines.astro";
+import Ledger from "../../../components/paper/Ledger.astro";
+import Grid from "../../../components/paper/Grid.astro";
+
+// A two-week sprint: ten working days of stand-ups across four pages, three
+// and two at a time, between the commitment and the burndown. Each stand-up
+// is the three questions, one line apiece.
+const STANDUP = ["Did", "Next", "Block"];
+---
+
+<BookletLayout slug="sprint">
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Sprint" />
+      <Blank label="Sprint" />
+      <Blank label="Dates" />
+      <Box label="Sprint goal" />
+    </Page>
+
+    <Page slot="page-2">
+      <Heading text="Committed" />
+      <Ledger
+        columns={[{ label: "Story" }, { label: "Pts", width: 2.6 }, { label: "✓", width: 2 }]}
+        rows={15}
+      />
+    </Page>
+
+    <Page slot="page-3">
+      <Section><Heading text="Day 1" dated /><Lines labels={STANDUP} /></Section>
+      <Section><Heading text="Day 2" dated /><Lines labels={STANDUP} /></Section>
+      <Section><Heading text="Day 3" dated /><Lines labels={STANDUP} /></Section>
+    </Page>
+
+    <Page slot="page-4">
+      <Section><Heading text="Day 4" dated /><Lines labels={STANDUP} /></Section>
+      <Section><Heading text="Day 5" dated /><Lines labels={STANDUP} /></Section>
+    </Page>
+
+    <Page slot="page-5">
+      <Section><Heading text="Day 6" dated /><Lines labels={STANDUP} /></Section>
+      <Section><Heading text="Day 7" dated /><Lines labels={STANDUP} /></Section>
+      <Section><Heading text="Day 8" dated /><Lines labels={STANDUP} /></Section>
+    </Page>
+
+    <Page slot="page-6">
+      <Section><Heading text="Day 9" dated /><Lines labels={STANDUP} /></Section>
+      <Section><Heading text="Day 10" dated /><Lines labels={STANDUP} /></Section>
+    </Page>
+
+    <Page slot="page-7">
+      <Heading text="Burndown" />
+      <Label text="Points left, up the side · days, along the bottom" />
+      <Grid kind="squares" />
+    </Page>
+
+    <Page slot="page-8">
+      <Heading text="Retro" />
+      <Label text="Went well" />
+      <Lines count={4} />
+      <Label text="To improve" />
+      <Lines count={4} />
+      <Label text="Actions" />
+      <Lines count={3} tick="start" />
+    </Page>
+  </MiniZine>
+</BookletLayout>

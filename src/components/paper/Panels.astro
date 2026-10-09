@@ -1,0 +1,43 @@
+---
+// Comic panels: rows of bordered frames filling the page, a row's panels
+// side by side. `rows` is how many panels each row holds, top to bottom —
+// `[1, 2]` is a wide panel over two small ones.
+interface Props {
+  rows: number[];
+}
+
+const { rows } = Astro.props;
+---
+
+<div class="panels">
+  {
+    rows.map((count) => (
+      <div class="row">
+        {Array.from({ length: count }, () => (
+          <span class="panel" />
+        ))}
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .panels {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6em;
+    min-height: 0;
+  }
+
+  .row {
+    flex: 1;
+    display: flex;
+    gap: 0.6em;
+  }
+
+  .panel {
+    flex: 1;
+    border: 0.14em solid var(--text);
+  }
+</style>

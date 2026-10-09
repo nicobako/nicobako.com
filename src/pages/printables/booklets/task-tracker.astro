@@ -1,0 +1,76 @@
+---
+import BookletLayout from "../../../components/BookletLayout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import Page from "../../../components/paper/Page.astro";
+import Section from "../../../components/paper/Section.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import Lines from "../../../components/paper/Lines.astro";
+import CheckGrid from "../../../components/paper/CheckGrid.astro";
+import Ledger from "../../../components/paper/Ledger.astro";
+
+// A month of tasks that come round again, grouped by how often they come:
+// daily ones on a grid per week (a 31-day grid would not fit a page), weekly
+// ones across the month's weeks, monthly ones as a checklist.
+const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
+const WEEKS = ["1", "2", "3", "4", "5"];
+---
+
+<BookletLayout slug="task-tracker">
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Task Tracker" />
+      <Blank label="Month" />
+      <Blank label="Name" />
+      <Box label="Reward when it's all ticked" />
+    </Page>
+
+    <Page slot="page-2">
+      <Section>
+        <Heading text="Week 1" dated />
+        <CheckGrid columns={WEEK} rows={6} />
+      </Section>
+    </Page>
+
+    <Page slot="page-3">
+      <Section>
+        <Heading text="Week 2" dated />
+        <CheckGrid columns={WEEK} rows={6} />
+      </Section>
+    </Page>
+
+    <Page slot="page-4">
+      <Section>
+        <Heading text="Week 3" dated />
+        <CheckGrid columns={WEEK} rows={6} />
+      </Section>
+    </Page>
+
+    <Page slot="page-5">
+      <Section>
+        <Heading text="Week 4" dated />
+        <CheckGrid columns={WEEK} rows={6} />
+      </Section>
+    </Page>
+
+    <Page slot="page-6">
+      <Heading text="Every week" />
+      <CheckGrid columns={WEEKS} rows={10} />
+    </Page>
+
+    <Page slot="page-7">
+      <Heading text="Who does what" />
+      <Ledger
+        columns={[{ label: "Task" }, { label: "Who", width: 5 }, { label: "When", width: 4 }]}
+        rows={14}
+      />
+    </Page>
+
+    <Page slot="page-8">
+      <Heading text="Once a month" />
+      <Lines count={16} tick="start" />
+    </Page>
+  </MiniZine>
+</BookletLayout>

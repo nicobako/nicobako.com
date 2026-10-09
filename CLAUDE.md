@@ -87,11 +87,13 @@ week under it — so the picker is a single row of links and the pages carry no
 script at all. `perspective-grid` is one-, two-, three-, four- and five-point
 perspective, each with its own short list of layouts (`PERSPECTIVES` in
 `perspective-grid.ts`), one page per layout under the bare path.
-Booklets live under `/printables/booklets/`, one page file per booklet —
-`weekly-planner`, `monthly-planner`, and `year-planner` (the year and its four
-quarters in one booklet); there is no index page. All three are undated: the
-reader writes in the week, month or year, so one page serves every one rather
-than a page per date.
+Booklets have their own section: `/printables/booklets/` is an index grouped
+as `BOOKLET_GROUPS` in `src/printables/booklet/booklets.ts` (planners, study and
+work, practice, for kids), and each booklet is its own page file beside it, named
+by its slug. The printables index lists them in a section of their own from the
+same list. The booklets index fails the build if a listed slug has no page file.
+All the dated booklets are undated: the reader writes in the week, month or year,
+so one page serves every one rather than a page per date.
 
 ### Game subsystem
 
@@ -278,11 +280,17 @@ is a child learning the words, not one who already has them.
   named slots, `page-1` to `page-8`, in reading order and written the right way up; it
   places them (through `MiniZinePanel.astro`), turns over the upside-down ones, numbers
   the inside pages and draws the cut. It knows nothing about what is on the pages.
-  `MiniZineSteps.astro` is the screen-only folding instructions. What goes in the slots
-  comes from `components/paper/`: `Page`, `Section` (shares a page's height with its
-  siblings), `CoverTitle`, `Heading`, `Label`, `Blank`, `Box`, `Lines` (counted, or one
-  per label), `CheckGrid`, `CalendarGrid` (a blank month), `Ledger`, and `Day`, which
-  is the first composition of them. They are sized in `em` — the sheet sets
+  `BookletLayout.astro` wraps a booklet's page: it takes the slug, reads the name and
+  description from `booklets.ts`, and adds the breadcrumbs and `MiniZineSteps.astro`
+  (the screen-only folding instructions), so a booklet's page file holds only its
+  `MiniZine`. What goes in the slots comes from `components/paper/`: `Page`,
+  `Section` (shares a page's height with its siblings), `CoverTitle`, `Heading`,
+  `Label`, `Blank`, `Box`, `Lines` (counted, or one per label), `CheckGrid`,
+  `CalendarGrid` (a blank month), `Ledger`, `Panels` (comic frames, as panels per
+  row), `Grid` (dots or squares, drawn as an SVG pattern because CSS background
+  hairlines drop out of print), `WritingSquares` (character boxes with a centre
+  cross), and `Day`, a composition of them. A composition only one booklet uses
+  lives in `components/booklets/` instead (`BookEntry` for the reading log). They are sized in `em` — the sheet sets
   a panel's font size to a tenth of a printed inch — so they also work on any other
   printable that sets a font size. Keep each one's props short; a part that would need
   a long list of options is two parts. Astro only accepts static slot names, on both

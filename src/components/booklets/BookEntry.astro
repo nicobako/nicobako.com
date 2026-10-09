@@ -1,0 +1,15 @@
+---
+// One book in the reading log: what it is, how it rated, a picture of the best
+// part and a few lines about it. A page's worth, repeated through the booklet.
+import Blank from "../paper/Blank.astro";
+import Label from "../paper/Label.astro";
+import Box from "../paper/Box.astro";
+import Lines from "../paper/Lines.astro";
+---
+
+<Blank label="Title" />
+<Blank label="Author" />
+<Blank label="Finished" />
+<Label text="My rating  ☆ ☆ ☆ ☆ ☆" />
+<Box label="The best part" />
+<Lines count={3} />

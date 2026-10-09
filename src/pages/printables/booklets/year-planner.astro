@@ -1,7 +1,6 @@
 ---
-import Layout from "../../../layouts/Layout.astro";
+import BookletLayout from "../../../components/BookletLayout.astro";
 import MiniZine from "../../../components/MiniZine.astro";
-import MiniZineSteps from "../../../components/MiniZineSteps.astro";
 import Page from "../../../components/paper/Page.astro";
 import CoverTitle from "../../../components/paper/CoverTitle.astro";
 import Section from "../../../components/paper/Section.astro";
@@ -20,18 +19,7 @@ const MONTHS = [
 ];
 ---
 
-<Layout
-  title="Year Planner Booklet — Nico Bako"
-  description="A pocket planner for a year and its four quarters, folded from one sheet: goals, a line per month, a page per quarter and a review."
->
-  <h1 class="no-print">Year Planner Booklet</h1>
-  <p class="no-print">
-    A pocket planner for a year and its four quarters: the year's goals, a line
-    per month for the dates that matter, a page per quarter to break the goals
-    down, and a review on the back.
-  </p>
-  <MiniZineSteps />
-
+<BookletLayout slug="year-planner">
   <MiniZine>
     <Page slot="page-1">
       <CoverTitle text="Year Planner" />
@@ -134,4 +122,4 @@ const MONTHS = [
       <Lines count={4} />
     </Page>
   </MiniZine>
-</Layout>
+</BookletLayout>

@@ -1,0 +1,54 @@
+---
+// A dot or square grid filling the space left on the page, for sketching,
+// diagrams and charts. Drawn as an SVG pattern rather than a CSS background:
+// browsers leave backgrounds off paper by default, and drop hairline gradient
+// stops at some positions even when told to print them.
+interface Props {
+  kind: "dots" | "squares";
+  /** Spacing in `em`; the default is close to a 5 mm notebook grid. */
+  step?: number;
+}
+
+const { kind, step = 1.9 } = Astro.props;
+// Two grids on a page with the same kind and step draw the same pattern, so
+// a shared id is harmless and keeps the build deterministic.
+const id = `grid-${kind}-${String(step).replace(".", "_")}`;
+const size = `${step}em`;
+const half = `${step / 2}em`;
+---
+
+<svg class="grid" aria-hidden="true">
+  <defs>
+    <pattern id={id} patternUnits="userSpaceOnUse" width={size} height={size}>
+      {
+        kind === "dots" ? (
+          <circle class="dot" cx={half} cy={half} r="0.1em" />
+        ) : (
+          <rect class="square" x="0" y="0" width={size} height={size} />
+        )
+      }
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill={`url(#${id})`} />
+</svg>
+
+<style>
+  .grid {
+    flex: 1;
+    display: block;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .dot {
+    fill: var(--muted);
+  }
+
+  /* Each tile strokes its own outline; half of each stroke falls in the next
+     tile, so neighbouring tiles make one line between them. */
+  .square {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 0.08em;
+  }
+</style>

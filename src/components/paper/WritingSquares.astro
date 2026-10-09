@@ -1,0 +1,54 @@
+---
+// Squares for writing characters one to a box, each with a dashed cross
+// through its middle to place the strokes against — the practice sheets kana
+// and kanji are learned on.
+interface Props {
+  columns: number;
+  rows: number;
+}
+
+const { columns, rows } = Astro.props;
+const cells = Array.from({ length: columns * rows }, (_, i) => i);
+---
+
+<div class="squares" style={`--columns: ${columns};`}>
+  {cells.map(() => <span class="square" />)}
+</div>
+
+<style>
+  .squares {
+    display: grid;
+    grid-template-columns: repeat(var(--columns), 1fr);
+    border-top: 0.08em solid var(--text);
+    border-left: 0.08em solid var(--text);
+  }
+
+  .square {
+    position: relative;
+    aspect-ratio: 1;
+    border-right: 0.08em solid var(--text);
+    border-bottom: 0.08em solid var(--text);
+  }
+
+  /* The guide cross: one dashed line down the middle, one across. */
+  .square::before,
+  .square::after {
+    content: "";
+    position: absolute;
+    border: 0 dashed var(--muted);
+  }
+
+  .square::before {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    border-left-width: 0.05em;
+  }
+
+  .square::after {
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-top-width: 0.05em;
+  }
+</style>

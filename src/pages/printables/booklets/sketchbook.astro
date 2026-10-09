@@ -1,0 +1,58 @@
+---
+import BookletLayout from "../../../components/BookletLayout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import Page from "../../../components/paper/Page.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import Grid from "../../../components/paper/Grid.astro";
+
+// A prompt on every page, because an empty page is the hardest one to start.
+---
+
+<BookletLayout slug="sketchbook">
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Sketchbook" />
+      <Blank label="Artist" />
+      <Blank label="Started" />
+      <Box label="Draw something you love" />
+    </Page>
+
+    <Page slot="page-2">
+      <Heading text="Your pet as a superhero" />
+      <Box />
+    </Page>
+
+    <Page slot="page-3">
+      <Heading text="A house on the moon" />
+      <Box />
+    </Page>
+
+    <Page slot="page-4">
+      <Heading text="A monster's lunch" />
+      <Box />
+    </Page>
+
+    <Page slot="page-5">
+      <Heading text="Your dream treehouse" />
+      <Box />
+    </Page>
+
+    <Page slot="page-6">
+      <Heading text="Invent a creature from the dots" />
+      <Grid kind="dots" />
+    </Page>
+
+    <Page slot="page-7">
+      <Heading text="A robot that helps at home" />
+      <Box />
+    </Page>
+
+    <Page slot="page-8">
+      <Heading text="The view from your window" />
+      <Box />
+    </Page>
+  </MiniZine>
+</BookletLayout>
