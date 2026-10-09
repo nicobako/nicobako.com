@@ -3,7 +3,10 @@
 // page, so a page fills to its foot whatever else is on it; `fixed` gives each
 // line a set height instead, for a short block with free lines under it.
 interface Props {
-  count: number;
+  /** How many lines; with `labels`, one line per label instead. */
+  count?: number;
+  /** A caption at the start of each line: the months of the year. */
+  labels?: string[];
   /** A tick box at the start of each line, or at the end. */
   tick?: "start" | "end";
   /** Number the lines from 1. */
@@ -11,8 +14,8 @@ interface Props {
   fixed?: boolean;
 }
 
-const { count, tick, numbered = false, fixed = false } = Astro.props;
-const lines = Array.from({ length: count }, (_, i) => i + 1);
+const { count = 0, labels, tick, numbered = false, fixed = false } = Astro.props;
+const lines = Array.from({ length: labels?.length ?? count }, (_, i) => i + 1);
 ---
 
 <div class:list={["lines", { fixed }]}>
@@ -21,6 +24,7 @@ const lines = Array.from({ length: count }, (_, i) => i + 1);
       <span class="line">
         {tick === "start" && <span class="tick" />}
         {numbered && <span class="number">{n}</span>}
+        {labels && <span class="number label">{labels[n - 1]}</span>}
         {tick === "end" && <span class="tick end" />}
       </span>
     ))
@@ -65,5 +69,11 @@ const lines = Array.from({ length: count }, (_, i) => i + 1);
 
   .number {
     color: var(--muted);
+  }
+
+  /* Labels line up, so the writing after them starts in one column. */
+  .label {
+    flex: none;
+    width: 2.6em;
   }
 </style>

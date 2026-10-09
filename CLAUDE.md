@@ -87,8 +87,11 @@ week under it — so the picker is a single row of links and the pages carry no
 script at all. `perspective-grid` is one-, two-, three-, four- and five-point
 perspective, each with its own short list of layouts (`PERSPECTIVES` in
 `perspective-grid.ts`), one page per layout under the bare path.
-Booklets live under `/printables/booklets/`, one page file per booklet (so far
-`weekly-planner`); there is no index page.
+Booklets live under `/printables/booklets/`, one page file per booklet —
+`weekly-planner`, `monthly-planner`, and `year-planner` (the year and its four
+quarters in one booklet); there is no index page. All three are undated: the
+reader writes in the week, month or year, so one page serves every one rather
+than a page per date.
 
 ### Game subsystem
 
@@ -277,8 +280,9 @@ is a child learning the words, not one who already has them.
   the inside pages and draws the cut. It knows nothing about what is on the pages.
   `MiniZineSteps.astro` is the screen-only folding instructions. What goes in the slots
   comes from `components/paper/`: `Page`, `Section` (shares a page's height with its
-  siblings), `Heading`, `Label`, `Blank`, `Box`, `Lines`, `CheckGrid`, `Ledger`, and
-  `Day`, which is the first composition of them. They are sized in `em` — the sheet sets
+  siblings), `CoverTitle`, `Heading`, `Label`, `Blank`, `Box`, `Lines` (counted, or one
+  per label), `CheckGrid`, `CalendarGrid` (a blank month), `Ledger`, and `Day`, which
+  is the first composition of them. They are sized in `em` — the sheet sets
   a panel's font size to a tenth of a printed inch — so they also work on any other
   printable that sets a font size. Keep each one's props short; a part that would need
   a long list of options is two parts. Astro only accepts static slot names, on both

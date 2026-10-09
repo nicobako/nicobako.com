@@ -3,6 +3,7 @@ import Layout from "../../../layouts/Layout.astro";
 import MiniZine from "../../../components/MiniZine.astro";
 import MiniZineSteps from "../../../components/MiniZineSteps.astro";
 import Page from "../../../components/paper/Page.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
 import Day from "../../../components/paper/Day.astro";
 import Heading from "../../../components/paper/Heading.astro";
 import Label from "../../../components/paper/Label.astro";
@@ -28,7 +29,7 @@ const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
 
   <MiniZine>
     <Page slot="page-1">
-      <p class="cover-title">Weekly Planner</p>
+      <CoverTitle text="Weekly Planner" />
       <Blank label="Week of" />
       <Blank label="Name" />
       <Box label="This week's focus" />
@@ -87,12 +88,3 @@ const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
     </Page>
   </MiniZine>
 </Layout>
-
-<style>
-  .cover-title {
-    font-size: 2.6em;
-    font-weight: 700;
-    line-height: 1.1;
-    margin: 0.6em 0;
-  }
-</style>

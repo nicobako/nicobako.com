@@ -1,10 +1,9 @@
 ---
-// A ruled table with headed columns: an expense log, a reading list with
-// dates. The first column takes the spare width; the rest are as wide as
-// declared.
+// A ruled table with headed columns: an expense log, a list of key dates.
+// Columns with a width are that wide; the rest share what is left.
 interface Column {
   label: string;
-  /** Width in `em`. Omit for the first column, which takes what is left. */
+  /** Width in `em`. Omit to share the width the other columns leave. */
   width?: number;
 }
 

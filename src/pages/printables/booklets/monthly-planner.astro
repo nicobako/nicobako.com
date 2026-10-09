@@ -1,0 +1,113 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import MiniZineSteps from "../../../components/MiniZineSteps.astro";
+import Page from "../../../components/paper/Page.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Section from "../../../components/paper/Section.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Label from "../../../components/paper/Label.astro";
+import Lines from "../../../components/paper/Lines.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import CalendarGrid from "../../../components/paper/CalendarGrid.astro";
+import Ledger from "../../../components/paper/Ledger.astro";
+
+// The month is left blank — the reader writes the dates into the calendar —
+// so one sheet serves every month instead of a page per month per year.
+// Five weeks, because that is how many a month touches more often than not;
+// the sixth, when there is one, has the notes page.
+const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
+---
+
+<Layout
+  title="Monthly Planner Booklet — Nico Bako"
+  description="A pocket planner for one month, folded from one sheet: a calendar, goals and key dates, the weeks, a budget and a review."
+>
+  <h1 class="no-print">Monthly Planner Booklet</h1>
+  <p class="no-print">
+    A pocket planner for one month: a calendar to write the dates into, goals
+    and key dates, a section per week, a budget, and a review on the back.
+  </p>
+  <MiniZineSteps />
+
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Monthly Planner" />
+      <Blank label="Month" />
+      <Blank label="Name" />
+      <Box label="This month's focus" />
+    </Page>
+
+    <Page slot="page-2">
+      <Heading text="Calendar" />
+      <CalendarGrid weekdays={WEEKDAYS} weeks={6} />
+    </Page>
+
+    <Page slot="page-3">
+      <Heading text="Top 3 this month" />
+      <Lines count={3} numbered tick="end" fixed />
+      <Label text="Key dates" />
+      <Ledger columns={[{ label: "Date", width: 4 }, { label: "What" }]} rows={9} />
+    </Page>
+
+    <Page slot="page-4">
+      <Section>
+        <Heading text="Week 1" dated />
+        <Lines count={2} tick="start" fixed />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Heading text="Week 2" dated />
+        <Lines count={2} tick="start" fixed />
+        <Lines count={3} />
+      </Section>
+    </Page>
+
+    <Page slot="page-5">
+      <Section>
+        <Heading text="Week 3" dated />
+        <Lines count={2} tick="start" fixed />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Heading text="Week 4" dated />
+        <Lines count={2} tick="start" fixed />
+        <Lines count={3} />
+      </Section>
+    </Page>
+
+    <Page slot="page-6">
+      <Section>
+        <Heading text="Week 5" dated />
+        <Lines count={2} tick="start" fixed />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Heading text="Notes" />
+        <Lines count={6} />
+      </Section>
+    </Page>
+
+    <Page slot="page-7">
+      <Heading text="Budget" />
+      <Blank label="Income" />
+      <Ledger
+        columns={[{ label: "Item" }, { label: "Amount", width: 6 }]}
+        rows={13}
+      />
+      <Blank label="Spent" />
+      <Blank label="Left" />
+    </Page>
+
+    <Page slot="page-8">
+      <Heading text="Month review" />
+      <Label text="Went well" />
+      <Lines count={4} />
+      <Label text="Didn't go well" />
+      <Lines count={4} />
+      <Label text="Next month" />
+      <Lines count={4} />
+    </Page>
+  </MiniZine>
+</Layout>

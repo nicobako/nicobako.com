@@ -1,0 +1,137 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import MiniZineSteps from "../../../components/MiniZineSteps.astro";
+import Page from "../../../components/paper/Page.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Section from "../../../components/paper/Section.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Label from "../../../components/paper/Label.astro";
+import Lines from "../../../components/paper/Lines.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+
+// The year and its quarters in one booklet: the year's goals and a line per
+// month up front, a page per quarter in the middle, and the review on the back.
+// A quarter's goals are the year's broken down, so they belong side by side.
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+---
+
+<Layout
+  title="Year Planner Booklet — Nico Bako"
+  description="A pocket planner for a year and its four quarters, folded from one sheet: goals, a line per month, a page per quarter and a review."
+>
+  <h1 class="no-print">Year Planner Booklet</h1>
+  <p class="no-print">
+    A pocket planner for a year and its four quarters: the year's goals, a line
+    per month for the dates that matter, a page per quarter to break the goals
+    down, and a review on the back.
+  </p>
+  <MiniZineSteps />
+
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Year Planner" />
+      <Blank label="Year" />
+      <Blank label="Name" />
+      <Box label="Word for the year" />
+    </Page>
+
+    <Page slot="page-2">
+      <Heading text="Goals for the year" />
+      <Lines count={5} numbered tick="end" fixed />
+      <Label text="Habits to build" />
+      <Lines count={6} tick="start" />
+    </Page>
+
+    <Page slot="page-3">
+      <Heading text="Year at a glance" />
+      <Lines labels={MONTHS} />
+    </Page>
+
+    <Page slot="page-4">
+      <Heading text="Q1 · Jan – Mar" />
+      <Label text="Goals" />
+      <Lines count={3} tick="start" fixed />
+      <Section>
+        <Label text="January" />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Label text="February" />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Label text="March" />
+        <Lines count={3} />
+      </Section>
+    </Page>
+
+    <Page slot="page-5">
+      <Heading text="Q2 · Apr – Jun" />
+      <Label text="Goals" />
+      <Lines count={3} tick="start" fixed />
+      <Section>
+        <Label text="April" />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Label text="May" />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Label text="June" />
+        <Lines count={3} />
+      </Section>
+    </Page>
+
+    <Page slot="page-6">
+      <Heading text="Q3 · Jul – Sep" />
+      <Label text="Goals" />
+      <Lines count={3} tick="start" fixed />
+      <Section>
+        <Label text="July" />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Label text="August" />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Label text="September" />
+        <Lines count={3} />
+      </Section>
+    </Page>
+
+    <Page slot="page-7">
+      <Heading text="Q4 · Oct – Dec" />
+      <Label text="Goals" />
+      <Lines count={3} tick="start" fixed />
+      <Section>
+        <Label text="October" />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Label text="November" />
+        <Lines count={3} />
+      </Section>
+      <Section>
+        <Label text="December" />
+        <Lines count={3} />
+      </Section>
+    </Page>
+
+    <Page slot="page-8">
+      <Heading text="Year review" />
+      <Label text="Best moments" />
+      <Lines count={4} />
+      <Label text="What I learned" />
+      <Lines count={4} />
+      <Label text="Next year" />
+      <Lines count={4} />
+    </Page>
+  </MiniZine>
+</Layout>

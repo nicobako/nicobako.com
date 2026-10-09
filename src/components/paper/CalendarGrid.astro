@@ -1,0 +1,44 @@
+---
+// A blank month: a box for every day under the weekday headings, with the
+// dates left for the reader to write in, so one sheet serves any month.
+interface Props {
+  /** Column headings, in the order the week runs. */
+  weekdays: string[];
+  /** Rows: six covers a month that starts late in the week. */
+  weeks: number;
+}
+
+const { weekdays, weeks } = Astro.props;
+const cells = Array.from({ length: weekdays.length * weeks }, (_, i) => i);
+---
+
+<div class="calendar" style={`--days: ${weekdays.length};`}>
+  {weekdays.map((day) => <span class="weekday">{day}</span>)}
+  {cells.map(() => <span class="cell" />)}
+</div>
+
+<style>
+  /* The grid draws the outer top and left edges and every box its own right
+     and bottom, so no line is doubled. */
+  .calendar {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(var(--days), 1fr);
+    grid-template-rows: auto;
+    grid-auto-rows: 1fr;
+    border-top: 0.06em solid var(--muted);
+    border-left: 0.06em solid var(--muted);
+  }
+
+  .weekday,
+  .cell {
+    border-right: 0.06em solid var(--muted);
+    border-bottom: 0.06em solid var(--muted);
+  }
+
+  .weekday {
+    padding: 0.15em 0;
+    text-align: center;
+    color: var(--muted);
+  }
+</style>
