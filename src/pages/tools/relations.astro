@@ -1,0 +1,499 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout
+  title="Relations — Nico Bako"
+  description="A grid for mapping which things relate to which: every item is a row and a column, and a tick marks a pair as related."
+>
+  <h1>Relations</h1>
+  <p>
+    Every item is both a row and a column, so the grid is its own mirror: tick a cell and
+    the two items are related, both ways. Pick an item's name to see what it is related to
+    and jump between them. Everything is saved on this device.
+  </p>
+
+  <form class="add" id="add-form" autocomplete="off">
+    <label for="add-name">New item</label>
+    <input id="add-name" name="name" type="text" maxlength="80" required />
+    <button type="submit">Add</button>
+  </form>
+  <p class="status" id="status" aria-live="polite"></p>
+
+  <section class="focus" id="focus" hidden aria-labelledby="focus-name">
+    <h2 id="focus-name"></h2>
+    <p class="related-label" id="related-label"></p>
+    <ul class="related" id="related"></ul>
+    <form class="rename" id="rename-form" autocomplete="off">
+      <label for="rename-name">Rename</label>
+      <input id="rename-name" type="text" maxlength="80" required />
+      <button type="submit">Save</button>
+      <button type="button" id="remove">Remove</button>
+      <button type="button" id="deselect">Close</button>
+    </form>
+  </section>
+
+  <p class="empty" id="empty">Add two or more items to start relating them.</p>
+  <div class="grid-scroll" id="grid-scroll" hidden>
+    <table class="grid" id="grid"></table>
+  </div>
+</Layout>
+
+<script>
+  import {
+    addItem,
+    isRelated,
+    loadGrid,
+    relatedTo,
+    removeItem,
+    renameItem,
+    saveGrid,
+    setRelated,
+  } from "../../tools/relations/relations";
+
+  const grid = loadGrid();
+  let selectedId: string | null = null;
+
+  const addForm = document.getElementById("add-form") as HTMLFormElement;
+  const addName = document.getElementById("add-name") as HTMLInputElement;
+  const status = document.getElementById("status") as HTMLParagraphElement;
+  const focus = document.getElementById("focus") as HTMLElement;
+  const focusName = document.getElementById("focus-name") as HTMLHeadingElement;
+  const relatedLabel = document.getElementById("related-label") as HTMLParagraphElement;
+  const relatedList = document.getElementById("related") as HTMLUListElement;
+  const renameForm = document.getElementById("rename-form") as HTMLFormElement;
+  const renameName = document.getElementById("rename-name") as HTMLInputElement;
+  const removeButton = document.getElementById("remove") as HTMLButtonElement;
+  const deselectButton = document.getElementById("deselect") as HTMLButtonElement;
+  const empty = document.getElementById("empty") as HTMLParagraphElement;
+  const scroller = document.getElementById("grid-scroll") as HTMLDivElement;
+  const table = document.getElementById("grid") as HTMLTableElement;
+
+  /** The header button for an item, so a click can select it. */
+  function itemButton(id: string, name: string, className: string): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = className;
+    button.dataset.item = id;
+    button.title = name;
+    button.textContent = name;
+    return button;
+  }
+
+  /** Rebuilds the table. Needed only when items change; a tick updates its two cells. */
+  function renderGrid(): void {
+    const { items } = grid;
+    empty.hidden = items.length > 1;
+    scroller.hidden = items.length === 0;
+    table.replaceChildren();
+
+    const head = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    const corner = document.createElement("td");
+    corner.className = "corner";
+    headRow.append(corner);
+    for (const item of items) {
+      const th = document.createElement("th");
+      th.scope = "col";
+      th.dataset.col = item.id;
+      th.append(itemButton(item.id, item.name, "col-name"));
+      headRow.append(th);
+    }
+    head.append(headRow);
+
+    const body = document.createElement("tbody");
+    items.forEach((rowItem, r) => {
+      const tr = document.createElement("tr");
+      tr.dataset.row = rowItem.id;
+      const th = document.createElement("th");
+      th.scope = "row";
+      th.append(itemButton(rowItem.id, rowItem.name, "row-name"));
+      tr.append(th);
+
+      items.forEach((colItem, c) => {
+        const td = document.createElement("td");
+        td.dataset.col = colItem.id;
+        if (r === c) {
+          td.className = "self";
+        } else {
+          const box = document.createElement("input");
+          box.type = "checkbox";
+          box.checked = isRelated(grid, rowItem.id, colItem.id);
+          box.dataset.row = rowItem.id;
+          box.dataset.col = colItem.id;
+          box.dataset.r = String(r);
+          box.dataset.c = String(c);
+          box.setAttribute("aria-label", `${rowItem.name} and ${colItem.name}`);
+          td.append(box);
+        }
+        tr.append(td);
+      });
+      body.append(tr);
+    });
+
+    table.append(head, body);
+    renderSelection();
+  }
+
+  /** Shows the selected item's panel and highlights its row and column. */
+  function renderSelection(): void {
+    const item = grid.items.find((i) => i.id === selectedId);
+    if (!item) selectedId = null;
+
+    for (const el of table.querySelectorAll(".is-selected")) el.classList.remove("is-selected");
+    focus.hidden = !item;
+    if (!item) return;
+
+    for (const el of table.querySelectorAll(
+      `[data-row="${item.id}"], [data-col="${item.id}"]`,
+    )) {
+      if (el instanceof HTMLTableRowElement || el instanceof HTMLTableCellElement) {
+        el.classList.add("is-selected");
+      }
+    }
+
+    focusName.textContent = item.name;
+    renameName.value = item.name;
+    const related = relatedTo(grid, item.id);
+    relatedLabel.textContent = related.length
+      ? `Related to ${related.length} ${related.length === 1 ? "item" : "items"}:`
+      : "Not related to anything yet.";
+    relatedList.replaceChildren(
+      ...related.map((other) => {
+        const li = document.createElement("li");
+        li.append(itemButton(other.id, other.name, "chip"));
+        return li;
+      }),
+    );
+  }
+
+  function select(id: string | null): void {
+    selectedId = id;
+    renderSelection();
+    if (id) {
+      table
+        .querySelector(`tr[data-row="${id}"] th`)
+        ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
+  }
+
+  function say(message: string): void {
+    status.textContent = message;
+  }
+
+  addForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const item = addItem(grid, addName.value);
+    if (!item) {
+      say(`“${addName.value.trim()}” is already in the grid.`);
+      return;
+    }
+    saveGrid(grid);
+    say("");
+    addName.value = "";
+    renderGrid();
+    addName.focus();
+  });
+
+  renameForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!selectedId) return;
+    if (!renameItem(grid, selectedId, renameName.value)) {
+      say(`Another item is already called “${renameName.value.trim()}”.`);
+      return;
+    }
+    saveGrid(grid);
+    say("");
+    renderGrid();
+  });
+
+  removeButton.addEventListener("click", () => {
+    const item = grid.items.find((i) => i.id === selectedId);
+    if (!item || !confirm(`Remove “${item.name}” and all of its relations?`)) return;
+    removeItem(grid, item.id);
+    saveGrid(grid);
+    selectedId = null;
+    renderGrid();
+  });
+
+  deselectButton.addEventListener("click", () => select(null));
+
+  // Any item name — a header or a chip in the panel — selects that item.
+  document.addEventListener("click", (event) => {
+    const button = (event.target as Element).closest<HTMLButtonElement>("button[data-item]");
+    if (button) select(button.dataset.item ?? null);
+  });
+
+  // A tick sets both mirrored cells, since they are the same relation.
+  table.addEventListener("change", (event) => {
+    const box = event.target as HTMLInputElement;
+    const { row, col } = box.dataset;
+    if (!row || !col) return;
+    setRelated(grid, row, col, box.checked);
+    saveGrid(grid);
+    const mirror = table.querySelector<HTMLInputElement>(
+      `input[data-row="${col}"][data-col="${row}"]`,
+    );
+    if (mirror) mirror.checked = box.checked;
+    if (selectedId === row || selectedId === col) renderSelection();
+  });
+
+  // Light up the row and column headers of the cell under the pointer or focus, so a
+  // cell deep in a large grid can be read off the sticky headers.
+  function highlight(target: EventTarget | null): void {
+    for (const el of table.querySelectorAll(".is-hot")) el.classList.remove("is-hot");
+    const cell = (target as Element | null)?.closest?.("td[data-col]");
+    const row = cell?.parentElement?.dataset.row;
+    if (!cell || !row) return;
+    table.querySelector(`tr[data-row="${row}"] th`)?.classList.add("is-hot");
+    table
+      .querySelector(`thead th[data-col="${(cell as HTMLElement).dataset.col}"]`)
+      ?.classList.add("is-hot");
+  }
+  table.addEventListener("pointerover", (event) => highlight(event.target));
+  table.addEventListener("focusin", (event) => highlight(event.target));
+  table.addEventListener("pointerleave", () => highlight(document.activeElement));
+
+  // Arrow keys move between cells, stepping over the empty diagonal.
+  const STEPS: Record<string, [number, number]> = {
+    ArrowUp: [-1, 0],
+    ArrowDown: [1, 0],
+    ArrowLeft: [0, -1],
+    ArrowRight: [0, 1],
+  };
+  table.addEventListener("keydown", (event) => {
+    const step = STEPS[event.key];
+    const box = event.target as HTMLInputElement;
+    if (!step || box.type !== "checkbox") return;
+    let r = Number(box.dataset.r) + step[0];
+    let c = Number(box.dataset.c) + step[1];
+    if (r === c) {
+      r += step[0];
+      c += step[1];
+    }
+    const next = table.querySelector<HTMLInputElement>(`input[data-r="${r}"][data-c="${c}"]`);
+    if (next) {
+      event.preventDefault();
+      next.focus();
+    }
+  });
+
+  renderGrid();
+</script>
+
+<style>
+  .add,
+  .rename {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .add label,
+  .rename label {
+    font-weight: 600;
+  }
+
+  input[type="text"] {
+    flex: 1 1 12rem;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.35rem 0.6rem;
+  }
+
+  form button {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    padding: 0.35rem 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .add button[type="submit"],
+  .rename button[type="submit"] {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .status {
+    min-height: 1.6em;
+    margin: 0.4rem 0 0.6rem;
+    color: var(--muted);
+  }
+
+  .focus {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .focus h2 {
+    margin-top: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .related-label {
+    margin-bottom: 0.5rem;
+    color: var(--muted);
+  }
+
+  .related {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+  }
+
+  .related :global(li + li) {
+    margin-top: 0;
+  }
+
+  .related :global(.chip) {
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--accent);
+    padding: 0.15rem 0.75rem;
+    cursor: pointer;
+  }
+
+  .related :global(.chip:hover) {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .empty {
+    color: var(--muted);
+  }
+
+  /* The scroller is what the sticky headers stick to, so it — not the page — scrolls
+     in both directions, and is capped in height so the column headers stay in view. */
+  .grid-scroll {
+    overflow: auto;
+    max-height: 75vh;
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+  }
+
+  /* `separate`, not `collapse`: collapsed borders are drawn by the table, so they
+     scroll away from under a sticky header cell. */
+  .grid {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .grid :global(th),
+  .grid :global(td) {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    padding: 0;
+  }
+
+  .grid :global(thead th),
+  .grid :global(.corner) {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    vertical-align: bottom;
+  }
+
+  .grid :global(tbody th),
+  .grid :global(.corner) {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    text-align: left;
+  }
+
+  .grid :global(.corner) {
+    z-index: 3;
+  }
+
+  .grid :global(td) {
+    width: 2.2rem;
+    min-width: 2.2rem;
+    height: 2.2rem;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .grid :global(td input) {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .grid :global(td.self) {
+    background: var(--surface);
+  }
+
+  .grid :global(.row-name),
+  .grid :global(.col-name) {
+    display: block;
+    border: none;
+    background: none;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .grid :global(.row-name) {
+    width: 100%;
+    max-width: 12rem;
+    padding: 0 0.7rem;
+    text-align: left;
+  }
+
+  /* Column names run up the page, so a long name costs height, not width. */
+  .grid :global(.col-name) {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    max-height: 10rem;
+    width: 100%;
+    padding: 0.6rem 0;
+  }
+
+  .grid :global(.row-name:hover),
+  .grid :global(.col-name:hover) {
+    color: var(--accent);
+  }
+
+  .grid :global(th.is-hot),
+  .grid :global(td.is-selected) {
+    background: var(--surface);
+  }
+
+  .grid :global(th.is-selected),
+  .grid :global(tr.is-selected th) {
+    background: var(--accent);
+  }
+
+  .grid :global(th.is-selected button),
+  .grid :global(tr.is-selected th button) {
+    color: var(--accent-text);
+  }
+
+  .grid :global(tr.is-selected td:not(.self)),
+  .grid :global(td.is-selected:not(.self)) {
+    background: var(--surface);
+  }
+</style>

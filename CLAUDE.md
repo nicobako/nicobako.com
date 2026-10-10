@@ -70,6 +70,7 @@ of presets trades directly against install size. Keep it short and deliberate.
 | `/games/`, `/games/classrooms-and-angry-teachers`, `/games/word-steps/` and a page per ladder (English and Japanese) | `src/pages/games/` |
 | `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/` (including a page per ascending-on-string variant), `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
+| `/tools/`, `/tools/relations` | `src/pages/tools/` |
 | `/printables/`, and the sheets listed below | `src/pages/printables/` |
 | `/offline` | `src/pages/offline.astro` |
 
@@ -297,6 +298,21 @@ is a child learning the words, not one who already has them.
   sides, which is why the eight panels and each booklet's pages are written out rather
   than mapped.
 - `speed-reading/speed-reading.ts` — line wrapping and column dealing. The one page that must re-render in the browser: where a line breaks depends on the reader's actual font metrics, so the build uses `estimateWidth` for first paint and the browser re-runs the layout with canvas measurements.
+
+### Tools subsystem
+
+`src/tools/` holds tools whose content is the reader's own, so unlike the printables
+there is nothing to pre-render and the page builds its view in the browser.
+
+- `relations/relations.ts` — the relation grid: a list of items and the set of related
+  pairs, kept in `localStorage` (`relations:grid`). A relation has no direction, so it is
+  stored once under an order-independent `pairKey`, and the grid's symmetry comes from
+  that rather than from keeping two cells in step. Removing an item drops its pairs.
+  `relations.astro` draws the table with `document.createElement` (the items are the
+  reader's, so there is no markup to write in advance); the headers stick inside a
+  scrolling container — `border-collapse: separate`, because collapsed borders scroll
+  away from under a sticky cell — and picking a name opens a panel listing what it is
+  related to, as links to jump between items.
 
 ### PWA subsystem
 
