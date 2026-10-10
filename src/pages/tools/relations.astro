@@ -24,6 +24,11 @@ import Layout from "../../layouts/Layout.astro";
     <h2 id="focus-name"></h2>
     <p class="related-label" id="related-label"></p>
     <ul class="related" id="related"></ul>
+    <form class="add-related" id="add-related-form" autocomplete="off">
+      <label for="add-related-name">Add related</label>
+      <input id="add-related-name" type="text" maxlength="80" list="item-names" required />
+      <button type="submit">Add</button>
+    </form>
     <form class="rename" id="rename-form" autocomplete="off">
       <label for="rename-name">Rename</label>
       <input id="rename-name" type="text" maxlength="80" required />
@@ -36,12 +41,14 @@ import Layout from "../../layouts/Layout.astro";
   <p class="empty" id="empty">Add two or more items to start relating them.</p>
   <form class="filter" id="filter-form" role="search" autocomplete="off" hidden>
     <label for="filter-text">Filter</label>
-    <input id="filter-text" type="search" placeholder="Part of a name" />
+    <input id="filter-text" type="search" placeholder="Part of a name" list="item-names" />
     <div class="axis" role="radiogroup" aria-label="Filter the">
       <label><input type="radio" name="axis" value="rows" checked /> Rows</label>
       <label><input type="radio" name="axis" value="cols" /> Columns</label>
     </div>
   </form>
+  <!-- Every item's name, offered as suggestions by the filter and "Add related". -->
+  <datalist id="item-names"></datalist>
   <p class="filter-count" id="filter-count" aria-live="polite"></p>
   <div class="grid-scroll" id="grid-scroll" hidden>
     <table class="grid" id="grid"></table>
@@ -54,6 +61,7 @@ import Layout from "../../layouts/Layout.astro";
     isRelated,
     loadGrid,
     matching,
+    relateByName,
     relatedTo,
     removeItem,
     renameItem,
@@ -71,6 +79,9 @@ import Layout from "../../layouts/Layout.astro";
   const focusName = document.getElementById("focus-name") as HTMLHeadingElement;
   const relatedLabel = document.getElementById("related-label") as HTMLParagraphElement;
   const relatedList = document.getElementById("related") as HTMLUListElement;
+  const addRelatedForm = document.getElementById("add-related-form") as HTMLFormElement;
+  const addRelatedName = document.getElementById("add-related-name") as HTMLInputElement;
+  const itemNames = document.getElementById("item-names") as HTMLDataListElement;
   const renameForm = document.getElementById("rename-form") as HTMLFormElement;
   const renameName = document.getElementById("rename-name") as HTMLInputElement;
   const removeButton = document.getElementById("remove") as HTMLButtonElement;
@@ -99,6 +110,13 @@ import Layout from "../../layouts/Layout.astro";
     empty.hidden = items.length > 1;
     scroller.hidden = items.length === 0;
     filterForm.hidden = items.length < 2;
+    itemNames.replaceChildren(
+      ...items.map((item) => {
+        const option = document.createElement("option");
+        option.value = item.name;
+        return option;
+      }),
+    );
     table.replaceChildren();
 
     const head = document.createElement("thead");
@@ -228,6 +246,22 @@ import Layout from "../../layouts/Layout.astro";
     addName.focus();
   });
 
+  // Relates the selected item to a name, creating the item if it is new; the field keeps
+  // focus so a family's members can be typed one after another.
+  addRelatedForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!selectedId || !addRelatedName.value.trim()) return;
+    if (!relateByName(grid, selectedId, addRelatedName.value)) {
+      say("An item can't be related to itself.");
+      return;
+    }
+    saveGrid(grid);
+    say("");
+    addRelatedName.value = "";
+    renderGrid();
+    addRelatedName.focus();
+  });
+
   renameForm.addEventListener("submit", (event) => {
     event.preventDefault();
     if (!selectedId) return;
@@ -323,6 +357,7 @@ import Layout from "../../layouts/Layout.astro";
 
 <style>
   .add,
+  .add-related,
   .rename {
     display: flex;
     flex-wrap: wrap;
@@ -331,6 +366,7 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .add label,
+  .add-related label,
   .rename label {
     font-weight: 600;
   }
@@ -357,6 +393,7 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .add button[type="submit"],
+  .add-related button[type="submit"],
   .rename button[type="submit"] {
     border-color: var(--accent);
     background: var(--accent);
@@ -375,6 +412,10 @@ import Layout from "../../layouts/Layout.astro";
     background: var(--surface);
     padding: 1rem 1.1rem;
     margin-bottom: 1.25rem;
+  }
+
+  .add-related {
+    margin-bottom: 0.75rem;
   }
 
   .focus h2 {

@@ -73,6 +73,17 @@ export function addItem(grid: Grid, name: string): Item | null {
   return item;
 }
 
+/**
+ * Relates `id` to the item called `name`, adding that item first if there is none.
+ * Null when the name is empty or is `id`'s own.
+ */
+export function relateByName(grid: Grid, id: string, name: string): Item | null {
+  const other = findByName(grid, name) ?? addItem(grid, name);
+  if (!other || other.id === id) return null;
+  setRelated(grid, id, other.id, true);
+  return other;
+}
+
 /** Renames an item; false when the new name is empty or belongs to another item. */
 export function renameItem(grid: Grid, id: string, name: string): boolean {
   const trimmed = name.trim();

@@ -314,7 +314,10 @@ there is nothing to pre-render and the page builds its view in the browser.
   away from under a sticky cell — and picking a name opens a panel listing what it is
   related to, as links to jump between items. A filter hides the rows *or* the columns
   whose names don't contain the text (`matching`), never both: the other axis stays whole,
-  so a filtered row still shows everything it relates to.
+  so a filtered row still shows everything it relates to. The panel's "Add related"
+  field (`relateByName`) links the selected item to a name, creating the item if it is
+  new, so a group's members can be typed in one after another; it and the filter share a
+  `<datalist>` of every name as suggestions.
 
 ### PWA subsystem
 
