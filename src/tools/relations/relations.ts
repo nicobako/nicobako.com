@@ -49,6 +49,16 @@ export function relatedTo(grid: Grid, id: string): Item[] {
   return grid.items.filter((item) => item.id !== id && isRelated(grid, id, item.id));
 }
 
+/** The ids of the items whose names contain `query`, ignoring case; all of them when it is blank. */
+export function matching(grid: Grid, query: string): Set<string> {
+  const wanted = query.trim().toLocaleLowerCase();
+  return new Set(
+    grid.items
+      .filter((item) => item.name.toLocaleLowerCase().includes(wanted))
+      .map((item) => item.id),
+  );
+}
+
 export function findByName(grid: Grid, name: string): Item | undefined {
   const wanted = name.trim().toLocaleLowerCase();
   return grid.items.find((item) => item.name.toLocaleLowerCase() === wanted);

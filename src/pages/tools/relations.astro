@@ -34,6 +34,15 @@ import Layout from "../../layouts/Layout.astro";
   </section>
 
   <p class="empty" id="empty">Add two or more items to start relating them.</p>
+  <form class="filter" id="filter-form" role="search" autocomplete="off" hidden>
+    <label for="filter-text">Filter</label>
+    <input id="filter-text" type="search" placeholder="Part of a name" />
+    <div class="axis" role="radiogroup" aria-label="Filter the">
+      <label><input type="radio" name="axis" value="rows" checked /> Rows</label>
+      <label><input type="radio" name="axis" value="cols" /> Columns</label>
+    </div>
+  </form>
+  <p class="filter-count" id="filter-count" aria-live="polite"></p>
   <div class="grid-scroll" id="grid-scroll" hidden>
     <table class="grid" id="grid"></table>
   </div>
@@ -44,6 +53,7 @@ import Layout from "../../layouts/Layout.astro";
     addItem,
     isRelated,
     loadGrid,
+    matching,
     relatedTo,
     removeItem,
     renameItem,
@@ -68,6 +78,9 @@ import Layout from "../../layouts/Layout.astro";
   const empty = document.getElementById("empty") as HTMLParagraphElement;
   const scroller = document.getElementById("grid-scroll") as HTMLDivElement;
   const table = document.getElementById("grid") as HTMLTableElement;
+  const filterForm = document.getElementById("filter-form") as HTMLFormElement;
+  const filterText = document.getElementById("filter-text") as HTMLInputElement;
+  const filterCount = document.getElementById("filter-count") as HTMLParagraphElement;
 
   /** The header button for an item, so a click can select it. */
   function itemButton(id: string, name: string, className: string): HTMLButtonElement {
@@ -85,6 +98,7 @@ import Layout from "../../layouts/Layout.astro";
     const { items } = grid;
     empty.hidden = items.length > 1;
     scroller.hidden = items.length === 0;
+    filterForm.hidden = items.length < 2;
     table.replaceChildren();
 
     const head = document.createElement("thead");
@@ -132,7 +146,26 @@ import Layout from "../../layouts/Layout.astro";
     });
 
     table.append(head, body);
+    applyFilter();
     renderSelection();
+  }
+
+  /** Hides the rows, or the columns, whose names don't match the filter. The other
+      axis is left whole, so a filtered row still shows everything it relates to. */
+  function applyFilter(): void {
+    const axis = (filterForm.elements.namedItem("axis") as RadioNodeList).value;
+    const shown = matching(grid, filterText.value);
+    for (const tr of table.querySelectorAll<HTMLTableRowElement>("tbody tr")) {
+      tr.hidden = axis === "rows" && !shown.has(tr.dataset.row ?? "");
+    }
+    for (const cell of table.querySelectorAll<HTMLElement>("th[data-col], td[data-col]")) {
+      cell.hidden = axis === "cols" && !shown.has(cell.dataset.col ?? "");
+    }
+    const total = grid.items.length;
+    filterCount.textContent =
+      filterText.value.trim() && !filterForm.hidden
+        ? `Showing ${shown.size} of ${total} ${axis === "rows" ? "rows" : "columns"}.`
+        : "";
   }
 
   /** Shows the selected item's panel and highlights its row and column. */
@@ -218,6 +251,10 @@ import Layout from "../../layouts/Layout.astro";
 
   deselectButton.addEventListener("click", () => select(null));
 
+  // Typing and switching between rows and columns both refilter; Enter has nothing to submit.
+  filterForm.addEventListener("input", applyFilter);
+  filterForm.addEventListener("submit", (event) => event.preventDefault());
+
   // Any item name — a header or a chip in the panel — selects that item.
   document.addEventListener("click", (event) => {
     const button = (event.target as Element).closest<HTMLButtonElement>("button[data-item]");
@@ -254,7 +291,7 @@ import Layout from "../../layouts/Layout.astro";
   table.addEventListener("focusin", (event) => highlight(event.target));
   table.addEventListener("pointerleave", () => highlight(document.activeElement));
 
-  // Arrow keys move between cells, stepping over the empty diagonal.
+  // Arrow keys move between cells, stepping over the empty diagonal and anything filtered out.
   const STEPS: Record<string, [number, number]> = {
     ArrowUp: [-1, 0],
     ArrowDown: [1, 0],
@@ -265,14 +302,17 @@ import Layout from "../../layouts/Layout.astro";
     const step = STEPS[event.key];
     const box = event.target as HTMLInputElement;
     if (!step || box.type !== "checkbox") return;
-    let r = Number(box.dataset.r) + step[0];
-    let c = Number(box.dataset.c) + step[1];
-    if (r === c) {
+    let r = Number(box.dataset.r);
+    let c = Number(box.dataset.c);
+    let next: HTMLInputElement | null;
+    do {
       r += step[0];
       c += step[1];
-    }
-    const next = table.querySelector<HTMLInputElement>(`input[data-r="${r}"][data-c="${c}"]`);
-    if (next) {
+      next = table.querySelector<HTMLInputElement>(`input[data-r="${r}"][data-c="${c}"]`);
+      const inside = r >= 0 && c >= 0 && r < grid.items.length && c < grid.items.length;
+      if (!inside) break;
+    } while (r === c || next?.closest("[hidden]"));
+    if (next && !next.closest("[hidden]")) {
       event.preventDefault();
       next.focus();
     }
@@ -295,7 +335,8 @@ import Layout from "../../layouts/Layout.astro";
     font-weight: 600;
   }
 
-  input[type="text"] {
+  input[type="text"],
+  input[type="search"] {
     flex: 1 1 12rem;
     min-width: 0;
     border: 1px solid var(--border);
@@ -373,6 +414,39 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .empty {
+    color: var(--muted);
+  }
+
+  .filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .filter > label {
+    font-weight: 600;
+  }
+
+  .axis {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .axis label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: pointer;
+  }
+
+  .axis input {
+    accent-color: var(--accent);
+  }
+
+  .filter-count {
+    min-height: 1.6em;
+    margin: 0.3rem 0 0.4rem;
     color: var(--muted);
   }
 
@@ -487,9 +561,18 @@ import Layout from "../../layouts/Layout.astro";
     background: var(--accent);
   }
 
+  /* Hover is listed too: the plain hover colour is the accent, which would vanish
+     against the accent background — and on a touch screen hover sticks after a tap. */
   .grid :global(th.is-selected button),
-  .grid :global(tr.is-selected th button) {
+  .grid :global(th.is-selected button:hover),
+  .grid :global(tr.is-selected th button),
+  .grid :global(tr.is-selected th button:hover) {
     color: var(--accent-text);
+  }
+
+  .grid :global(th.is-selected button:hover),
+  .grid :global(tr.is-selected th button:hover) {
+    text-decoration: underline;
   }
 
   .grid :global(tr.is-selected td:not(.self)),
