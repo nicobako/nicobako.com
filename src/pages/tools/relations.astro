@@ -8,9 +8,8 @@ import Layout from "../../layouts/Layout.astro";
 >
   <h1>Relations</h1>
   <p>
-    Every item is both a row and a column, so the grid is its own mirror: tick a cell and
-    the two items are related, both ways. Pick an item's name to see what it is related to
-    and jump between them. Everything is saved on this device.
+    Add items, then tick a cell to relate two of them. Pick a name to see and add what it
+    is related to. Saved on this device.
   </p>
 
   <form class="add" id="add-form" autocomplete="off">
@@ -58,6 +57,7 @@ import Layout from "../../layouts/Layout.astro";
 <script>
   import {
     addItem,
+    findByName,
     isRelated,
     loadGrid,
     matching,
@@ -222,6 +222,8 @@ import Layout from "../../layouts/Layout.astro";
     selectedId = id;
     renderSelection();
     if (id) {
+      // Picking an item is usually the start of relating things to it.
+      addRelatedName.focus();
       table
         .querySelector(`tr[data-row="${id}"] th`)
         ?.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -234,16 +236,15 @@ import Layout from "../../layouts/Layout.astro";
 
   addForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    const item = addItem(grid, addName.value);
-    if (!item) {
-      say(`“${addName.value.trim()}” is already in the grid.`);
-      return;
-    }
+    // A name already in the grid is not an error: it selects that item instead.
+    const item = findByName(grid, addName.value) ?? addItem(grid, addName.value);
+    if (!item) return;
     saveGrid(grid);
     say("");
     addName.value = "";
     renderGrid();
-    addName.focus();
+    // Select the new item, so its members can be typed straight into "Add related".
+    select(item.id);
   });
 
   // Relates the selected item to a name, creating the item if it is new; the field keeps
@@ -393,8 +394,7 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .add button[type="submit"],
-  .add-related button[type="submit"],
-  .rename button[type="submit"] {
+  .add-related button[type="submit"] {
     border-color: var(--accent);
     background: var(--accent);
     color: var(--accent-text);

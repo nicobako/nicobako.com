@@ -316,7 +316,9 @@ there is nothing to pre-render and the page builds its view in the browser.
   whose names don't contain the text (`matching`), never both: the other axis stays whole,
   so a filtered row still shows everything it relates to. The panel's "Add related"
   field (`relateByName`) links the selected item to a name, creating the item if it is
-  new, so a group's members can be typed in one after another; it and the filter share a
+  new, so a group's members can be typed in one after another. Selecting an item —
+  including by adding it, or typing a name already in the grid into "New item" — puts
+  the cursor in that field, so a whole group goes in from the keyboard; it and the filter share a
   `<datalist>` of every name as suggestions.
 
 ### PWA subsystem
