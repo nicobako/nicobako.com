@@ -8,9 +8,8 @@ import Layout from "../../layouts/Layout.astro";
 >
   <h1>Relations</h1>
   <p>
-    Every item is both a row and a column, so the grid is its own mirror: tick a cell and
-    the two items are related, both ways. Pick an item's name to see what it is related to
-    and jump between them. Everything is saved on this device.
+    Add items, then tick a cell to relate two of them. Pick a name to see and add what it
+    is related to. Saved on this device.
   </p>
 
   <form class="add" id="add-form" autocomplete="off">
@@ -24,6 +23,11 @@ import Layout from "../../layouts/Layout.astro";
     <h2 id="focus-name"></h2>
     <p class="related-label" id="related-label"></p>
     <ul class="related" id="related"></ul>
+    <form class="add-related" id="add-related-form" autocomplete="off">
+      <label for="add-related-name">Add related</label>
+      <input id="add-related-name" type="text" maxlength="80" list="item-names" required />
+      <button type="submit">Add</button>
+    </form>
     <form class="rename" id="rename-form" autocomplete="off">
       <label for="rename-name">Rename</label>
       <input id="rename-name" type="text" maxlength="80" required />
@@ -34,6 +38,17 @@ import Layout from "../../layouts/Layout.astro";
   </section>
 
   <p class="empty" id="empty">Add two or more items to start relating them.</p>
+  <form class="filter" id="filter-form" role="search" autocomplete="off" hidden>
+    <label for="filter-text">Filter</label>
+    <input id="filter-text" type="search" placeholder="Part of a name" list="item-names" />
+    <div class="axis" role="radiogroup" aria-label="Filter the">
+      <label><input type="radio" name="axis" value="rows" checked /> Rows</label>
+      <label><input type="radio" name="axis" value="cols" /> Columns</label>
+    </div>
+  </form>
+  <!-- Every item's name, offered as suggestions by the filter and "Add related". -->
+  <datalist id="item-names"></datalist>
+  <p class="filter-count" id="filter-count" aria-live="polite"></p>
   <div class="grid-scroll" id="grid-scroll" hidden>
     <table class="grid" id="grid"></table>
   </div>
@@ -42,8 +57,11 @@ import Layout from "../../layouts/Layout.astro";
 <script>
   import {
     addItem,
+    findByName,
     isRelated,
     loadGrid,
+    matching,
+    relateByName,
     relatedTo,
     removeItem,
     renameItem,
@@ -61,6 +79,9 @@ import Layout from "../../layouts/Layout.astro";
   const focusName = document.getElementById("focus-name") as HTMLHeadingElement;
   const relatedLabel = document.getElementById("related-label") as HTMLParagraphElement;
   const relatedList = document.getElementById("related") as HTMLUListElement;
+  const addRelatedForm = document.getElementById("add-related-form") as HTMLFormElement;
+  const addRelatedName = document.getElementById("add-related-name") as HTMLInputElement;
+  const itemNames = document.getElementById("item-names") as HTMLDataListElement;
   const renameForm = document.getElementById("rename-form") as HTMLFormElement;
   const renameName = document.getElementById("rename-name") as HTMLInputElement;
   const removeButton = document.getElementById("remove") as HTMLButtonElement;
@@ -68,6 +89,9 @@ import Layout from "../../layouts/Layout.astro";
   const empty = document.getElementById("empty") as HTMLParagraphElement;
   const scroller = document.getElementById("grid-scroll") as HTMLDivElement;
   const table = document.getElementById("grid") as HTMLTableElement;
+  const filterForm = document.getElementById("filter-form") as HTMLFormElement;
+  const filterText = document.getElementById("filter-text") as HTMLInputElement;
+  const filterCount = document.getElementById("filter-count") as HTMLParagraphElement;
 
   /** The header button for an item, so a click can select it. */
   function itemButton(id: string, name: string, className: string): HTMLButtonElement {
@@ -85,6 +109,14 @@ import Layout from "../../layouts/Layout.astro";
     const { items } = grid;
     empty.hidden = items.length > 1;
     scroller.hidden = items.length === 0;
+    filterForm.hidden = items.length < 2;
+    itemNames.replaceChildren(
+      ...items.map((item) => {
+        const option = document.createElement("option");
+        option.value = item.name;
+        return option;
+      }),
+    );
     table.replaceChildren();
 
     const head = document.createElement("thead");
@@ -132,7 +164,26 @@ import Layout from "../../layouts/Layout.astro";
     });
 
     table.append(head, body);
+    applyFilter();
     renderSelection();
+  }
+
+  /** Hides the rows, or the columns, whose names don't match the filter. The other
+      axis is left whole, so a filtered row still shows everything it relates to. */
+  function applyFilter(): void {
+    const axis = (filterForm.elements.namedItem("axis") as RadioNodeList).value;
+    const shown = matching(grid, filterText.value);
+    for (const tr of table.querySelectorAll<HTMLTableRowElement>("tbody tr")) {
+      tr.hidden = axis === "rows" && !shown.has(tr.dataset.row ?? "");
+    }
+    for (const cell of table.querySelectorAll<HTMLElement>("th[data-col], td[data-col]")) {
+      cell.hidden = axis === "cols" && !shown.has(cell.dataset.col ?? "");
+    }
+    const total = grid.items.length;
+    filterCount.textContent =
+      filterText.value.trim() && !filterForm.hidden
+        ? `Showing ${shown.size} of ${total} ${axis === "rows" ? "rows" : "columns"}.`
+        : "";
   }
 
   /** Shows the selected item's panel and highlights its row and column. */
@@ -171,6 +222,8 @@ import Layout from "../../layouts/Layout.astro";
     selectedId = id;
     renderSelection();
     if (id) {
+      // Picking an item is usually the start of relating things to it.
+      addRelatedName.focus();
       table
         .querySelector(`tr[data-row="${id}"] th`)
         ?.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -183,16 +236,31 @@ import Layout from "../../layouts/Layout.astro";
 
   addForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    const item = addItem(grid, addName.value);
-    if (!item) {
-      say(`“${addName.value.trim()}” is already in the grid.`);
-      return;
-    }
+    // A name already in the grid is not an error: it selects that item instead.
+    const item = findByName(grid, addName.value) ?? addItem(grid, addName.value);
+    if (!item) return;
     saveGrid(grid);
     say("");
     addName.value = "";
     renderGrid();
-    addName.focus();
+    // Select the new item, so its members can be typed straight into "Add related".
+    select(item.id);
+  });
+
+  // Relates the selected item to a name, creating the item if it is new; the field keeps
+  // focus so a family's members can be typed one after another.
+  addRelatedForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!selectedId || !addRelatedName.value.trim()) return;
+    if (!relateByName(grid, selectedId, addRelatedName.value)) {
+      say("An item can't be related to itself.");
+      return;
+    }
+    saveGrid(grid);
+    say("");
+    addRelatedName.value = "";
+    renderGrid();
+    addRelatedName.focus();
   });
 
   renameForm.addEventListener("submit", (event) => {
@@ -217,6 +285,10 @@ import Layout from "../../layouts/Layout.astro";
   });
 
   deselectButton.addEventListener("click", () => select(null));
+
+  // Typing and switching between rows and columns both refilter; Enter has nothing to submit.
+  filterForm.addEventListener("input", applyFilter);
+  filterForm.addEventListener("submit", (event) => event.preventDefault());
 
   // Any item name — a header or a chip in the panel — selects that item.
   document.addEventListener("click", (event) => {
@@ -254,7 +326,7 @@ import Layout from "../../layouts/Layout.astro";
   table.addEventListener("focusin", (event) => highlight(event.target));
   table.addEventListener("pointerleave", () => highlight(document.activeElement));
 
-  // Arrow keys move between cells, stepping over the empty diagonal.
+  // Arrow keys move between cells, stepping over the empty diagonal and anything filtered out.
   const STEPS: Record<string, [number, number]> = {
     ArrowUp: [-1, 0],
     ArrowDown: [1, 0],
@@ -265,14 +337,17 @@ import Layout from "../../layouts/Layout.astro";
     const step = STEPS[event.key];
     const box = event.target as HTMLInputElement;
     if (!step || box.type !== "checkbox") return;
-    let r = Number(box.dataset.r) + step[0];
-    let c = Number(box.dataset.c) + step[1];
-    if (r === c) {
+    let r = Number(box.dataset.r);
+    let c = Number(box.dataset.c);
+    let next: HTMLInputElement | null;
+    do {
       r += step[0];
       c += step[1];
-    }
-    const next = table.querySelector<HTMLInputElement>(`input[data-r="${r}"][data-c="${c}"]`);
-    if (next) {
+      next = table.querySelector<HTMLInputElement>(`input[data-r="${r}"][data-c="${c}"]`);
+      const inside = r >= 0 && c >= 0 && r < grid.items.length && c < grid.items.length;
+      if (!inside) break;
+    } while (r === c || next?.closest("[hidden]"));
+    if (next && !next.closest("[hidden]")) {
       event.preventDefault();
       next.focus();
     }
@@ -283,6 +358,7 @@ import Layout from "../../layouts/Layout.astro";
 
 <style>
   .add,
+  .add-related,
   .rename {
     display: flex;
     flex-wrap: wrap;
@@ -291,11 +367,13 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .add label,
+  .add-related label,
   .rename label {
     font-weight: 600;
   }
 
-  input[type="text"] {
+  input[type="text"],
+  input[type="search"] {
     flex: 1 1 12rem;
     min-width: 0;
     border: 1px solid var(--border);
@@ -316,7 +394,7 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .add button[type="submit"],
-  .rename button[type="submit"] {
+  .add-related button[type="submit"] {
     border-color: var(--accent);
     background: var(--accent);
     color: var(--accent-text);
@@ -334,6 +412,10 @@ import Layout from "../../layouts/Layout.astro";
     background: var(--surface);
     padding: 1rem 1.1rem;
     margin-bottom: 1.25rem;
+  }
+
+  .add-related {
+    margin-bottom: 0.75rem;
   }
 
   .focus h2 {
@@ -373,6 +455,39 @@ import Layout from "../../layouts/Layout.astro";
   }
 
   .empty {
+    color: var(--muted);
+  }
+
+  .filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .filter > label {
+    font-weight: 600;
+  }
+
+  .axis {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .axis label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: pointer;
+  }
+
+  .axis input {
+    accent-color: var(--accent);
+  }
+
+  .filter-count {
+    min-height: 1.6em;
+    margin: 0.3rem 0 0.4rem;
     color: var(--muted);
   }
 
@@ -487,9 +602,18 @@ import Layout from "../../layouts/Layout.astro";
     background: var(--accent);
   }
 
+  /* Hover is listed too: the plain hover colour is the accent, which would vanish
+     against the accent background — and on a touch screen hover sticks after a tap. */
   .grid :global(th.is-selected button),
-  .grid :global(tr.is-selected th button) {
+  .grid :global(th.is-selected button:hover),
+  .grid :global(tr.is-selected th button),
+  .grid :global(tr.is-selected th button:hover) {
     color: var(--accent-text);
+  }
+
+  .grid :global(th.is-selected button:hover),
+  .grid :global(tr.is-selected th button:hover) {
+    text-decoration: underline;
   }
 
   .grid :global(tr.is-selected td:not(.self)),

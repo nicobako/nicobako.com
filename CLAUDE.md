@@ -312,7 +312,14 @@ there is nothing to pre-render and the page builds its view in the browser.
   reader's, so there is no markup to write in advance); the headers stick inside a
   scrolling container — `border-collapse: separate`, because collapsed borders scroll
   away from under a sticky cell — and picking a name opens a panel listing what it is
-  related to, as links to jump between items.
+  related to, as links to jump between items. A filter hides the rows *or* the columns
+  whose names don't contain the text (`matching`), never both: the other axis stays whole,
+  so a filtered row still shows everything it relates to. The panel's "Add related"
+  field (`relateByName`) links the selected item to a name, creating the item if it is
+  new, so a group's members can be typed in one after another. Selecting an item —
+  including by adding it, or typing a name already in the grid into "New item" — puts
+  the cursor in that field, so a whole group goes in from the keyboard; it and the filter share a
+  `<datalist>` of every name as suggestions.
 
 ### PWA subsystem
 

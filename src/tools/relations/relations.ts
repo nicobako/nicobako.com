@@ -49,6 +49,16 @@ export function relatedTo(grid: Grid, id: string): Item[] {
   return grid.items.filter((item) => item.id !== id && isRelated(grid, id, item.id));
 }
 
+/** The ids of the items whose names contain `query`, ignoring case; all of them when it is blank. */
+export function matching(grid: Grid, query: string): Set<string> {
+  const wanted = query.trim().toLocaleLowerCase();
+  return new Set(
+    grid.items
+      .filter((item) => item.name.toLocaleLowerCase().includes(wanted))
+      .map((item) => item.id),
+  );
+}
+
 export function findByName(grid: Grid, name: string): Item | undefined {
   const wanted = name.trim().toLocaleLowerCase();
   return grid.items.find((item) => item.name.toLocaleLowerCase() === wanted);
@@ -61,6 +71,17 @@ export function addItem(grid: Grid, name: string): Item | null {
   const item = { id: generateId(), name: trimmed };
   grid.items.push(item);
   return item;
+}
+
+/**
+ * Relates `id` to the item called `name`, adding that item first if there is none.
+ * Null when the name is empty or is `id`'s own.
+ */
+export function relateByName(grid: Grid, id: string, name: string): Item | null {
+  const other = findByName(grid, name) ?? addItem(grid, name);
+  if (!other || other.id === id) return null;
+  setRelated(grid, id, other.id, true);
+  return other;
 }
 
 /** Renames an item; false when the new name is empty or belongs to another item. */
