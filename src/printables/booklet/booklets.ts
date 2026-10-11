@@ -43,6 +43,12 @@ export const BOOKLET_GROUPS: BookletGroup[] = [
         description:
           "A month of repeating tasks: daily ones ticked off week by week, weekly and monthly ones, and who does what.",
       },
+      {
+        slug: "kanban",
+        name: "Kanban Board",
+        description:
+          "A task board to carry: backlog, to do, doing, waiting and done, ruled tight so each column holds twenty tasks or more.",
+      },
     ],
   },
   {

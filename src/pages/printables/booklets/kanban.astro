@@ -1,0 +1,73 @@
+---
+import BookletLayout from "../../../components/BookletLayout.astro";
+import MiniZine from "../../../components/MiniZine.astro";
+import Page from "../../../components/paper/Page.astro";
+import Section from "../../../components/paper/Section.astro";
+import CoverTitle from "../../../components/paper/CoverTitle.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Label from "../../../components/paper/Label.astro";
+import Blank from "../../../components/paper/Blank.astro";
+import Box from "../../../components/paper/Box.astro";
+import Lines from "../../../components/paper/Lines.astro";
+
+// A kanban board, one column to a page and ruled as tight as handwriting
+// allows, so the columns hold many tasks. A task moves by hand: tick its box
+// in the column it leaves and write it into the next. The spreads are laid
+// out so that the two columns a task most often moves between — to do and
+// doing — face each other.
+const LINES = 20;
+---
+
+<BookletLayout slug="kanban">
+  <MiniZine>
+    <Page slot="page-1">
+      <CoverTitle text="Kanban" />
+      <Blank label="Board" />
+      <Blank label="Started" />
+      <Blank label="Most in Doing" />
+      <Label text="To move a task, tick its box and write it in the next column." />
+      <Box label="Goal" />
+    </Page>
+
+    <Page slot="page-2">
+      <Heading text="Backlog" />
+      <Lines count={LINES} tick="start" />
+    </Page>
+
+    <Page slot="page-3">
+      <Heading text="Backlog" />
+      <Lines count={LINES} tick="start" />
+    </Page>
+
+    <Page slot="page-4">
+      <Heading text="To do" />
+      <Lines count={LINES} tick="start" />
+    </Page>
+
+    <Page slot="page-5">
+      <Section>
+        <Heading text="Doing" />
+        <Lines count={9} tick="start" />
+      </Section>
+      <Section>
+        <Heading text="Waiting" />
+        <Lines count={9} tick="start" />
+      </Section>
+    </Page>
+
+    <Page slot="page-6">
+      <Heading text="Done" />
+      <Lines count={LINES} />
+    </Page>
+
+    <Page slot="page-7">
+      <Heading text="Done" />
+      <Lines count={LINES} />
+    </Page>
+
+    <Page slot="page-8">
+      <Heading text="Notes" />
+      <Lines count={LINES} />
+    </Page>
+  </MiniZine>
+</BookletLayout>
