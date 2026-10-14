@@ -200,9 +200,9 @@ is a child learning the words, not one who already has them.
   idiom. The pages carry no script beyond the shared `AbcTrack` mount.
 
   **The preset count is the thing to watch here.** Four strings × 24 finger orders × 2
-  position spans is 192 real, precached pages (~3.2 MB, taking the precache from 5.7 to
-  8.9 MB). The 24 orders are the exercise itself and the four strings are not negotiable,
-  so the span list is where the restraint went: there are only two because a span starting
+  position spans is 192 real, precached pages (~2.4 MB of the precache). The 24 orders
+  are the exercise itself and the four strings are not negotiable, so the span list is
+  where the restraint went: there are only two because a span starting
   at first position is already contained in the longer one — each position is its own block
   of systems, so "first through fifth" is the first five blocks of `1-7`, read and stopped
   early. Only `5-10` is a genuinely different exercise (different register, entered by a
@@ -341,7 +341,7 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site (~8.9 MB across ~570 files, most of it the generated etude and
+The whole site (~12 MB across ~660 files, most of it the generated etude and
 printable variants) is precached, so every page works offline after the first
 visit. `npm run build` prints the file count; check it when adding presets. Caching is network-first for navigations, cache-first for hashed
 `/_astro/` assets, and stale-while-revalidate for everything else same-origin.
@@ -359,3 +359,4 @@ safe zone). Edit the SVG sources and re-render the PNGs if the mark changes.
   real faces before falling back, because a bare `system-ui` renders kana in whatever the
   OS happens to pick.
 - Styles in page and component files are Astro-scoped by default; only `Layout.astro`'s `<style is:global>` affects the whole document.
+- `build.inlineStylesheets: 'never'` in `astro.config.mjs` keeps stylesheets as shared, hashed files in `/_astro/` instead of inlining them. Astro's default inlines anything under 4 KB, which copied `Layout.astro`'s global CSS into every page; with ~560 pages, most of them generated variants, one cached stylesheet is far cheaper than 560 copies (it cut the built HTML from 9.0 to 7.2 MB). The cost is a stylesheet request per page, which the service worker serves from cache.
