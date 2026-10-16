@@ -1,0 +1,95 @@
+---
+// A sheet of A4, landscape, holding two A5 pages side by side, with marks at
+// the middle of the top and bottom edges to cut it in half along. A spread
+// fills the sheet with its two pages; a single page is printed twice, so one
+// cut makes two.
+import PlannerLayout from "./PlannerLayout.astro";
+import type { PlannerLayoutInfo } from "../../printables/a5-planner/a5-planner.ts";
+
+interface Props {
+  layout: PlannerLayoutInfo;
+}
+
+const { layout } = Astro.props;
+---
+
+<div class="frame">
+  <div class="sheet">
+    <PlannerLayout slug={layout.slug} />
+    {layout.pages === 1 && <PlannerLayout slug={layout.slug} />}
+    <span class="cut top" />
+    <span class="cut bottom" />
+  </div>
+</div>
+
+<style>
+  /* The frame is the container the sheet measures itself against: on screen
+     one printed millimetre is a fixed share of the column, on paper it is a
+     millimetre. */
+  .frame {
+    container-type: inline-size;
+    width: 100%;
+  }
+
+  .sheet {
+    --mm: calc(100cqw / 297);
+    position: relative;
+    display: flex;
+    width: calc(var(--mm) * 297);
+    height: calc(var(--mm) * 210);
+    background: var(--bg);
+    outline: 1px solid var(--border);
+  }
+
+  /* On screen, a faint line down the middle shows where the cut goes. */
+  .sheet::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    border-left: 1px dashed var(--border);
+  }
+
+  /* The marks to cut along: short, so that they are gone once the sheet is
+     cut, and long enough to survive the edge a printer cannot reach. */
+  .cut {
+    position: absolute;
+    left: 50%;
+    height: calc(var(--mm) * 8);
+    border-left: calc(var(--mm) * 0.25) solid var(--text);
+  }
+
+  .top {
+    top: 0;
+  }
+
+  .bottom {
+    bottom: 0;
+  }
+
+  @media print {
+    .frame {
+      width: 297mm;
+    }
+
+    .sheet {
+      --mm: 1mm;
+      /* A hair short of the paper, so rounding never spills a blank page. */
+      height: 209.5mm;
+      outline: none;
+      /* Never paint the page fill — with background graphics enabled, the dark
+         theme's --bg would print as a solid sheet. */
+      background: none;
+    }
+
+    .sheet::after {
+      display: none;
+    }
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+</style>

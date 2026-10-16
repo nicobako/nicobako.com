@@ -1,0 +1,24 @@
+---
+import A5Sheets from "../../../../components/a5-planner/A5Sheets.astro";
+import PlannerPage from "../../../../components/a5-planner/PlannerPage.astro";
+import {
+  A5,
+  PLANNER_LAYOUTS,
+  type PlannerLayoutInfo,
+} from "../../../../printables/a5-planner/a5-planner.ts";
+
+export function getStaticPaths() {
+  return PLANNER_LAYOUTS.map((layout) => ({
+    params: { layout: layout.slug },
+    props: { layout },
+  }));
+}
+
+interface Props {
+  layout: PlannerLayoutInfo;
+}
+---
+
+<PlannerPage layout={Astro.props.layout} paper={A5}>
+  <A5Sheets layout={Astro.props.layout} />
+</PlannerPage>

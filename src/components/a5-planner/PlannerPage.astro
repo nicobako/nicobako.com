@@ -1,0 +1,60 @@
+---
+// The page around a planner layout: its name and description, the trail back
+// to the planner index, the paper picker and how to print. The sheet itself
+// comes in the slot, from the route: each paper's sheet sets its own `@page`
+// size, and a page that imported both would carry both rules.
+import Layout from "../../layouts/Layout.astro";
+import Breadcrumbs from "../Breadcrumbs.astro";
+import PaperPicker from "./PaperPicker.astro";
+import {
+  describeLayout,
+  type Paper,
+  type PlannerLayoutInfo,
+} from "../../printables/a5-planner/a5-planner.ts";
+
+interface Props {
+  layout: PlannerLayoutInfo;
+  paper: Paper;
+}
+
+const { layout, paper } = Astro.props;
+---
+
+<Layout
+  title={`${layout.name} — A5 Planner — Nico Bako`}
+  description={`A printable A5 binder page. ${layout.description}`}
+>
+  <div class="controls no-print">
+    <Breadcrumbs
+      trail={[
+        { label: "Printables", href: "/printables/" },
+        { label: "A5 Planner", href: "/printables/a5-planner/" },
+      ]}
+    />
+    <h1>{layout.name}</h1>
+    <p>{layout.description}</p>
+    <PaperPicker layout={layout} paper={paper} />
+    <p class="hint">{describeLayout(layout, paper)} {paper.instructions}</p>
+  </div>
+
+  <slot />
+</Layout>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .controls p,
+  .controls :global(.crumbs) {
+    margin: 0;
+  }
+
+  .hint {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

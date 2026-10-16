@@ -1,0 +1,108 @@
+---
+// A dense ruled tracker: a column per day, week or month, and a row per habit,
+// goal or day — a square in every cell to tick, dot or colour in. Where
+// `CheckGrid` gives each box room around it, this one packs a whole month of
+// columns across a page.
+//
+// Rows are either written in (`rows`, with a wide first column for the name)
+// or printed (`labels`, with a narrow first column for the label).
+interface Props {
+  columns: string[];
+  /** Write-in rows; ignored when `labels` is given. */
+  rows?: number;
+  /** A printed label at the start of each row, one row per label. */
+  labels?: string[];
+  /** Width of the first column in `em`. */
+  nameWidth?: number;
+  /** Draw a heavier rule after every this-many columns, to count along by. */
+  every?: number;
+  /** Give each row a set height rather than sharing what is left on the page. */
+  fixed?: boolean;
+}
+
+const {
+  columns,
+  rows = 0,
+  labels,
+  nameWidth = labels ? 1.6 : 8,
+  every,
+  fixed = false,
+} = Astro.props;
+const rowNames = labels ?? Array.from({ length: rows }, () => "");
+const major = (i: number) =>
+  every !== undefined && (i + 1) % every === 0 && i + 1 < columns.length;
+---
+
+<div
+  class:list={["tracker", { fixed }]}
+  style={`--columns: ${columns.length}; --name: ${nameWidth}em;`}
+>
+  <span class="corner" />
+  {
+    columns.map((column, i) => (
+      <span class:list={["head", { major: major(i) }]}>{column}</span>
+    ))
+  }
+  {
+    rowNames.map((name) => (
+      <>
+        <span class:list={["name", { printed: labels }]}>{name}</span>
+        {columns.map((_, i) => (
+          <span class:list={["cell", { major: major(i) }]} />
+        ))}
+      </>
+    ))
+  }
+</div>
+
+<style>
+  /* The grid draws the outer top and left edges and every cell its own right
+     and bottom, so no line is doubled. */
+  .tracker {
+    flex: 1;
+    display: grid;
+    grid-template-columns: var(--name) repeat(var(--columns), minmax(0, 1fr));
+    grid-template-rows: auto;
+    grid-auto-rows: minmax(0, 1fr);
+    min-height: 0;
+    border-top: 0.06em solid var(--muted);
+    border-left: 0.06em solid var(--muted);
+  }
+
+  .tracker.fixed {
+    flex: none;
+    grid-auto-rows: 1.9em;
+  }
+
+  .corner,
+  .head,
+  .name,
+  .cell {
+    border-right: 0.06em solid var(--muted);
+    border-bottom: 0.06em solid var(--muted);
+  }
+
+  .head {
+    padding: 0.15em 0;
+    font-size: 0.75em;
+    text-align: center;
+    color: var(--muted);
+    border-bottom-color: var(--text);
+  }
+
+  .corner {
+    border-bottom-color: var(--text);
+  }
+
+  .name.printed {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    color: var(--muted);
+  }
+
+  .major {
+    border-right: 0.1em solid var(--text);
+  }
+</style>

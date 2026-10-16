@@ -1,0 +1,38 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Ledger from "../../paper/Ledger.astro";
+import Boxes from "../../paper/Boxes.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+---
+
+<A5Page>
+  <Heading text="Quarter review" dated />
+  <Row>
+    <Column>
+      <Label text="Wins" />
+      <Lines count={8} />
+    </Column>
+    <Column>
+      <Label text="Lessons" />
+      <Lines count={8} />
+    </Column>
+  </Row>
+  <Label text="Numbers" />
+  <Ledger
+    columns={[
+      { label: "Measure" },
+      { label: "Target", width: 9 },
+      { label: "Actual", width: 9 },
+    ]}
+    rows={5}
+    fixed
+  />
+  <Label text="Next quarter" />
+  <Boxes labels={["Stop", "Start", "Continue"]} columns={3} lines={6} />
+  <Label text="Focus" />
+  <Lines count={3} numbered fixed />
+</A5Page>

@@ -1,0 +1,92 @@
+---
+// A week of hours: a column per day under its heading and a blank for the
+// date, a row per hour with the hour down the left and a dotted half hour.
+// Fills the space left on the page.
+interface Props {
+  days: string[];
+  /** First hour, on the 24-hour clock. */
+  from: number;
+  /** Last hour; it gets a row of its own. */
+  to: number;
+}
+
+const { days, from, to } = Astro.props;
+const hours = Array.from({ length: to - from + 1 }, (_, i) => from + i);
+---
+
+<div class="timetable" style={`--days: ${days.length};`}>
+  <span class="corner" />
+  {
+    days.map((day) => (
+      <span class="day">
+        {day}
+        <span class="date" />
+      </span>
+    ))
+  }
+  {
+    hours.map((hour) => (
+      <>
+        <span class="time">{hour}</span>
+        {days.map(() => (
+          <span class="slot" />
+        ))}
+      </>
+    ))
+  }
+</div>
+
+<style>
+  .timetable {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.6em repeat(var(--days), minmax(0, 1fr));
+    grid-template-rows: auto;
+    grid-auto-rows: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .day {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3em;
+    padding: 0 0.3em 0.15em;
+    font-weight: 600;
+    border-bottom: 0.09em solid var(--text);
+  }
+
+  .day + .day,
+  .slot {
+    border-left: 0.06em solid var(--muted);
+  }
+
+  .date {
+    flex: 1;
+    border-bottom: 0.04em solid var(--muted);
+  }
+
+  .corner {
+    border-bottom: 0.09em solid var(--text);
+  }
+
+  .time {
+    padding-top: 0.1em;
+    font-size: 0.8em;
+    color: var(--muted);
+  }
+
+  /* The half hour is a dotted line across the middle of each slot. */
+  .slot {
+    position: relative;
+    border-bottom: 0.06em solid var(--muted);
+  }
+
+  .slot::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    border-top: 0.06em dotted var(--muted);
+  }
+</style>

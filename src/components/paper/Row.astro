@@ -1,0 +1,29 @@
+---
+// Parts of a page side by side: `Column`s, each a stack of its own. A row
+// takes the height left on the page, or a set height in `em`.
+interface Props {
+  height?: number;
+}
+
+const { height } = Astro.props;
+---
+
+<div
+  class:list={["row", { fixed: height !== undefined }]}
+  style={height !== undefined ? `height: ${height}em;` : undefined}
+>
+  <slot />
+</div>
+
+<style>
+  .row {
+    flex: 1;
+    display: flex;
+    gap: 1em;
+    min-height: 0;
+  }
+
+  .row.fixed {
+    flex: none;
+  }
+</style>

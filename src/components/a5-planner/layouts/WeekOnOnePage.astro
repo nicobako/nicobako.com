@@ -1,0 +1,43 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Day from "../../paper/Day.astro";
+import Section from "../../paper/Section.astro";
+import TrackerGrid from "../../paper/TrackerGrid.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+import { WEEKDAY_LETTERS } from "../../../printables/a5-planner/a5-planner.ts";
+---
+
+<A5Page>
+  <Heading text="Week" dated />
+  <Row height={15}>
+    <Column size={2}>
+      <Label text="Top 3" />
+      <Lines count={3} numbered tick="end" />
+    </Column>
+    <Column size={3}>
+      <Label text="Habits" />
+      <TrackerGrid columns={WEEKDAY_LETTERS} rows={5} nameWidth={10} />
+    </Column>
+  </Row>
+  <Row>
+    <Column>
+      <Day day="Monday" tasks={1} lines={4} />
+      <Day day="Tuesday" tasks={1} lines={4} />
+      <Day day="Wednesday" tasks={1} lines={4} />
+      <Day day="Thursday" tasks={1} lines={4} />
+    </Column>
+    <Column>
+      <Day day="Friday" tasks={1} lines={4} />
+      <Day day="Saturday" tasks={1} lines={4} />
+      <Day day="Sunday" tasks={1} lines={4} />
+      <Section>
+        <Heading text="Notes" />
+        <Lines count={5} />
+      </Section>
+    </Column>
+  </Row>
+</A5Page>

@@ -1,0 +1,70 @@
+---
+// A layout's pages on A5 paper, one page to a sheet: a spread prints as two
+// sheets, left page first.
+import PlannerLayout from "./PlannerLayout.astro";
+import type { PlannerLayoutInfo } from "../../printables/a5-planner/a5-planner.ts";
+
+interface Props {
+  layout: PlannerLayoutInfo;
+}
+
+const { layout } = Astro.props;
+---
+
+<div class="frame">
+  <div class="sheets">
+    <PlannerLayout slug={layout.slug} />
+  </div>
+</div>
+
+<style>
+  /* On screen a page is drawn as wide as an A5 page reads comfortably; on
+     paper it is the page. */
+  .frame {
+    container-type: inline-size;
+    width: 100%;
+    max-width: 30rem;
+    margin: 0 auto;
+  }
+
+  .sheets {
+    --mm: calc(100cqw / 148.5);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .sheets > :global(.a5-page) {
+    background: var(--bg);
+    outline: 1px solid var(--border);
+  }
+
+  @media print {
+    .frame {
+      width: 148.5mm;
+      max-width: none;
+    }
+
+    .sheets {
+      --mm: 1mm;
+      display: block;
+    }
+
+    .sheets > :global(.a5-page) {
+      /* A hair short of the paper, so rounding never spills a blank page. */
+      height: 209.5mm;
+      outline: none;
+      background: none;
+      break-after: page;
+    }
+
+    .sheets > :global(.a5-page:last-child) {
+      break-after: auto;
+    }
+  }
+
+  @page {
+    size: A5 portrait;
+    margin: 0;
+  }
+</style>

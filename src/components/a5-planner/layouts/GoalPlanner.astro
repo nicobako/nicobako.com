@@ -1,0 +1,34 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Blank from "../../paper/Blank.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Ledger from "../../paper/Ledger.astro";
+import Marks from "../../paper/Marks.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+---
+
+<A5Page>
+  <Heading text="Goal" />
+  <Lines count={2} fixed />
+  <Row height={1.6}>
+    <Column><Blank label="Start" /></Column>
+    <Column><Blank label="Deadline" /></Column>
+  </Row>
+  <Label text="Why it matters" />
+  <Lines count={3} fixed />
+  <Label text="Steps" />
+  <Ledger
+    columns={[
+      { label: "Step" },
+      { label: "Due", width: 6 },
+      { label: "Done", width: 3.2 },
+    ]}
+    rows={14}
+  />
+  <Label text="What could get in the way, and what I will do" />
+  <Lines count={4} fixed />
+  <Marks label="Progress" count={10} shape="square" />
+</A5Page>

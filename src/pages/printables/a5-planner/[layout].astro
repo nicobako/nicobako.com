@@ -1,0 +1,25 @@
+---
+import A4Sheet from "../../../components/a5-planner/A4Sheet.astro";
+import PlannerPage from "../../../components/a5-planner/PlannerPage.astro";
+import {
+  A4,
+  PLANNER_LAYOUTS,
+  type PlannerLayoutInfo,
+} from "../../../printables/a5-planner/a5-planner.ts";
+
+// A4 keeps each layout's bare path; the A5 page hangs off it.
+export function getStaticPaths() {
+  return PLANNER_LAYOUTS.map((layout) => ({
+    params: { layout: layout.slug },
+    props: { layout },
+  }));
+}
+
+interface Props {
+  layout: PlannerLayoutInfo;
+}
+---
+
+<PlannerPage layout={Astro.props.layout} paper={A4}>
+  <A4Sheet layout={Astro.props.layout} />
+</PlannerPage>

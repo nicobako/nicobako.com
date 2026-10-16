@@ -1,0 +1,42 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Blank from "../../paper/Blank.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Day from "../../paper/Day.astro";
+import Section from "../../paper/Section.astro";
+import TrackerGrid from "../../paper/TrackerGrid.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+import { WEEKDAY_LETTERS } from "../../../printables/a5-planner/a5-planner.ts";
+---
+
+<A5Page side="left">
+  <Heading text="Week" dated />
+  <Blank label="Focus" />
+  <Day day="Monday" tasks={3} lines={4} />
+  <Day day="Tuesday" tasks={3} lines={4} />
+  <Day day="Wednesday" tasks={3} lines={4} />
+  <Day day="Thursday" tasks={3} lines={4} />
+</A5Page>
+
+<A5Page side="right">
+  <Day day="Friday" tasks={3} lines={4} />
+  <Day day="Saturday" tasks={2} lines={5} />
+  <Day day="Sunday" tasks={2} lines={5} />
+  <Section>
+    <Row>
+      <Column size={3}>
+        <Label text="Habits" />
+        <TrackerGrid columns={WEEKDAY_LETTERS} rows={6} nameWidth={10} />
+      </Column>
+      <Column size={2}>
+        <Label text="Top 3" />
+        <Lines count={3} numbered tick="end" fixed />
+        <Label text="Notes" />
+        <Lines count={2} />
+      </Column>
+    </Row>
+  </Section>
+</A5Page>

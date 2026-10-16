@@ -1,0 +1,27 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Marks from "../../paper/Marks.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+---
+
+<A5Page>
+  <Heading text="Day" dated />
+  <Row height={1.6}>
+    <Column><Marks label="Mood" count={5} numbered /></Column>
+    <Column><Marks label="Energy" count={5} numbered /></Column>
+  </Row>
+  <Label text="Grateful for" />
+  <Lines count={3} numbered fixed />
+  <Label text="Today I will" />
+  <Lines count={2} fixed />
+  <Label text="Journal" />
+  <Lines count={20} />
+  <Label text="Wins today" />
+  <Lines count={3} fixed />
+  <Label text="Tomorrow" />
+  <Lines count={2} fixed />
+</A5Page>

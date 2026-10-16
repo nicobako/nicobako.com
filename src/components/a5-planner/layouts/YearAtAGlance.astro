@@ -1,0 +1,11 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Boxes from "../../paper/Boxes.astro";
+import { MONTHS } from "../../../printables/a5-planner/a5-planner.ts";
+---
+
+<A5Page>
+  <Heading text="Year" dated />
+  <Boxes labels={MONTHS} columns={2} lines={5} />
+</A5Page>

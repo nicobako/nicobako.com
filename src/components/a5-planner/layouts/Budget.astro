@@ -1,0 +1,38 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Blank from "../../paper/Blank.astro";
+import Label from "../../paper/Label.astro";
+import Ledger from "../../paper/Ledger.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+---
+
+<A5Page>
+  <Heading text="Budget" dated />
+  <Label text="Income" />
+  <Ledger
+    columns={[
+      { label: "Source" },
+      { label: "Expected", width: 8 },
+      { label: "Actual", width: 8 },
+    ]}
+    rows={4}
+    fixed
+  />
+  <Label text="Expenses" />
+  <Ledger
+    columns={[
+      { label: "Date", width: 4.5 },
+      { label: "Item" },
+      { label: "Category", width: 10 },
+      { label: "Amount", width: 7 },
+    ]}
+    rows={23}
+  />
+  <Row height={1.6}>
+    <Column><Blank label="In" /></Column>
+    <Column><Blank label="Out" /></Column>
+    <Column><Blank label="Left" /></Column>
+  </Row>
+</A5Page>

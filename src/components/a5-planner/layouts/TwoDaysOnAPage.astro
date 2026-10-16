@@ -1,0 +1,31 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Hours from "../../paper/Hours.astro";
+import Section from "../../paper/Section.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+---
+
+<A5Page>
+  {
+    [1, 2].map(() => (
+      <Section>
+        <Heading text="Day" dated />
+        <Row>
+          <Column size={5}>
+            <Hours from={7} to={21} />
+          </Column>
+          <Column size={6}>
+            <Label text="To do" />
+            <Lines count={9} tick="start" />
+            <Label text="Notes" />
+            <Lines count={5} />
+          </Column>
+        </Row>
+      </Section>
+    ))
+  }
+</A5Page>

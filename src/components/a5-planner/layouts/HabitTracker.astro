@@ -1,0 +1,11 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import TrackerGrid from "../../paper/TrackerGrid.astro";
+import { MONTH_DAYS } from "../../../printables/a5-planner/a5-planner.ts";
+---
+
+<A5Page>
+  <Heading text="Habits" dated />
+  <TrackerGrid columns={MONTH_DAYS} rows={24} nameWidth={10} every={5} />
+</A5Page>

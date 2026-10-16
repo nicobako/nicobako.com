@@ -1,0 +1,17 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import TrackerGrid from "../../paper/TrackerGrid.astro";
+
+const WEEKS = Array.from({ length: 13 }, (_, i) => String(i + 1));
+---
+
+<A5Page>
+  <Heading text="Quarter" dated />
+  <Label text="Goals, projects and habits, week by week" />
+  <TrackerGrid columns={WEEKS} rows={26} nameWidth={16} />
+  <Label text="Notes" />
+  <Lines count={3} fixed />
+</A5Page>

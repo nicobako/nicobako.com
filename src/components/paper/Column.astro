@@ -1,0 +1,22 @@
+---
+// One column of a `Row`: its contents stacked the way a `Page`'s are, with
+// whatever grows taking the height the rest leaves. `size` is its share of the
+// row's width against the other columns.
+interface Props {
+  size?: number;
+}
+
+const { size = 1 } = Astro.props;
+---
+
+<div class="column" style={`flex: ${size} 1 0;`}><slot /></div>
+
+<style>
+  .column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    min-width: 0;
+    min-height: 0;
+  }
+</style>
