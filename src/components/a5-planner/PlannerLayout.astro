@@ -1,0 +1,68 @@
+---
+// A planner layout's pages, by slug. Each layout is a component of its own in
+// `layouts/`, rendering its one or two `A5Page`s; this is the one place that
+// ties a slug in `a5-planner.ts` to its component, and the build fails if a
+// listed layout has none.
+import YearAtAGlance from "./layouts/YearAtAGlance.astro";
+import YearGoals from "./layouts/YearGoals.astro";
+import YearTracker from "./layouts/YearTracker.astro";
+import QuarterPlan from "./layouts/QuarterPlan.astro";
+import QuarterTracker from "./layouts/QuarterTracker.astro";
+import QuarterReview from "./layouts/QuarterReview.astro";
+import MonthCalendar from "./layouts/MonthCalendar.astro";
+import MonthOnOnePage from "./layouts/MonthOnOnePage.astro";
+import MonthList from "./layouts/MonthList.astro";
+import WeekOnTwoPages from "./layouts/WeekOnTwoPages.astro";
+import WeekOnOnePage from "./layouts/WeekOnOnePage.astro";
+import WeekTimeBlocks from "./layouts/WeekTimeBlocks.astro";
+import DayOnAPage from "./layouts/DayOnAPage.astro";
+import TwoDaysOnAPage from "./layouts/TwoDaysOnAPage.astro";
+import DailyJournal from "./layouts/DailyJournal.astro";
+import HabitTracker from "./layouts/HabitTracker.astro";
+import Table from "./layouts/Table.astro";
+import Checklist from "./layouts/Checklist.astro";
+import Budget from "./layouts/Budget.astro";
+import GoalPlanner from "./layouts/GoalPlanner.astro";
+import MealPlan from "./layouts/MealPlan.astro";
+import Lined from "./layouts/Lined.astro";
+import DotGrid from "./layouts/DotGrid.astro";
+import SquareGrid from "./layouts/SquareGrid.astro";
+
+interface Props {
+  slug: string;
+}
+
+const COMPONENTS: Record<string, typeof YearAtAGlance> = {
+  "year-at-a-glance": YearAtAGlance,
+  "year-goals": YearGoals,
+  "year-tracker": YearTracker,
+  "quarter-plan": QuarterPlan,
+  "quarter-tracker": QuarterTracker,
+  "quarter-review": QuarterReview,
+  "month-calendar": MonthCalendar,
+  "month-on-one-page": MonthOnOnePage,
+  "month-list": MonthList,
+  "week-on-two-pages": WeekOnTwoPages,
+  "week-on-one-page": WeekOnOnePage,
+  "week-time-blocks": WeekTimeBlocks,
+  "day-on-a-page": DayOnAPage,
+  "two-days-on-a-page": TwoDaysOnAPage,
+  "daily-journal": DailyJournal,
+  "habit-tracker": HabitTracker,
+  table: Table,
+  checklist: Checklist,
+  budget: Budget,
+  "goal-planner": GoalPlanner,
+  "meal-plan": MealPlan,
+  lined: Lined,
+  "dot-grid": DotGrid,
+  "square-grid": SquareGrid,
+};
+
+const Component = COMPONENTS[Astro.props.slug];
+if (!Component) {
+  throw new Error(`Planner layout "${Astro.props.slug}" has no component`);
+}
+---
+
+<Component />

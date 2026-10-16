@@ -1,0 +1,25 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+import TrackerGrid from "../../paper/TrackerGrid.astro";
+import { MONTHS, MONTH_DAYS } from "../../../printables/a5-planner/a5-planner.ts";
+
+// A month to a column and a day to a row, so the 31 rows serve every month
+// and the page needs no year printed on it. The key's boxes are coloured in
+// the way the days will be.
+const INITIALS = MONTHS.map((month) => month[0]);
+---
+
+<A5Page>
+  <Heading text="Year" dated />
+  <TrackerGrid columns={INITIALS} labels={MONTH_DAYS} nameWidth={2} />
+  <Label text="Key" />
+  <Row height={7.2}>
+    <Column><Lines count={3} tick="start" fixed /></Column>
+    <Column><Lines count={3} tick="start" fixed /></Column>
+  </Row>
+</A5Page>

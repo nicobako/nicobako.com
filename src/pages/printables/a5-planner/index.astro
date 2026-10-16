@@ -1,0 +1,80 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import {
+  A5,
+  PLANNER_GROUPS,
+  plannerHref,
+} from "../../../printables/a5-planner/a5-planner.ts";
+---
+
+<Layout
+  title="A5 Planner — Nico Bako"
+  description="Printable pages for an A5 ring binder — year, quarter, month, week and day layouts, habit trackers, lists and grids — printed two to a sheet of A4 and cut in half, or on A5."
+>
+  <Breadcrumbs trail={[{ label: "Printables", href: "/printables/" }]} />
+  <h1>A5 Planner</h1>
+  <p>
+    Pages for an A5 ring binder. Each one prints two to a landscape sheet of A4,
+    to cut in half down the middle, or one to a sheet of A5. A layout of one page
+    prints twice on A4, so a single cut makes two pages; a spread puts its left
+    and right pages on the same sheet.
+  </p>
+  <p>
+    Every page leaves a wider margin on its ring edge for the holes: the left
+    edge, or the right edge for the left page of a spread. Nothing is dated —
+    write the year, month, week or day in — and the lines are close, for small
+    handwriting.
+  </p>
+
+  {
+    PLANNER_GROUPS.map((group) => (
+      <section>
+        <h2>{group.name}</h2>
+        <dl>
+          {group.layouts.map((layout) => (
+            <>
+              <dt>
+                <a href={plannerHref(layout)}>{layout.name}</a>
+                {layout.pages === 2 && <span class="tag">spread</span>}
+                <a class="alt" href={plannerHref(layout, A5)}>
+                  A5
+                </a>
+              </dt>
+              <dd>{layout.description}</dd>
+            </>
+          ))}
+        </dl>
+      </section>
+    ))
+  }
+</Layout>
+
+<style>
+  dl {
+    margin: 0;
+  }
+
+  dt {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0.15rem 0 0;
+    color: var(--muted);
+  }
+
+  .tag,
+  .alt {
+    font-size: 0.8rem;
+    font-weight: 400;
+  }
+
+  .tag {
+    color: var(--muted);
+  }
+</style>

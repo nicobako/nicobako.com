@@ -1,0 +1,54 @@
+---
+// A caption and a row of marks to fill in one at a time: glasses of water, a
+// mood out of five, a progress bar in tenths.
+interface Props {
+  label: string;
+  count: number;
+  shape?: "circle" | "square";
+  /** Print 1, 2, 3… inside the marks. */
+  numbered?: boolean;
+}
+
+const { label, count, shape = "circle", numbered = false } = Astro.props;
+const marks = Array.from({ length: count }, (_, i) => i + 1);
+---
+
+<p class="marks">
+  <span class="label">{label}</span>
+  {
+    marks.map((n) => (
+      <span class:list={["mark", shape]}>{numbered && n}</span>
+    ))
+  }
+</p>
+
+<style>
+  .marks {
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+    margin: 0;
+  }
+
+  .label {
+    margin-right: 0.3em;
+    color: var(--muted);
+  }
+
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 1.3em;
+    height: 1.3em;
+    box-sizing: border-box;
+    font-size: 0.9em;
+    color: var(--muted);
+    border: 0.08em solid var(--text);
+  }
+
+  .circle {
+    border-radius: 50%;
+  }
+</style>

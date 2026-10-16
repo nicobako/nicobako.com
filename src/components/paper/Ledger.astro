@@ -9,27 +9,34 @@ interface Column {
 
 interface Props {
   columns: Column[];
-  rows: number;
+  /** Rows; ignored when `labels` is given. */
+  rows?: number;
+  /** Printed in the first column, one row per label: the days of a month. */
+  labels?: string[];
+  /** Give each row a set height rather than sharing what is left on the page. */
+  fixed?: boolean;
 }
 
-const { columns, rows } = Astro.props;
+const { columns, rows = 0, labels, fixed = false } = Astro.props;
 const template = columns
   .map((column) => (column.width ? `${column.width}em` : "1fr"))
   .join(" ");
-const rowList = Array.from({ length: rows }, (_, i) => i);
+const rowList = labels ?? Array.from({ length: rows }, () => "");
 ---
 
-<div class="ledger" style={`grid-template-columns: ${template};`}>
+<div class:list={["ledger", { fixed }]} style={`grid-template-columns: ${template};`}>
   {
     columns.map((column, i) => (
       <span class:list={["head", { first: i === 0 }]}>{column.label}</span>
     ))
   }
   {
-    rowList.map(() => (
+    rowList.map((label) => (
       <>
         {columns.map((_, i) => (
-          <span class:list={["cell", { first: i === 0 }]} />
+          <span class:list={["cell", { first: i === 0 }]}>
+            {i === 0 && label && <span class="row-label">{label}</span>}
+          </span>
         ))}
       </>
     ))
@@ -41,7 +48,13 @@ const rowList = Array.from({ length: rows }, (_, i) => i);
     flex: 1;
     display: grid;
     grid-template-rows: auto;
-    grid-auto-rows: 1fr;
+    grid-auto-rows: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .ledger.fixed {
+    flex: none;
+    grid-auto-rows: 2.4em;
   }
 
   .head,
@@ -57,6 +70,18 @@ const rowList = Array.from({ length: rows }, (_, i) => i);
 
   .cell {
     border-bottom: 0.06em solid var(--muted);
+  }
+
+  /* A printed label sits low in its cell, where the writing beside it goes. */
+  .cell.first {
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .row-label {
+    padding-bottom: 0.1em;
+    font-size: 0.8em;
+    color: var(--muted);
   }
 
   /* A rule between columns, but not before the first. */

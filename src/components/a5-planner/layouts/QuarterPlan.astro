@@ -1,0 +1,49 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Blank from "../../paper/Blank.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Ledger from "../../paper/Ledger.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+
+// A quarter is thirteen weeks, near enough every time.
+const WEEKS = Array.from({ length: 13 }, (_, i) => String(i + 1));
+---
+
+<A5Page side="left">
+  <Heading text="Quarter" dated />
+  <Blank label="Focus" />
+  <Label text="Goals" />
+  <Lines count={3} numbered tick="end" fixed />
+  <Row>
+    <Column>
+      <Blank label="Month" />
+      <Lines count={22} />
+    </Column>
+    <Column>
+      <Blank label="Month" />
+      <Lines count={22} />
+    </Column>
+    <Column>
+      <Blank label="Month" />
+      <Lines count={22} />
+    </Column>
+  </Row>
+</A5Page>
+
+<A5Page side="right">
+  <Heading text="Weeks" />
+  <Ledger
+    columns={[
+      { label: "Week", width: 3.2 },
+      { label: "Dates", width: 7 },
+      { label: "Focus" },
+      { label: "Done", width: 3.2 },
+    ]}
+    labels={WEEKS}
+  />
+  <Label text="Notes" />
+  <Lines count={4} fixed />
+</A5Page>

@@ -1,0 +1,76 @@
+---
+import {
+  PAPERS,
+  plannerHref,
+  type Paper,
+  type PlannerLayoutInfo,
+} from "../../printables/a5-planner/a5-planner.ts";
+
+interface Props {
+  layout: PlannerLayoutInfo;
+  paper: Paper;
+}
+
+const { layout, paper } = Astro.props;
+
+// One axis, so one row of links between pre-rendered pages.
+const options = PAPERS.map((option) => ({
+  label: option.name,
+  href: plannerHref(layout, option),
+  current: option === paper,
+}));
+---
+
+<div class="paper-picker no-print">
+  <span class="legend">Paper</span>
+  {
+    options.map((option) =>
+      option.current ? (
+        <span class="option current" aria-current="page">
+          {option.label}
+        </span>
+      ) : (
+        <a class="option" href={option.href}>
+          {option.label}
+        </a>
+      ),
+    )
+  }
+</div>
+
+<style>
+  .paper-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .legend {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .option {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .current {
+    background: var(--bg);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  a.option:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>

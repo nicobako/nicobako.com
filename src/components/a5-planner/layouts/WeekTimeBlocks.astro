@@ -1,0 +1,31 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Timetable from "../../paper/Timetable.astro";
+import TrackerGrid from "../../paper/TrackerGrid.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+import {
+  WEEKDAYS,
+  WEEKDAY_LETTERS,
+} from "../../../printables/a5-planner/a5-planner.ts";
+
+const SHORT = WEEKDAYS.map((day) => day.slice(0, 3));
+---
+
+<A5Page>
+  <Heading text="Week" dated />
+  <Timetable days={SHORT} from={6} to={22} />
+  <Row height={14}>
+    <Column size={3}>
+      <Label text="Habits" />
+      <TrackerGrid columns={WEEKDAY_LETTERS} rows={5} nameWidth={10} />
+    </Column>
+    <Column size={2}>
+      <Label text="To do" />
+      <Lines count={5} tick="start" />
+    </Column>
+  </Row>
+</A5Page>

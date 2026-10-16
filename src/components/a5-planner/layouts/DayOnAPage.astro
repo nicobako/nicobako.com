@@ -1,0 +1,36 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Blank from "../../paper/Blank.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Hours from "../../paper/Hours.astro";
+import Marks from "../../paper/Marks.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+---
+
+<A5Page>
+  <Heading text="Day" dated />
+  <Row>
+    <Column size={5}>
+      <Label text="Schedule" />
+      <Hours from={6} to={22} />
+    </Column>
+    <Column size={6}>
+      <Label text="Top 3" />
+      <Lines count={3} numbered tick="end" fixed />
+      <Label text="Tasks" />
+      <Lines count={9} tick="start" fixed />
+      <Label text="Habits" />
+      <Lines count={4} tick="start" fixed />
+      <Label text="Notes" />
+      <Lines count={10} />
+    </Column>
+  </Row>
+  <Row height={1.6}>
+    <Column size={5}><Marks label="Water" count={8} /></Column>
+    <Column size={4}><Marks label="Mood" count={5} numbered /></Column>
+    <Column size={3}><Blank label="Sleep" /></Column>
+  </Row>
+</A5Page>

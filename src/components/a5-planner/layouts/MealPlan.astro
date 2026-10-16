@@ -1,0 +1,30 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import Ledger from "../../paper/Ledger.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+import { WEEKDAYS } from "../../../printables/a5-planner/a5-planner.ts";
+
+const SHORT = WEEKDAYS.map((day) => day.slice(0, 3));
+---
+
+<A5Page>
+  <Heading text="Meals" dated />
+  <Ledger
+    columns={[
+      { label: "", width: 2.6 },
+      { label: "Breakfast" },
+      { label: "Lunch" },
+      { label: "Dinner" },
+    ]}
+    labels={SHORT}
+  />
+  <Label text="Shopping" />
+  <Row height={26}>
+    <Column><Lines count={11} tick="start" /></Column>
+    <Column><Lines count={11} tick="start" /></Column>
+  </Row>
+</A5Page>

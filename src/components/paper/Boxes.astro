@@ -1,0 +1,54 @@
+---
+// Captioned boxes in a grid filling the space left on the page, each with
+// ruled lines inside: the months of a year, the areas of a life.
+interface Props {
+  labels: string[];
+  columns: number;
+  /** Ruled lines in each box; they share the box's height. */
+  lines: number;
+}
+
+const { labels, columns, lines } = Astro.props;
+const rules = Array.from({ length: lines }, (_, i) => i);
+---
+
+<div class="boxes" style={`--columns: ${columns};`}>
+  {
+    labels.map((label) => (
+      <div class="box">
+        <span class="caption">{label}</span>
+        {rules.map(() => (
+          <span class="rule" />
+        ))}
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .boxes {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    gap: 0.6em;
+    min-height: 0;
+  }
+
+  .box {
+    display: flex;
+    flex-direction: column;
+    padding: 0.2em 0.5em 0.4em;
+    border: 0.08em solid var(--muted);
+    border-radius: 0.3em;
+  }
+
+  .caption {
+    font-weight: 600;
+  }
+
+  .rule {
+    flex: 1;
+    border-bottom: 0.06em solid var(--muted);
+  }
+</style>

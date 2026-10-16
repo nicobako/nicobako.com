@@ -1,0 +1,45 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Blank from "../../paper/Blank.astro";
+import Boxes from "../../paper/Boxes.astro";
+import Label from "../../paper/Label.astro";
+import Ledger from "../../paper/Ledger.astro";
+import Lines from "../../paper/Lines.astro";
+
+// The areas a year's goals are usually sorted into. Eight, so they pair up
+// into four rows of boxes with room in each for a goal and its first steps.
+const AREAS = [
+  "Health",
+  "Work",
+  "Money",
+  "Home",
+  "Family & friends",
+  "Learning",
+  "Fun & adventure",
+  "Giving back",
+];
+const QUARTER = { width: 5.5 };
+---
+
+<A5Page side="left">
+  <Heading text="Year" dated />
+  <Blank label="Word for the year" />
+  <Boxes labels={AREAS} columns={2} lines={6} />
+</A5Page>
+
+<A5Page side="right">
+  <Heading text="Goals and milestones" />
+  <Ledger
+    columns={[
+      { label: "Goal" },
+      { label: "Q1", ...QUARTER },
+      { label: "Q2", ...QUARTER },
+      { label: "Q3", ...QUARTER },
+      { label: "Q4", ...QUARTER },
+    ]}
+    rows={12}
+  />
+  <Label text="Not this year" />
+  <Lines count={3} fixed />
+</A5Page>

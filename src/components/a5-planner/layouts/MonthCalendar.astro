@@ -1,0 +1,37 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import CalendarGrid from "../../paper/CalendarGrid.astro";
+import TrackerGrid from "../../paper/TrackerGrid.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+import { MONTH_DAYS, WEEKDAYS } from "../../../printables/a5-planner/a5-planner.ts";
+
+const SHORT = WEEKDAYS.map((day) => day.slice(0, 3));
+---
+
+<A5Page side="left">
+  <Heading text="Month" dated />
+  <CalendarGrid weekdays={SHORT} weeks={6} />
+  <Label text="Notes" />
+  <Lines count={3} fixed />
+</A5Page>
+
+<A5Page side="right">
+  <Row height={17}>
+    <Column>
+      <Label text="Goals" />
+      <Lines count={5} tick="start" fixed />
+    </Column>
+    <Column>
+      <Label text="Key dates" />
+      <Lines count={5} fixed />
+    </Column>
+  </Row>
+  <Heading text="Habits" />
+  <TrackerGrid columns={MONTH_DAYS} rows={12} nameWidth={9} every={5} fixed />
+  <Label text="Notes" />
+  <Lines count={9} />
+</A5Page>

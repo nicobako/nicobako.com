@@ -1,0 +1,33 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Lines from "../../paper/Lines.astro";
+import CalendarGrid from "../../paper/CalendarGrid.astro";
+import TrackerGrid from "../../paper/TrackerGrid.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+import {
+  MONTH_DAYS,
+  WEEKDAY_LETTERS,
+} from "../../../printables/a5-planner/a5-planner.ts";
+---
+
+<A5Page>
+  <Heading text="Month" dated />
+  <Row height={30}>
+    <Column size={3}>
+      <CalendarGrid weekdays={WEEKDAY_LETTERS} weeks={6} />
+    </Column>
+    <Column size={2}>
+      <Label text="Goals" />
+      <Lines count={3} tick="start" fixed />
+      <Label text="Key dates" />
+      <Lines count={5} />
+    </Column>
+  </Row>
+  <Label text="Habits" />
+  <TrackerGrid columns={MONTH_DAYS} rows={12} nameWidth={8} every={5} />
+  <Label text="Notes" />
+  <Lines count={4} fixed />
+</A5Page>

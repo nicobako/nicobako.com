@@ -1,0 +1,41 @@
+---
+// One A5 binder page, 148.5 × 210 mm, with its contents stacked as a `Page`.
+// The margin on the ring edge is wider than the rest, so the holes clear the
+// writing: a page on its own, or the right of a spread, is bound on its left;
+// the left page of a spread on its right.
+//
+// It is drawn in `--mm`, one printed millimetre, which the sheet around it
+// sets — the true millimetre on paper, a share of the column on screen — and
+// its font size is what the parts in `components/paper/` scale from.
+import Page from "../paper/Page.astro";
+
+interface Props {
+  /** Which page of a spread this is. A page on its own is a right-hand page. */
+  side?: "left" | "right";
+}
+
+const { side = "right" } = Astro.props;
+---
+
+<div class:list={["a5-page", side]}>
+  <Page><slot /></Page>
+</div>
+
+<style>
+  /* 2.5 mm type makes the grids come out in whole millimetres: a line of
+     `Lines fixed` is 6 mm, a `Grid` step of 2 is 5 mm. */
+  .a5-page {
+    width: calc(var(--mm) * 148.5);
+    height: calc(var(--mm) * 210);
+    box-sizing: border-box;
+    padding: calc(var(--mm) * 8) calc(var(--mm) * 7) calc(var(--mm) * 9)
+      calc(var(--mm) * 14);
+    font-size: calc(var(--mm) * 2.5);
+    overflow: hidden;
+  }
+
+  .a5-page.left {
+    padding-left: calc(var(--mm) * 7);
+    padding-right: calc(var(--mm) * 14);
+  }
+</style>

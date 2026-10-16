@@ -95,6 +95,11 @@ by its slug. The printables index lists them in a section of their own from the
 same list. The booklets index fails the build if a listed slug has no page file.
 All the dated booklets are undated: the reader writes in the week, month or year,
 so one page serves every one rather than a page per date.
+The A5 planner is a section of its own too: `/printables/a5-planner/` lists
+`PLANNER_GROUPS` from `src/printables/a5-planner/a5-planner.ts` (year, quarter,
+month, week, day, lists and trackers, paper), and each layout has two pages — A4 at
+`/printables/a5-planner/{slug}/` (`[layout].astro`) and A5 at `{slug}/a5/`
+(`[layout]/a5.astro`), the paper being its one axis.
 
 ### Game subsystem
 
@@ -297,6 +302,20 @@ is a child learning the words, not one who already has them.
   a long list of options is two parts. Astro only accepts static slot names, on both
   sides, which is why the eight panels and each booklet's pages are written out rather
   than mapped.
+- `a5-planner/a5-planner.ts` — binder pages for a six-ring A5 binder: the layouts,
+  grouped, each with its page count (`1`, or `2` for a spread), and the two papers.
+  A layout is a component in `components/a5-planner/layouts/`, rendering its one or
+  two `A5Page`s from the `components/paper/` parts; `PlannerLayout.astro` maps a slug
+  to its component and fails the build if one is missing. `A5Page` is 148.5 × 210 mm
+  drawn in `--mm`, with a wider margin on the ring edge (left, or right for the left
+  page of a spread) and 2.5 mm type, so a `Grid` step of 2 is a 5 mm grid.
+  `A4Sheet` puts two pages on landscape A4 with cut marks at the middle — a spread
+  fills it, a single page prints twice so one cut makes two — and `A5Sheets` prints
+  them one to a sheet. Each route imports only its own sheet, because each sheet
+  sets its own `@page` size and a page importing both would carry both rules. The
+  parts added for it — `TrackerGrid` (dense habit / day grids), `Hours`,
+  `Timetable`, `Boxes`, `Marks`, `Row` and `Column` — work on any printable that
+  sets a font size, as the rest of `paper/` do.
 - `speed-reading/speed-reading.ts` — line wrapping and column dealing. The one page that must re-render in the browser: where a line breaks depends on the reader's actual font metrics, so the build uses `estimateWidth` for first paint and the browser re-runs the layout with canvas measurements.
 
 ### Tools subsystem
@@ -341,7 +360,7 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site (~8.9 MB across ~570 files, most of it the generated etude and
+The whole site (~10.4 MB across ~650 files, most of it the generated etude and
 printable variants) is precached, so every page works offline after the first
 visit. `npm run build` prints the file count; check it when adding presets. Caching is network-first for navigations, cache-first for hashed
 `/_astro/` assets, and stale-while-revalidate for everything else same-origin.

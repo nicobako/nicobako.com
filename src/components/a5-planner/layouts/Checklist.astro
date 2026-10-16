@@ -1,0 +1,15 @@
+---
+import A5Page from "../A5Page.astro";
+import Blank from "../../paper/Blank.astro";
+import Lines from "../../paper/Lines.astro";
+import Row from "../../paper/Row.astro";
+import Column from "../../paper/Column.astro";
+---
+
+<A5Page>
+  <Blank label="List" />
+  <Row>
+    <Column><Lines count={32} tick="start" /></Column>
+    <Column><Lines count={32} tick="start" /></Column>
+  </Row>
+</A5Page>

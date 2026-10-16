@@ -1,0 +1,19 @@
+---
+import A5Page from "../A5Page.astro";
+import Blank from "../../paper/Blank.astro";
+import Ledger from "../../paper/Ledger.astro";
+
+// The headings are left to the reader, so one page is a log, a reading list or
+// a collection. A no-break space gives the empty heading row a line's height
+// to write in.
+const ROWS = Array.from({ length: 32 }, (_, i) => String(i + 1));
+const OPEN = { label: " " };
+---
+
+<A5Page>
+  <Blank label="Title" />
+  <Ledger
+    columns={[{ label: "#", width: 2.4 }, OPEN, OPEN, OPEN, OPEN]}
+    labels={ROWS}
+  />
+</A5Page>

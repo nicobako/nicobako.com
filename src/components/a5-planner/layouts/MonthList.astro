@@ -1,0 +1,30 @@
+---
+import A5Page from "../A5Page.astro";
+import Heading from "../../paper/Heading.astro";
+import Label from "../../paper/Label.astro";
+import Ledger from "../../paper/Ledger.astro";
+import { MONTH_DAYS } from "../../../printables/a5-planner/a5-planner.ts";
+
+// The narrow columns are headed by hand, a habit to each, so the same page
+// tracks whatever this month is about.
+const HABIT = { label: "", width: 2 };
+---
+
+<A5Page>
+  <Heading text="Month" dated />
+  <Label text="Write the weekday beside each date, and a habit over each narrow column." />
+  <Ledger
+    columns={[
+      { label: "", width: 2 },
+      { label: "Day", width: 2.6 },
+      { label: "Plans and events" },
+      HABIT,
+      HABIT,
+      HABIT,
+      HABIT,
+      HABIT,
+      HABIT,
+    ]}
+    labels={MONTH_DAYS}
+  />
+</A5Page>
