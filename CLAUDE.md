@@ -97,9 +97,10 @@ All the dated booklets are undated: the reader writes in the week, month or year
 so one page serves every one rather than a page per date.
 The A5 planner is a section of its own too: `/printables/a5-planner/` lists
 `PLANNER_GROUPS` from `src/printables/a5-planner/a5-planner.ts` (year, quarter,
-month, week, day, lists and trackers, paper), and each layout has two pages — A4 at
-`/printables/a5-planner/{slug}/` (`[layout].astro`) and A5 at `{slug}/a5/`
-(`[layout]/a5.astro`), the paper being its one axis.
+month, week, day, lists and trackers, paper), and each layout has three pages — A4
+at `/printables/a5-planner/{slug}/` (`[layout].astro`), A5 at `{slug}/a5/` and B5
+at `{slug}/b5/` — the paper being its one axis. `b5-test.astro` is the one-off
+check to print before the B5 pages.
 
 ### Game subsystem
 
@@ -311,7 +312,16 @@ is a child learning the words, not one who already has them.
   page of a spread) and 2.5 mm type, so a `Grid` step of 2 is a 5 mm grid.
   `A4Sheet` puts two pages on landscape A4 with cut marks at the middle — a spread
   fills it, a single page prints twice so one cut makes two — and `A5Sheets` prints
-  them one to a sheet. Each route imports only its own sheet, because each sheet
+  them one to a sheet. `B5Sheet` is for a printer (or a phone's print dialog)
+  with no B5 size: A4 and B5 share a shape, so the A4 sheet's two pages shrink by
+  128.5/148.5 onto B5, turned on their side, one above the other, to cut into two B6
+  pages. It is laid out as A4 portrait, the size the dialog offers, with everything
+  inside the 182 × 257 mm a tray that centres the paper puts a B5 sheet on — 14 mm in
+  from each side, against the top — and at least 6 mm in from its edges, because a
+  printer that thinks it holds A4 would put anything else past the paper (on a laser,
+  onto the roller). `b5-test.astro` checks that the tray does centre the sheet,
+  drawing only between 34 and 176 mm across, which is on the paper whichever way the
+  tray lines it up. Each route imports only its own sheet, because each sheet
   sets its own `@page` size and a page importing both would carry both rules. The
   parts added for it — `TrackerGrid` (dense habit / day grids), `Hours`,
   `Timetable`, `Boxes`, `Marks`, `Row` and `Column` — work on any printable that
@@ -360,7 +370,7 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site (~10.4 MB across ~650 files, most of it the generated etude and
+The whole site (~11 MB across ~675 files, most of it the generated etude and
 printable variants) is precached, so every page works offline after the first
 visit. `npm run build` prints the file count; check it when adding presets. Caching is network-first for navigations, cache-first for hashed
 `/_astro/` assets, and stale-while-revalidate for everything else same-origin.

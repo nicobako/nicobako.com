@@ -1,0 +1,119 @@
+---
+// A sheet of B5 holding two pages shrunk to B6, one above the other and each
+// turned on its side, with marks at the left and right edges to cut it across
+// the middle. A spread puts its left page above and its right page below; a
+// single page is printed twice, so one cut makes two.
+//
+// Printed as A4 portrait, because that is the size a phone's print dialog
+// offers, with the B5 sheet drawn where it sits in a tray that centres the
+// paper: 14 mm in from each side of the A4 page, and up against its top edge.
+// Nothing is drawn outside it — a printer that believes it holds A4 would put
+// the rest past the sheet's edge.
+import PlannerLayout from "./PlannerLayout.astro";
+import type { PlannerLayoutInfo } from "../../printables/a5-planner/a5-planner.ts";
+
+interface Props {
+  layout: PlannerLayoutInfo;
+}
+
+const { layout } = Astro.props;
+---
+
+<div class="frame">
+  <div class="sheet">
+    <PlannerLayout slug={layout.slug} />
+    {layout.pages === 1 && <PlannerLayout slug={layout.slug} />}
+    <span class="cut left" />
+    <span class="cut right" />
+  </div>
+</div>
+
+<style>
+  /* `--sheet-mm` is one millimetre of the B5 sheet; the pages are drawn in
+     their own `--mm`, an A5 millimetre shrunk so A5's 148.5 mm width becomes
+     half of B5's 257 mm height. A4 and B5 share a shape, so the other side
+     comes out within half a millimetre of 182 too. */
+  .frame {
+    container-type: inline-size;
+    width: 100%;
+    max-width: 30rem;
+    margin: 0 auto;
+  }
+
+  .sheet {
+    --sheet-mm: calc(100cqw / 182);
+    --mm: calc(var(--sheet-mm) * 128.5 / 148.5);
+    position: relative;
+    width: calc(var(--sheet-mm) * 182);
+    height: calc(var(--sheet-mm) * 257);
+    overflow: hidden;
+    background: var(--bg);
+    outline: 1px solid var(--border);
+  }
+
+  /* Each page is centred on its half of the sheet, then turned a quarter turn
+     anticlockwise, so its top edge runs down the sheet's left side. */
+  .sheet > :global(.a5-page) {
+    position: absolute;
+    left: 50%;
+    top: 25%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+  }
+
+  .sheet > :global(.a5-page:nth-child(2)) {
+    top: 75%;
+  }
+
+  /* On screen, a faint line across the middle shows where the cut goes. */
+  .sheet::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-top: 1px dashed var(--border);
+  }
+
+  /* The marks to cut along stop 6 mm short of the sheet's edges, so that a
+     sheet sitting a little off centre still keeps them on the paper. */
+  .cut {
+    position: absolute;
+    top: 50%;
+    width: calc(var(--sheet-mm) * 8);
+    border-top: calc(var(--sheet-mm) * 0.25) solid var(--text);
+  }
+
+  .left {
+    left: calc(var(--sheet-mm) * 6);
+  }
+
+  .right {
+    right: calc(var(--sheet-mm) * 6);
+  }
+
+  @media print {
+    .frame {
+      width: 210mm;
+      max-width: none;
+      margin: 0;
+    }
+
+    .sheet {
+      --sheet-mm: 1mm;
+      margin-left: 14mm;
+      outline: none;
+      /* Never paint the page fill — with background graphics enabled, the dark
+         theme's --bg would print as a solid sheet. */
+      background: none;
+    }
+
+    .sheet::after {
+      display: none;
+    }
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+</style>
