@@ -3,6 +3,8 @@ import Layout from "../../../layouts/Layout.astro";
 import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 import {
   A5,
+  B5,
+  B5_TEST,
   PLANNER_GROUPS,
   plannerHref,
 } from "../../../printables/a5-planner/a5-planner.ts";
@@ -26,6 +28,13 @@ import {
     write the year, month, week or day in — and the lines are close, for small
     handwriting.
   </p>
+  <p>
+    Each layout can also print on B5, for a printer or phone that has no B5
+    setting: the A4 sheet's two pages shrink onto a sheet of B5, printed with the
+    A4 size, and cut into two B6 pages. Print the
+    <a href={B5_TEST}>B5 test sheet</a> once first, to check your printer centres
+    the paper.
+  </p>
 
   {
     PLANNER_GROUPS.map((group) => (
@@ -39,6 +48,9 @@ import {
                 {layout.pages === 2 && <span class="tag">spread</span>}
                 <a class="alt" href={plannerHref(layout, A5)}>
                   A5
+                </a>
+                <a class="alt" href={plannerHref(layout, B5)}>
+                  B5
                 </a>
               </dt>
               <dd>{layout.description}</dd>

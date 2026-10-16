@@ -7,6 +7,8 @@ import Layout from "../../layouts/Layout.astro";
 import Breadcrumbs from "../Breadcrumbs.astro";
 import PaperPicker from "./PaperPicker.astro";
 import {
+  B5,
+  B5_TEST,
   describeLayout,
   type Paper,
   type PlannerLayoutInfo,
@@ -35,6 +37,14 @@ const { layout, paper } = Astro.props;
     <p>{layout.description}</p>
     <PaperPicker layout={layout} paper={paper} />
     <p class="hint">{describeLayout(layout, paper)} {paper.instructions}</p>
+    {
+      paper === B5 && (
+        <p class="hint">
+          <a href={B5_TEST}>B5 test sheet</a> — checks that your printer centres
+          the B5 sheet, and prints at full size.
+        </p>
+      )
+    }
   </div>
 
   <slot />

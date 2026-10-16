@@ -1,0 +1,176 @@
+---
+// The check to run once before printing the B5 pages: they are laid out on A4
+// on the assumption that the tray centres a B5 sheet, and this page says
+// whether it does — without putting anything where a sheet that is not
+// centred would leave no paper. The two lines sit 34 mm in from each side of
+// the A4 page, inside a B5 sheet however the tray lines it up, so the gap from
+// each line to its edge tells which way the sheet sits. The 100 mm rule says
+// whether the print was scaled.
+import Layout from "../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+---
+
+<Layout
+  title="B5 Test Sheet — A5 Planner — Nico Bako"
+  description="A test print that checks a printer centres B5 paper when printing with the A4 size, before printing the B5 planner pages."
+>
+  <div class="controls no-print">
+    <Breadcrumbs
+      trail={[
+        { label: "Printables", href: "/printables/" },
+        { label: "A5 Planner", href: "/printables/a5-planner/" },
+      ]}
+    />
+    <h1>B5 Test Sheet</h1>
+    <p>
+      Print this once before the B5 pages. Load a sheet of B5 (182 × 257 mm)
+      with the tray's side guides pushed against it, then print with the A4
+      paper size, portrait, at 100% scale and with the margins set to none. The
+      sheet itself says what to measure.
+    </p>
+  </div>
+
+  <div class="frame">
+    <div class="a4">
+      <div class="b5" />
+      <div class="test">
+        <span class="mark left" />
+        <span class="mark right" />
+        <div class="text">
+          <p class="title">B5 test sheet</p>
+          <p>
+            Measure from each of the two long lines to the edge of the paper
+            beside it.
+          </p>
+          <p>
+            <strong>Both about 20 mm:</strong> your printer centres B5, and the
+            B5 pages will print where they should.
+          </p>
+          <p>
+            <strong>One about 6 mm and the other about 34 mm:</strong> your
+            printer lines paper up against one side, and the B5 pages would run
+            off the other. Do not print them.
+          </p>
+          <p>The line below should measure 100 mm. If it is shorter, the page was scaled: set the scale to 100%, or turn off "fit to page".</p>
+          <span class="rule" />
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .controls p,
+  .controls :global(.crumbs) {
+    margin: 0;
+  }
+
+  .frame {
+    container-type: inline-size;
+    width: 100%;
+    max-width: 30rem;
+    margin: 0 auto;
+  }
+
+  .a4 {
+    --mm: calc(100cqw / 210);
+    position: relative;
+    width: calc(var(--mm) * 210);
+    height: calc(var(--mm) * 297);
+    background: var(--bg);
+    outline: 1px solid var(--border);
+  }
+
+  /* Where a centred B5 sheet sits — shown on screen only. */
+  .b5 {
+    position: absolute;
+    left: calc(var(--mm) * 14);
+    top: 0;
+    width: calc(var(--mm) * 182);
+    height: calc(var(--mm) * 257);
+    outline: 1px dashed var(--border);
+  }
+
+  /* Everything printed stays between 34 and 176 mm across: inside a B5 sheet
+     whether the tray puts it against the left, the right, or the middle. */
+  .test {
+    position: absolute;
+    left: calc(var(--mm) * 34);
+    top: calc(var(--mm) * 20);
+    width: calc(var(--mm) * 142);
+    height: calc(var(--mm) * 210);
+    font-size: calc(var(--mm) * 3.6);
+    line-height: 1.35;
+    color: var(--text);
+  }
+
+  .mark {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-left: calc(var(--mm) * 0.35) solid var(--text);
+  }
+
+  .mark.left {
+    left: 0;
+  }
+
+  .mark.right {
+    right: 0;
+  }
+
+  .text {
+    position: absolute;
+    left: calc(var(--mm) * 8);
+    right: calc(var(--mm) * 8);
+    top: calc(var(--mm) * 10);
+  }
+
+  .text p {
+    margin: 0 0 0.8em;
+  }
+
+  .title {
+    font-size: 1.5em;
+    font-weight: 600;
+  }
+
+  .rule {
+    display: block;
+    width: calc(var(--mm) * 100);
+    height: calc(var(--mm) * 3);
+    border: 0 solid var(--text);
+    border-width: 0 calc(var(--mm) * 0.35) calc(var(--mm) * 0.35);
+  }
+
+  @media print {
+    .frame {
+      width: 210mm;
+      max-width: none;
+      margin: 0;
+    }
+
+    .a4 {
+      --mm: 1mm;
+      height: 296.5mm;
+      outline: none;
+      background: none;
+    }
+
+    .b5 {
+      display: none;
+    }
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+</style>

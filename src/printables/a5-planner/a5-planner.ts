@@ -248,6 +248,14 @@ export interface Paper {
  * A4 is the default, and so keeps the bare path: it is the paper a home printer
  * holds, and one sheet cut down the middle is two binder pages. A5 is for paper
  * that is already cut, or bought that size.
+ *
+ * B5 is for a printer — or a phone's print dialog — that offers no B5 size. A4
+ * and B5 share a shape, so the A4 sheet's two pages shrink onto B5 at 182/210 and
+ * cut into two B6 pages (128 × 182 mm). The page is laid out as A4 portrait, the
+ * size the dialog does offer, with everything inside the 182 × 257 mm where a B5
+ * sheet sits in a tray that centres the paper: a printer that thinks it has A4
+ * would otherwise put ink, or toner, past the sheet's edge. `B5_TEST` is the
+ * page that checks the tray does centre it before anything else is printed.
  */
 export const PAPERS: Paper[] = [
   {
@@ -262,10 +270,20 @@ export const PAPERS: Paper[] = [
     instructions:
       "Print on A5, portrait, at 100% scale with the margins set to none.",
   },
+  {
+    slug: "b5",
+    name: "B5, cut into B6",
+    instructions:
+      "Load B5 paper and print with the A4 paper size, portrait, at 100% scale with the margins set to none, then cut across the middle, along the marks at the left and right edges. Print the B5 test sheet once first.",
+  },
 ];
 
 export const A4 = PAPERS[0];
 export const A5 = PAPERS[1];
+export const B5 = PAPERS[2];
+
+/** The page that checks a B5 sheet lands where the B5 layouts expect it. */
+export const B5_TEST = "/printables/a5-planner/b5-test/";
 
 /** URL for a layout on a paper. A4 keeps the bare path. */
 export function plannerHref(layout: PlannerLayoutInfo, paper: Paper = A4): string {
@@ -275,6 +293,11 @@ export function plannerHref(layout: PlannerLayoutInfo, paper: Paper = A4): strin
 
 /** What a reader gets from one print of a layout, on a paper. */
 export function describeLayout(layout: PlannerLayoutInfo, paper: Paper): string {
+  if (paper === B5) {
+    return layout.pages === 2
+      ? "One B5 sheet holds the spread, shrunk to B6: the left page above, the right below, each turned on its side."
+      : "One B5 sheet holds the page twice, shrunk to B6 and turned on its side, so one cut makes two.";
+  }
   if (paper === A5) {
     return layout.pages === 2
       ? "Two A5 pages: the left page of a spread, then the right."
