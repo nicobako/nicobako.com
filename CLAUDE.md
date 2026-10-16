@@ -360,7 +360,7 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site (~9.5 MB across ~650 files, most of it the generated etude and
+The whole site (~10.4 MB across ~650 files, most of it the generated etude and
 printable variants) is precached, so every page works offline after the first
 visit. `npm run build` prints the file count; check it when adding presets. Caching is network-first for navigations, cache-first for hashed
 `/_astro/` assets, and stale-while-revalidate for everything else same-origin.
