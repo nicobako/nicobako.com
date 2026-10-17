@@ -52,6 +52,22 @@ sw.addEventListener('message', (event) => {
 	}
 });
 
+// A timer's notification (src/timers/shared/notify.ts) brings its page back to
+// the front: the tab that is already running it if there is one, else a new one.
+sw.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+	const url = new URL(event.notification.data?.url ?? '/', sw.location.origin).href;
+
+	event.waitUntil(
+		(async () => {
+			const windows = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true });
+			const open = windows.find((client) => client.url === url);
+			if (open) return open.focus();
+			return sw.clients.openWindow(url);
+		})(),
+	);
+});
+
 sw.addEventListener('fetch', (event) => {
 	const request = event.request;
 

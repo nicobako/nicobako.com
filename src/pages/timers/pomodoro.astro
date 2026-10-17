@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import TimerNotifications from "../../components/TimerNotifications.astro";
 ---
 
 <Layout
@@ -44,13 +45,15 @@ import Layout from "../../layouts/Layout.astro";
     </div>
 
     <p id="status" class="timer-status" role="status"></p>
+    <TimerNotifications />
   </div>
 </Layout>
 
 <script>
-  import { Countdown, formatClock } from "../../timers/shared/countdown.ts";
+  import { Countdown, formatClock, formatDuration } from "../../timers/shared/countdown.ts";
+  import { enableNotifications, notify } from "../../timers/shared/notify.ts";
   import { playChime } from "../../timers/shared/audio.ts";
-  import { PomodoroCycle, PHASE_LABEL, type PomodoroConfig } from "../../timers/pomodoro/pomodoro.ts";
+  import { PomodoroCycle, PHASE_LABEL, type Phase, type PomodoroConfig } from "../../timers/pomodoro/pomodoro.ts";
 
   type RunState = "idle" | "running" | "paused";
 
@@ -106,14 +109,16 @@ import Layout from "../../layouts/Layout.astro";
     ({ remainingMs }) => {
       display.textContent = formatClock(remainingMs);
     },
-    () => advancePhase(),
+    () => advancePhase(true),
   );
 
-  function advancePhase(): void {
+  /** `finished` is false when the phase was skipped, which needs no notification. */
+  function advancePhase(finished: boolean): void {
     playChime();
     const next = cycle.advance();
     updatePhaseDisplay();
     statusEl.textContent = next === "work" ? "Back to focus." : "Time for a break.";
+    if (finished) notifyPhase(next);
     if (autoAdvanceInput.checked) {
       countdown.start(cycle.durationMs());
       setRunState("running");
@@ -121,6 +126,21 @@ import Layout from "../../layouts/Layout.astro";
       display.textContent = formatClock(cycle.durationMs());
       setRunState("idle");
     }
+  }
+
+  function notifyPhase(next: Phase): void {
+    const length = formatDuration(cycle.durationMs());
+    const sessions = cycle.completedWorkSessions;
+    const starts = autoAdvanceInput.checked ? "" : " Press Start when ready.";
+    void notify(
+      next === "work"
+        ? { title: "Break over", body: `Back to focus for ${length}.${starts}`, tag: "pomodoro" }
+        : {
+            title: "Focus done",
+            body: `Take a ${length} ${next === "longBreak" ? "long " : ""}break. ${sessions} done.${starts}`,
+            tag: "pomodoro",
+          },
+    );
   }
 
   updatePhaseDisplay();
@@ -142,13 +162,14 @@ import Layout from "../../layouts/Layout.astro";
       setRunState("running");
       return;
     }
+    enableNotifications();
     countdown.start(cycle.durationMs());
     setRunState("running");
   });
 
   skipBtn.addEventListener("click", () => {
     countdown.reset();
-    advancePhase();
+    advancePhase(false);
   });
 
   resetBtn.addEventListener("click", () => {
