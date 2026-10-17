@@ -1,0 +1,43 @@
+---
+// One line under a timer saying whether it will send a notification when it
+// finishes, and what to do if it can't. The permission itself is asked for when
+// the timer starts (see src/timers/shared/notify.ts).
+---
+
+<p class="timer-notifications" data-timer-notifications></p>
+
+<script>
+  import { notificationsSupported, PERMISSION_EVENT } from "../timers/shared/notify.ts";
+
+  const MESSAGES: Record<NotificationPermission | "unsupported", string> = {
+    default: "When you start, you'll be asked to allow notifications, so the end of the timer can reach your phone and watch.",
+    granted: "Notifications on: you'll get one when the timer is done.",
+    denied: "Notifications are blocked for this site. Allow them in your browser's site settings to be notified when the timer is done.",
+    unsupported: "This browser can't show notifications. On an iPhone, add this site to your Home Screen and open it from there.",
+  };
+
+  const notes = document.querySelectorAll<HTMLElement>("[data-timer-notifications]");
+
+  function render(): void {
+    const state = notificationsSupported() ? Notification.permission : "unsupported";
+    notes.forEach((note) => (note.textContent = MESSAGES[state]));
+  }
+
+  render();
+  document.addEventListener(PERMISSION_EVENT, render);
+  // Catches a change made in the browser's site settings while the page is open.
+  navigator.permissions
+    ?.query({ name: "notifications" })
+    .then((status) => status.addEventListener("change", render))
+    .catch(() => {});
+</script>
+
+<style>
+  .timer-notifications {
+    max-width: 24rem;
+    margin: 0;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+</style>

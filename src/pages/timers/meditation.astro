@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import TimerNotifications from "../../components/TimerNotifications.astro";
 ---
 
 <Layout
@@ -41,11 +42,13 @@ import Layout from "../../layouts/Layout.astro";
     </div>
 
     <p id="status" class="timer-status" role="status"></p>
+    <TimerNotifications />
   </div>
 </Layout>
 
 <script>
-  import { Countdown, formatClock } from "../../timers/shared/countdown.ts";
+  import { Countdown, formatClock, formatDuration } from "../../timers/shared/countdown.ts";
+  import { enableNotifications, notify } from "../../timers/shared/notify.ts";
   import { playChime } from "../../timers/shared/audio.ts";
   import { BellTracker } from "../../timers/meditation/meditation.ts";
 
@@ -102,6 +105,7 @@ import Layout from "../../layouts/Layout.astro";
       display.textContent = "00:00";
       if (endBellInput.checked) playChime();
       setState("done");
+      void notify({ title: "Meditation done", body: `Your ${formatDuration(durationMs())} session is complete.`, tag: "meditation" });
     },
   );
 
@@ -122,6 +126,7 @@ import Layout from "../../layouts/Layout.astro";
     const total = durationMs();
     bellTracker = new BellTracker(total, intervalMs());
     if (startBellInput.checked) playChime();
+    enableNotifications();
     countdown.start(total);
     setState("running");
   });

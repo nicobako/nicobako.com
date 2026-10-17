@@ -328,6 +328,25 @@ is a child learning the words, not one who already has them.
   sets a font size, as the rest of `paper/` do.
 - `speed-reading/speed-reading.ts` — line wrapping and column dealing. The one page that must re-render in the browser: where a line breaks depends on the reader's actual font metrics, so the build uses `estimateWidth` for first paint and the browser re-runs the layout with canvas measurements.
 
+### Timers subsystem
+
+`src/timers/` holds the clocks behind `/timers/*`; `shared/countdown.ts` is the
+pause-safe `Countdown` every timer but the stopwatch runs on. It keeps an end-time
+timeout next to its 200 ms tick, because a hidden tab may run a repeating tick only
+once a minute, and the finish is what the notification hangs on.
+
+- `shared/notify.ts` — the system notification sent when a timer finishes (and, for
+  the Pomodoro and interval timers, when each phase or interval does). They are
+  written to read on a **watch**: Android mirrors them to a paired Fitbit as the
+  title then the body, on a screen a few words wide with no glyphs for most emoji,
+  so a title is two or three words, a body one short sentence, and there are no
+  emoji. They go through the service worker's `showNotification`, because Android
+  Chrome throws on `new Notification()`; one tag per page with `renotify`, so a new
+  one replaces the last and still buzzes. Permission is asked on Start (it needs a
+  user gesture), a skipped phase sends nothing, and `components/TimerNotifications.astro`
+  is the one line under each timer saying whether notifications are on and, if not,
+  what to do. The service worker's `notificationclick` focuses the timer's tab.
+
 ### Tools subsystem
 
 `src/tools/` holds tools whose content is the reader's own, so unlike the printables

@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import TimerNotifications from "../../components/TimerNotifications.astro";
 ---
 
 <Layout
@@ -45,11 +46,13 @@ import Layout from "../../layouts/Layout.astro";
     </div>
 
     <p id="status" class="timer-status" role="status"></p>
+    <TimerNotifications />
   </div>
 </Layout>
 
 <script>
-  import { Countdown, formatClock } from "../../timers/shared/countdown.ts";
+  import { Countdown, formatClock, formatDuration } from "../../timers/shared/countdown.ts";
+  import { enableNotifications, notify } from "../../timers/shared/notify.ts";
   import { playAlarm, playChime } from "../../timers/shared/audio.ts";
   import { IntervalPlan, type IntervalStep, type IntervalPosition } from "../../timers/interval/interval.ts";
 
@@ -174,7 +177,7 @@ import Layout from "../../layouts/Layout.astro";
     ({ remainingMs }) => {
       display.textContent = formatClock(remainingMs);
     },
-    () => advance(),
+    () => advance(true),
   );
 
   function startStep(): void {
@@ -187,17 +190,31 @@ import Layout from "../../layouts/Layout.astro";
     countdown.start(step.seconds * 1000);
   }
 
-  function advance(): void {
+  /**
+   * `finished` is false when the interval was skipped. A finished one sends a
+   * notification naming the next, so a watch can call the changes in a workout.
+   */
+  function advance(finished: boolean): void {
     if (!plan) return;
+    const { steps, rounds } = plan.config;
     const nextPos = plan.next(position);
     if (!nextPos) {
       playAlarm();
       setState("complete");
+      if (finished) {
+        const body = rounds > 1 ? `All ${rounds} rounds complete.` : `All ${steps.length} intervals complete.`;
+        void notify({ title: "Intervals done", body, tag: "interval" });
+      }
       return;
     }
     playChime();
     position = nextPos;
     startStep();
+    const step = plan.stepAt(position);
+    if (finished && step) {
+      const round = rounds > 1 ? ` Round ${position.round} of ${rounds}.` : "";
+      void notify({ title: step.name, body: `${formatDuration(step.seconds * 1000)} now.${round}`, tag: "interval" });
+    }
   }
 
   refreshRemoveButtons();
@@ -230,6 +247,7 @@ import Layout from "../../layouts/Layout.astro";
     if (steps.length === 0) return;
     plan = new IntervalPlan({ steps, rounds: readRounds() });
     position = { stepIndex: 0, round: 1 };
+    enableNotifications();
     setState("running");
     startStep();
   });
@@ -237,7 +255,7 @@ import Layout from "../../layouts/Layout.astro";
   skipBtn.addEventListener("click", () => {
     if (!plan) return;
     countdown.reset();
-    advance();
+    advance(false);
   });
 
   resetBtn.addEventListener("click", () => {
