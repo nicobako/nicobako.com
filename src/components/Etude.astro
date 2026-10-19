@@ -1,0 +1,45 @@
+---
+// One declared etude: what it asks for, and the score.
+//
+// The etude arrives as data and is built here, at build time, so a page that renders one
+// carries no generator of its own. A build error rather than an empty staff is the point
+// of the throw: an authored etude whose patterns don't line up, or that falls off its
+// instrument, is a mistake in the declaration and should not ship as a blank page.
+import AbcTrack from "./AbcTrack.astro";
+import { buildEtude, describeEtude, type Etude } from "../music/etudes/etude.ts";
+
+interface Props {
+  etude: Etude;
+  /** Heading level, so a page of several etudes can nest them. */
+  heading?: "h1" | "h2" | "h3";
+  /** Whether the score gets a playback widget. */
+  audio?: boolean;
+}
+
+const { etude, heading = "h2", audio = true } = Astro.props;
+
+const result = buildEtude(etude);
+if (result.errors.length > 0) {
+  throw new Error(`Etude "${etude.title}" can't be built: ${result.errors.join(" ")}`);
+}
+
+const Heading = heading;
+---
+
+<section class="etude">
+  <Heading>{etude.title}</Heading>
+  <p class="summary">{describeEtude(etude)}</p>
+  <AbcTrack abcText={result.abc} transposition={result.transposition} audio={audio} />
+</section>
+
+<style>
+  .etude {
+    margin-bottom: 2.5rem;
+  }
+
+  .summary {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

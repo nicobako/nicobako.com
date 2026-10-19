@@ -34,16 +34,21 @@ class Track {
   private synthControl: SynthObjectController | null = null;
   private tune: TuneObject | null = null;
   private source = "";
-  private transposeValue: HTMLElement;
+  private transposeValue: HTMLElement | null;
   /** Visual/playback transpose in semitones; the `.abc` source is left as-is. */
   private transpose = 0;
+  /**
+   * The transpose the *source* came with — an etude's key, say — which the reader's
+   * −/+ is relative to. A template without a transpose row carries the base alone.
+   */
+  private base = 0;
 
   constructor(root: HTMLElement) {
     this.root = root;
     this.notation = root.querySelector("[data-notation]")!;
     this.warnings = root.querySelector("[data-warnings]")!;
     this.status = root.querySelector("[data-status]")!;
-    this.transposeValue = root.querySelector("[data-transpose-value]")!;
+    this.transposeValue = root.querySelector("[data-transpose-value]");
     const audio = root.querySelector<HTMLElement>("[data-audio]")!;
 
     if (abcjs.synth.supportsAudio()) {
@@ -81,25 +86,38 @@ class Track {
       }
     });
 
-    root.querySelector("[data-transpose-down]")!.addEventListener("click", () => {
+    // Optional: a page whose key is decided elsewhere (the etude builder's) renders the
+    // template without this row.
+    root.querySelector("[data-transpose-down]")?.addEventListener("click", () => {
       this.setTranspose(this.transpose - 1);
     });
-    root.querySelector("[data-transpose-up]")!.addEventListener("click", () => {
+    root.querySelector("[data-transpose-up]")?.addEventListener("click", () => {
       this.setTranspose(this.transpose + 1);
     });
   }
 
-  /** Point the track at a new source (one tune, as split out by abcjs) and draw it. */
-  update(source: string): void {
+  /**
+   * Point the track at a new source (one tune, as split out by abcjs) and draw it.
+   * `base` is the transpose the source is already written to expect.
+   */
+  update(source: string, base = 0): void {
     this.source = source;
+    this.base = base;
     this.draw();
+  }
+
+  /** What actually reaches abcjs: the source's own key plus whatever the reader added. */
+  private effective(): number {
+    return this.base + this.transpose;
   }
 
   private setTranspose(semitones: number): void {
     const clamped = Math.max(-24, Math.min(24, semitones));
     if (clamped === this.transpose) return;
     this.transpose = clamped;
-    this.transposeValue.textContent = clamped > 0 ? `+${clamped}` : `${clamped}`;
+    if (this.transposeValue) {
+      this.transposeValue.textContent = clamped > 0 ? `+${clamped}` : `${clamped}`;
+    }
     this.draw();
   }
 
@@ -112,7 +130,7 @@ class Track {
   private draw(): void {
     const tunes = abcjs.renderAbc(this.notation, this.source, {
       responsive: "resize",
-      visualTranspose: this.transpose,
+      visualTranspose: this.effective(),
     });
     const tune = tunes[0] ?? null;
     this.tune = tune;
@@ -126,7 +144,7 @@ class Track {
       // transposing-instrument offset and subtracts it back out of the MIDI so
       // the sound stays at concert pitch. Pass a matching midiTranspose so
       // playback follows the notation. (see abc_midi_sequencer.js)
-      void this.synthControl.setTune(tune, false, { midiTranspose: this.transpose });
+      void this.synthControl.setTune(tune, false, { midiTranspose: this.effective() });
       // abcjs's SynthController only primes audio for a tune the first time
       // Play is pressed: setTune() never clears the isLoaded/isLoading flags
       // it sets during that first priming, so without this, editing after
@@ -151,14 +169,14 @@ class Track {
   private async downloadWav(): Promise<void> {
     if (!this.tune) return;
     const midiBuffer = new abcjs.synth.CreateSynth();
-    await midiBuffer.init({ visualObj: this.tune, options: { midiTranspose: this.transpose } });
+    await midiBuffer.init({ visualObj: this.tune, options: { midiTranspose: this.effective() } });
     await midiBuffer.prime();
     triggerDownload(midiBuffer.download(), `${fileBaseName(this.tune)}.wav`);
   }
 
   private downloadMidi(): void {
     if (!this.tune) return;
-    const bytes = abcjs.synth.getMidiFile(this.tune, { midiOutputType: "binary", midiTranspose: this.transpose }) as Uint8Array<ArrayBuffer>;
+    const bytes = abcjs.synth.getMidiFile(this.tune, { midiOutputType: "binary", midiTranspose: this.effective() }) as Uint8Array<ArrayBuffer>;
     const blob = new Blob([bytes], { type: "audio/midi" });
     triggerDownload(URL.createObjectURL(blob), `${fileBaseName(this.tune)}.midi`);
   }
@@ -174,7 +192,7 @@ export class AbcEditor {
     this.template = template;
   }
 
-  render(abc: string): void {
+  render(abc: string, base = 0): void {
     // Let abcjs split the document into tunes rather than doing it by hand: a
     // TuneBook parses the source exactly the way renderAbc does internally, so
     // each tune's source string below is what abcjs would render on its own.
@@ -193,6 +211,6 @@ export class AbcEditor {
 
     // Each track renders its own tune: they carry independent transpose amounts,
     // and renderAbc's params (visualTranspose) apply per call, not per tune.
-    this.tracks.forEach((track, i) => track.update(tunes[i].abc));
+    this.tracks.forEach((track, i) => track.update(tunes[i].abc, base));
   }
 }

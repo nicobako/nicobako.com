@@ -21,6 +21,8 @@
 // This module returns data only: tables, a slug or two, and an ABC string. Nothing here
 // touches the DOM, and the pages are pure templates over it.
 
+import { abcPitch } from "../abc-pitch.ts";
+
 /** One violin string, named by the note it is tuned to. */
 export interface ViolinString {
   /** URL segment — `g-string`. */
@@ -186,8 +188,6 @@ const BARS_PER_STAGE = 2;
 
 const TEMPO_BPM = 60;
 
-const LETTERS = ["C", "D", "E", "F", "G", "A", "B"] as const;
-
 /**
  * The subdivision ladder: the same finger pattern said four times over, each time twice as
  * fast. Every stage fills the same two bars, so the pattern is stated once, twice, four
@@ -202,19 +202,6 @@ const STAGES: { duration: number; label: string }[] = [
   { duration: 1, label: "sixteenth notes" },
 ];
 
-/**
- * The ABC token for a scale degree above the open string, which is written as C4.
- *
- * `degree` is `(position - 1) + finger`, so 0 is the open string itself (never played
- * here) and 13 is the fourth finger in tenth position.
- */
-function pitchToken(degree: number): string {
-  const octave = 4 + Math.floor(degree / 7);
-  const letter = LETTERS[degree - (octave - 4) * 7]!;
-  if (octave >= 5) return letter.toLowerCase() + "'".repeat(octave - 5);
-  return letter + ",".repeat(4 - octave);
-}
-
 interface Event {
   degree: number;
   duration: number;
@@ -228,7 +215,10 @@ function eventToken(event: Event): string {
   let token = "";
   if (event.slurStart) token += "(";
   if (event.finger !== null) token += `!${event.finger}!`;
-  token += pitchToken(event.degree);
+  // A degree is `(position - 1) + finger` letters above the open string, which is
+  // written as C4 — so 0 is the open string itself (never played here) and 13 is the
+  // fourth finger in tenth position.
+  token += abcPitch(event.degree);
   if (event.duration !== 1) token += String(event.duration);
   if (event.slurEnd) token += ")";
   return token;

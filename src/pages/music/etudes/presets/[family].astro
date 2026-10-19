@@ -1,0 +1,314 @@
+---
+import Layout from "../../../../layouts/Layout.astro";
+import Breadcrumbs from "../../../../components/Breadcrumbs.astro";
+import AbcTrack from "../../../../components/AbcTrack.astro";
+import {
+  PRESET_FAMILIES,
+  PRESETS_PATH,
+  type PresetFamily,
+} from "../../../../music/etudes/presets/families.ts";
+import { INSTRUMENTS } from "../../../../music/etudes/presets/instruments.ts";
+import { NOTE_PATTERNS } from "../../../../music/etudes/presets/notes.ts";
+import { MODES, degreeLetters } from "../../../../music/etudes/scale.ts";
+import {
+  buildEtude,
+  defineEtude,
+  type Etude,
+} from "../../../../music/etudes/etude.ts";
+
+export function getStaticPaths() {
+  return PRESET_FAMILIES.map((family) => ({
+    params: { family: family.slug },
+    props: { family },
+  }));
+}
+
+interface Props {
+  family: PresetFamily;
+}
+
+const { family } = Astro.props;
+
+// Every example is the same etude with one axis changed, so what the notation shows is
+// the preset and nothing else. A note pattern runs its own full cycle; the other
+// patterns are given eight notes of the plain scale to act on.
+type Fixture = Partial<Etude> & Pick<Etude, "title">;
+const FIXTURE: Fixture = {
+  title: "Example",
+  notes: "1 2 3 4 5 6 7 1'",
+  rhythm: "q",
+  bowing: "1",
+  keyOffset: 2,
+};
+
+const examples =
+  family.kind === "pattern"
+    ? family.presets.map((preset) => {
+        const etude = defineEtude({
+          ...FIXTURE,
+          [family.field!]: preset.value,
+          length: family.field === "notes" ? null : 8,
+        });
+        return { preset, result: buildEtude(etude) };
+      })
+    : [];
+
+// A fingering belongs to a note pattern, so they are documented here beside the pattern
+// each one fingers rather than as a family of their own — and each is shown playing that
+// pattern, which is the only context a finger means anything in.
+const fingered =
+  family.slug === "notes"
+    ? NOTE_PATTERNS.flatMap((pattern) =>
+        pattern.fingerings.map((fingering) => ({
+          pattern,
+          fingering,
+          result: buildEtude(
+            defineEtude({
+              ...FIXTURE,
+              notes: pattern.value,
+              fingering: fingering.value,
+            }),
+          ),
+        })),
+      )
+    : [];
+
+// The same eight notes on each instrument's clef: the clearest statement that a clef is
+// presentation, since nothing but the drawing changes.
+const clefExamples =
+  family.slug === "instruments"
+    ? INSTRUMENTS.map((instrument) => ({
+        instrument,
+        result: buildEtude(
+          defineEtude({
+            ...FIXTURE,
+            clef: instrument.clef,
+            rootOctave: instrument.rootOctave,
+          }),
+        ),
+      }))
+    : [];
+
+// An example that cannot be built is a mistake in the preset, not something to hide.
+for (const { preset, result } of examples) {
+  if (result.errors.length > 0) {
+    throw new Error(
+      `Preset "${preset.slug}" can't be built: ${result.errors.join(" ")}`,
+    );
+  }
+}
+for (const { pattern, fingering, result } of fingered) {
+  if (result.errors.length > 0) {
+    throw new Error(
+      `Fingering "${fingering.slug}" of "${pattern.slug}" can't be built: ${result.errors.join(" ")}`,
+    );
+  }
+}
+for (const { instrument, result } of clefExamples) {
+  if (result.errors.length > 0) {
+    throw new Error(
+      `${instrument.name} example can't be built: ${result.errors.join(" ")}`,
+    );
+  }
+}
+---
+
+<Layout
+  title={`${family.name} — Etude Presets — Nico Bako`}
+  description={family.blurb}
+>
+  <Breadcrumbs
+    trail={[
+      { label: "Music", href: "/music/" },
+      { label: "Etudes", href: "/music/etudes/" },
+      { label: "Presets", href: PRESETS_PATH },
+    ]}
+  />
+  <h1>{family.name}</h1>
+  <p>{family.blurb}</p>
+
+  {
+    family.slug === "modes" && (
+      <table class="degrees">
+        <thead>
+          <tr>
+            <>
+              <th>Mode</th>
+              <th>Degrees 1–7, written</th>
+            </>
+          </tr>
+        </thead>
+        <tbody>
+          {MODES.map((mode) => (
+            <tr>
+              <th scope="row">{mode.name}</th>
+              <td>
+                {degreeLetters(mode).map((letter) => (
+                  <span class="letter">{letter}</span>
+                ))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+
+  {
+    family.slug === "instruments" && (
+      <table class="degrees">
+        <thead>
+          <tr>
+            <>
+              <th>Instrument</th>
+              <th>Clef</th>
+              <th>Root octave</th>
+              <th>Open strings</th>
+            </>
+          </tr>
+        </thead>
+        <tbody>
+          {INSTRUMENTS.map((instrument) => (
+            <tr>
+              <th scope="row">{instrument.name}</th>
+              <td>{instrument.clef}</td>
+              <td>{instrument.rootOctave}</td>
+              <td>{instrument.strings.join(" ")}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+
+  {
+    family.presets.map((preset) => (
+      <section class="preset">
+        <h2>{preset.name}</h2>
+        {preset.value !== "" && (
+          <p class="pattern">
+            <code>{preset.value}</code>
+          </p>
+        )}
+        <p class="description">{preset.description}</p>
+        {examples
+          .filter((example) => example.preset.slug === preset.slug)
+          .map((example) => (
+            <AbcTrack
+              abcText={example.result.abc}
+              transposition={example.result.transposition}
+              audio={false}
+            />
+          ))}
+        {clefExamples
+          .filter((example) => example.instrument.slug === preset.slug)
+          .map((example) => (
+            <AbcTrack
+              abcText={example.result.abc}
+              transposition={example.result.transposition}
+              audio={false}
+            />
+          ))}
+        {fingered.filter((example) => example.pattern.slug === preset.slug)
+          .length > 0 && (
+          <div class="fingerings">
+            <h3>Fingerings</h3>
+            {fingered
+              .filter((example) => example.pattern.slug === preset.slug)
+              .map((example) => (
+                <div class="fingering">
+                  <h4>{example.fingering.name}</h4>
+                  <p class="pattern">
+                    <code>{example.fingering.value}</code>
+                  </p>
+                  <p class="description">{example.fingering.description}</p>
+                  <AbcTrack
+                    abcText={example.result.abc}
+                    transposition={example.result.transposition}
+                    audio={false}
+                  />
+                </div>
+              ))}
+          </div>
+        )}
+      </section>
+    ))
+  }
+
+  <p class="back no-print">
+    These go into the <a href="/music/etude-builder">Etude Builder</a>, which
+    keeps a text box behind every picker — a preset is a starting point, not the
+    only pattern allowed.
+  </p>
+</Layout>
+
+<style>
+  .preset {
+    margin: 2.5rem 0;
+  }
+
+  .preset h2 {
+    margin-bottom: 0.25rem;
+  }
+
+  .pattern {
+    margin: 0 0 0.5rem;
+  }
+
+  .description {
+    margin: 0 0 1rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .fingerings {
+    margin-top: 1.5rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--border);
+  }
+
+  .fingerings h3 {
+    font-size: 1rem;
+    margin: 0 0 0.75rem;
+  }
+
+  .fingering {
+    margin-bottom: 1.5rem;
+  }
+
+  .fingering h4 {
+    font-size: 0.95rem;
+    margin: 0 0 0.25rem;
+  }
+
+  .degrees {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin: 1.5rem 0;
+  }
+
+  .degrees th,
+  .degrees td {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .degrees tbody th {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .letter {
+    display: inline-block;
+    min-width: 1.6rem;
+    font-family: var(--font-mono);
+  }
+
+  .back {
+    margin-top: 3rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

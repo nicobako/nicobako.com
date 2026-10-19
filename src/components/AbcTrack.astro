@@ -11,9 +11,14 @@ interface Props {
    * alike; `abcText` is left exactly as written.
    */
   transposition?: number;
+  /**
+   * Whether to build a playback widget. Off for pages of many short examples,
+   * where a transport bar under each one is clutter.
+   */
+  audio?: boolean;
 }
 
-const { abcText, transposition = 0 } = Astro.props;
+const { abcText, transposition = 0, audio = true } = Astro.props;
 ---
 
 <section
@@ -21,6 +26,7 @@ const { abcText, transposition = 0 } = Astro.props;
   data-abc-track
   data-abc={abcText}
   data-transposition={transposition}
+  data-audio-enabled={String(audio)}
 >
   <div class="abc-notation-wrap">
     <div class="abc-notation" data-notation></div>
