@@ -68,7 +68,7 @@ of presets trades directly against install size. Keep it short and deliberate.
 |---|---|
 | `/` | `src/pages/index.astro` |
 | `/games/`, `/games/classrooms-and-angry-teachers`, `/games/word-steps/` and a page per ladder (English and Japanese) | `src/pages/games/` |
-| `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/` (including a page per ascending-on-string variant), `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
+| `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/` (including a page per ascending-on-string variant), `/music/etudes/presets/` and a page per preset family, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/tools/`, `/tools/relations` | `src/pages/tools/` |
 | `/printables/`, and the sheets listed below | `src/pages/printables/` |
@@ -178,15 +178,59 @@ is a child learning the words, not one who already has them.
 - `src/music/violin/scales.ts` — the Carl Flesch fingering tables. Reference data only; `violin-3-octave-fingerings.astro` is a pure template over it.
 - `src/music/abc-track/abc-track.ts` — mounting logic for `components/AbcTrack.astro`, one
   self-contained tune: SVG notation plus abcjs's playback widget. Its only props are
-  `abcText` and `transposition`, because everything else abcjs understands is said in the
-  ABC source itself — a prop is only warranted for what has to reach abcjs's JavaScript.
-  The source travels to the browser as data attributes on the track's root element and the
-  component's `<script>` (hoisted and bundled once per page, however many tracks a page
-  renders) hands it to abcjs, which draws the DOM itself. `transposition` shifts the
+  `abcText`, `transposition` and `audio`, because everything else abcjs understands is said
+  in the ABC source itself — a prop is only warranted for what has to reach abcjs's
+  JavaScript. The source travels to the browser as data attributes on the track's root
+  element and the component's `<script>` (hoisted and bundled once per page, however many
+  tracks a page renders) hands it to abcjs, which draws the DOM itself. `transposition` shifts the
   notation *and* playback: abcjs reads `visualTranspose` as a transposing-instrument offset
   and subtracts it back out of the MIDI, so the synth gets a matching `midiTranspose`.
   Playback fetches soundfonts from abcjs's CDN at first Play, so it is the one part of the
-  site that needs the network even though the page itself is precached.
+  site that needs the network even though the page itself is precached. `audio={false}`
+  draws notation alone, which is what the preset pages use: a transport bar under each of
+  nine short examples is clutter rather than use.
+- `src/music/abc-pitch.ts` — `abcPitch`, which writes the letter and octave marks for a
+  note *n* letters above written middle C, and `accidentalMark`. A white-key scale degree
+  never amounts to more than that one integer, which is why a mode, a root octave and an
+  open string are all arithmetic on it; both etude generators share this copy.
+  `src/music/abc-key.ts` holds `TONIC_SPELLINGS`, the table that mirrors abcjs's own
+  unconfigurable key-signature spellings, because two unrelated features have to agree
+  with them.
+- `src/music/etudes/scale.ts` — the seven diatonic modes, as **rotations** of one parent
+  scale rather than sets of intervals over a fixed tonic: the mode decides which letter
+  degree 1 sits on (Ionian C, Dorian D, Aeolian A), so every unaltered degree is a white
+  key, the tune is always written `K:C`, and there is no table of semitone offsets or key
+  signatures per mode. `KEYS` resolves all 7 × 12 keys at build time, and each label comes
+  from the *parent major* at that offset so the page and the staff can never disagree —
+  the mode never reaches abcjs, which sees only `K:C` and a transposition.
+- `src/music/etudes/etude.ts` — what an etude *is*, and the generator that turns one into
+  ABC. Notes, rhythm and bowing cycle independently and the tune runs until they realign
+  (`cycleLength`), which is the whole premise: five notes against a rhythm of three
+  against a bowing of two do not repeat for thirty notes. Three fields are deliberately
+  *not* cycling axes. A **fingering** is an annotation — a finger means something only
+  against a particular note, so its length must divide the note pattern's and it stays out
+  of the lcm, or a marking would both land on the wrong note and change how long the etude
+  is. The **key** is a transposition handed to abcjs and picks a pitch *class* only; the
+  **root octave** is the register the music is written in. Keeping those two apart is what
+  lets changing the key never move the octave and changing the octave never move the key.
+  `defineEtude` fills every default, so declaring an etude is a line. The clef is one token
+  on the key line and nothing more: in ABC a letter names an absolute pitch whatever clef
+  is in force, so `clef=alto` draws the same music lower on the staff and changes neither
+  the arithmetic nor the playback — which is the entire viola and cello story.
+- `src/music/etudes/presets/` — the named constants, one module per family (`notes`,
+  `rhythms`, `bowings`, `instruments`), each entry carrying the prose that earns it a
+  name, plus `families.ts` listing them so `/music/etudes/presets/` and
+  `presets/[family].astro` are maps over data rather than five hand-written pages. An
+  `Instrument` is violin, viola or cello: a clef, a default root octave, and the open
+  strings, which is all that actually differs. **Fingerings are not a family**: a finger
+  only means something against a particular note, so a fingering belongs to a note
+  pattern and each `NotePattern` carries its own named ones ("open string, first
+  position", "single string", "shifting" for the plain scale). The builder's fingering
+  picker is filled from whichever pattern is in the notes box, and the notes page
+  documents each fingering beside the pattern it fingers. For the same reason a finger
+  cannot be written inline with a note: it is said once, in the fingering.
+  `ascending-on-string.ts` is still violin only — its `STRINGS` table is violin open
+  strings — and migrating it onto this model is the next step.
 - `src/music/etudes/ascending-on-string.ts` — climbing one string through the positions:
   the four fingers played in a chosen order in first position, a shift up a step, the same
   order again, all the way up. Two facts collapse the whole family into tables. The notes
@@ -206,9 +250,9 @@ is a child learning the words, not one who already has them.
   idiom. The pages carry no script beyond the shared `AbcTrack` mount.
 
   **The preset count is the thing to watch here.** Four strings × 24 finger orders × 2
-  position spans is 192 real, precached pages (~3.2 MB, taking the precache from 5.7 to
-  8.9 MB). The 24 orders are the exercise itself and the four strings are not negotiable,
-  so the span list is where the restraint went: there are only two because a span starting
+  position spans is 192 real, precached pages (~2.4 MB of the precache). The 24 orders
+  are the exercise itself and the four strings are not negotiable, so the span list is
+  where the restraint went: there are only two because a span starting
   at first position is already contained in the longer one — each position is its own block
   of systems, so "first through fifth" is the first five blocks of `1-7`, read and stopped
   early. Only `5-10` is a genuinely different exercise (different register, entered by a
@@ -389,7 +433,7 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site (~11 MB across ~675 files, most of it the generated etude and
+The whole site (~15 MB across ~750 files, most of it the generated etude and
 printable variants) is precached, so every page works offline after the first
 visit. `npm run build` prints the file count; check it when adding presets. Caching is network-first for navigations, cache-first for hashed
 `/_astro/` assets, and stale-while-revalidate for everything else same-origin.
@@ -407,3 +451,4 @@ safe zone). Edit the SVG sources and re-render the PNGs if the mark changes.
   real faces before falling back, because a bare `system-ui` renders kana in whatever the
   OS happens to pick.
 - Styles in page and component files are Astro-scoped by default; only `Layout.astro`'s `<style is:global>` affects the whole document.
+- `build.inlineStylesheets: 'never'` in `astro.config.mjs` keeps stylesheets as shared, hashed files in `/_astro/` instead of inlining them. Astro's default inlines anything under 4 KB, which copied `Layout.astro`'s global CSS into every page; with hundreds of pages, most of them generated variants, one cached stylesheet is far cheaper than a copy per page (measured at ~560 pages, it cut the built HTML from 9.0 to 7.2 MB). The cost is a stylesheet request per page, which the service worker serves from cache.

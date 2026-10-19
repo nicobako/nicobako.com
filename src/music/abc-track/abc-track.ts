@@ -25,6 +25,10 @@ function warningText(warnings: string[] | undefined): string {
  * Draw one track: SVG notation into `[data-notation]`, abcjs's playback widget
  * into `[data-audio]`, and any parse warnings into `[data-warnings]`.
  *
+ * A track with `data-audio-enabled="false"` draws notation only. That is for the pages
+ * that show many short examples at once, where a transport bar under every one of them
+ * is clutter rather than use.
+ *
  * `transposition` is in semitones. `visualTranspose` shifts the notation and
  * abcjs then subtracts the same amount back out of the MIDI (it reads the value
  * as a transposing-instrument offset, so the sound stays at concert pitch), so
@@ -50,6 +54,7 @@ export function mountAbcTrack(root: HTMLElement): void {
   warnings.textContent = warningText(tune?.warnings);
 
   if (!tune) return;
+  if (root.dataset.audioEnabled === "false") return;
 
   if (!abcjs.synth.supportsAudio()) {
     audio.textContent = "Audio playback isn't supported in this browser.";

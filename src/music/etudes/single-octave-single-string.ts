@@ -9,7 +9,8 @@
 // This module returns data only. `src/content.config.ts` wraps it in a content
 // collection; the pages read that collection and never call in here for content.
 
-import { pitchesInRange, type Pitch, type Spelling } from "../pitch.ts";
+import { TONIC_SPELLINGS } from "../abc-key.ts";
+import { pitchesInRange, type Pitch } from "../pitch.ts";
 
 export type ModeSlug = "major" | "minor";
 export type VariationSlug = "no-shift-notes" | "with-shift-notes";
@@ -30,23 +31,6 @@ export const MODES: Mode[] = [
   { slug: "major", name: "Major" },
   { slug: "minor", name: "Minor" },
 ];
-
-/**
- * How abcjs spells each tonic, indexed by semitone above C.
- *
- * These are not our preference — they mirror what abcjs actually renders, so that a page
- * titled "D#4" shows a D# on the staff. abcjs decides the key signature from a fixed
- * internal table that cannot be configured, and the two modes disagree on exactly three
- * pitch classes: 1 (Db/C#), 3 (Eb/D#) and 8 (Ab/G#). Every name below is an accepted
- * spelling on the circle of fifths, so following abcjs costs nothing musically.
- *
- * If abcjs is ever upgraded, re-verify these against `parseOnly(...).getKeySignature()`
- * before trusting them.
- */
-const TONIC_SPELLINGS: Record<ModeSlug, Spelling> = {
-  major: ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"],
-  minor: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "Bb", "B"],
-};
 
 /** C3 and C6 as offsets from middle C. Widening this multiplies real, precached pages. */
 const LOWEST_TONIC = -12;

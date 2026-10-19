@@ -102,6 +102,11 @@ C C G G | A A G2 | F F E E | D D C2 |]
 
   const editor = new AbcEditor({ container: tracks, template: trackTemplate });
 
+  // A tune arriving from elsewhere can carry the key it was written in — the etude
+  // builder's key lives in the transpose rather than in the source — so the track starts
+  // at that offset and the reader's -/+ moves from there.
+  const linkedTranspose = Number(new URLSearchParams(location.search).get("transpose")) || 0;
+
   function renderTuneSelect(): void {
     tuneSelect.innerHTML = "";
     for (const tune of store.tunes) {
@@ -115,7 +120,7 @@ C C G G | A A G2 | F F E E | D D C2 |]
 
   function loadActiveIntoEditor(): void {
     input.value = getActive(store).abc;
-    editor.render(input.value);
+    editor.render(input.value, linkedTranspose);
     renderTuneSelect();
   }
 
@@ -123,7 +128,7 @@ C C G G | A A G2 | F F E E | D D C2 |]
 
   input.addEventListener("input", () => {
     getActive(store).abc = input.value;
-    editor.render(input.value);
+    editor.render(input.value, linkedTranspose);
     saveStore(store);
   });
 
@@ -175,7 +180,7 @@ C C G G | A A G2 | F F E E | D D C2 |]
       .then((text) => {
         input.value = text;
         getActive(store).abc = text;
-        editor.render(text);
+        editor.render(text, linkedTranspose);
         saveStore(store);
         uploadStatus.textContent = "";
       })
