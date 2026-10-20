@@ -1,6 +1,7 @@
 // Rhythms: the durations the notes are said in, cycled independently of them.
 //
-// `s` sixteenth, `e` eighth, `q` quarter, `h` half, `w` whole, with a dot for dotted.
+// `s` sixteenth, `e` eighth, `q` quarter, `h` half, `w` whole, with a dot for dotted and
+// a leading `3` for a triplet.
 // A rhythm whose length does not divide the note pattern's is the point of the tool, not
 // a mistake: the two drift against each other until they realign.
 
@@ -40,6 +41,13 @@ export const RHYTHMS: Preset[] = [
     value: "q e e",
     description:
       "Three values against a note pattern of almost any length, so the long note lands somewhere new each time round.",
+  },
+  {
+    slug: "triplets",
+    name: "Eighth triplets",
+    value: "3e",
+    description:
+      "Three eighths in the time of two. One token, three notes — so against a note pattern of four it takes three bars to come round.",
   },
   {
     slug: "gallop",

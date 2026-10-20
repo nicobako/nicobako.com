@@ -223,7 +223,16 @@ is a child learning the words, not one who already has them.
   notes, bowing and fingering fields have no count, because there the number already *is*
   the token; a long note pattern is what a preset is for. Each count is capped at
   `MAX_NOTES` where it is read, since `MAX_NOTES` truncates the finished tune and would
-  otherwise never get the chance.
+  otherwise never get the chance. A *leading* `3` on a rhythm token is unambiguous for the
+  same reason, and makes a triplet: `3e` is one token that yields three notes. It is
+  expanded at parse time into a flat list of one slot per note, so nothing downstream
+  knows about tuplets — a triplet just counts as three notes against the other patterns,
+  which is what makes it cycle against them. A slot carries the duration it is *written*
+  at and, separately, the time it *takes*, counted in thirds of a unit so a triplet
+  member's two-thirds stays a whole number and barlines land where they should. The two
+  things a tuplet needs that a plain note does not: an explicit length that would stop
+  mid-triplet is nudged on to the end of it, and a bar is never broken with a triplet half
+  written.
   `defineEtude` fills every default, so declaring an etude is a line. The clef is one token
   on the key line and nothing more: in ABC a letter names an absolute pitch whatever clef
   is in force, so `clef=alto` draws the same music lower on the staff and changes neither

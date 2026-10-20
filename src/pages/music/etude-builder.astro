@@ -94,7 +94,10 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
               {RHYTHM_NAMES.map(([letter, name], i) => (
                 <>{i > 0 ? ", " : ""}<code>{letter}</code>{` ${name}`}</>
               ))}. Add a dot for dotted: <code>q.</code>, and a count to repeat
-              one: <code>q14 h</code> is fourteen quarter notes and a half.
+              one: <code>q14 h</code> is fourteen quarter notes and a half. A
+              leading <code>3</code> makes a triplet — <code>3e</code> is three
+              eighths in the time of two, and counts as three notes against the
+              other patterns.
             </>
           )}
           {family.field === "bowing" && (

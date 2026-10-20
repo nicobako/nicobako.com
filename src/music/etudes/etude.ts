@@ -70,8 +70,9 @@ const MAX_NOTES = 192;
 const NOTE_PATTERN = /^([#b]*)([1-7])([',]*)$/;
 // The trailing digits are a repeat count: `q14` is fourteen quarters. A rhythm token is a
 // letter, so a number on the end can only be a count — which is exactly why the three
-// fields whose tokens are themselves numbers have no count.
-const RHYTHM_PATTERN = /^([seqhw])(\.?)(\d*)$/;
+// fields whose tokens are themselves numbers have no count. A *leading* 3 is unambiguous
+// for the same reason, and makes a triplet: `3e` is three eighths in the time of two.
+const RHYTHM_PATTERN = /^(3)?([seqhw])(\.?)(\d*)$/;
 const ARTICULATION_PATTERN = /^([a-z]+)(\d*)$/;
 const BOWING_PATTERN = /^[1-9][0-9]*$/;
 const FINGER_PATTERN = /^(?:[0-4]|-)$/;
@@ -268,30 +269,63 @@ export function parseNotes(input: string): { notes: NoteEvent[]; errors: string[
   return { notes, errors };
 }
 
-export function parseRhythm(input: string): { durations: number[]; errors: string[] } {
-  const durations: number[] = [];
+/**
+ * One note's worth of rhythm.
+ *
+ * `occupies` is counted in *thirds* of a unit rather than units, which is what keeps a
+ * triplet exact: a triplet member is written at its plain duration and takes two thirds
+ * of it, so measuring in thirds leaves every value a whole number and barlines land
+ * where they should.
+ */
+export interface RhythmSlot {
+  /** Written duration, in units of L — what goes after the note in the ABC. */
+  duration: number;
+  /** Time actually taken, in thirds of a unit. */
+  occupies: number;
+  /** Position within a triplet (0, 1 or 2), or null for a plain note. */
+  tripletIndex: number | null;
+}
+
+/**
+ * A leading `3` makes a triplet: one token that yields three notes. Expanding it here
+ * rather than at generation time means the rest of the generator still sees a flat list
+ * of one slot per note, so the cycling, bowing, fingering and beaming logic needs to know
+ * nothing about tuplets — a triplet simply counts as three notes against the other
+ * patterns, which is what makes it cycle against them.
+ */
+export function parseRhythm(input: string): { slots: RhythmSlot[]; errors: string[] } {
+  const slots: RhythmSlot[] = [];
   const errors: string[] = [];
 
   for (const token of tokenize(input)) {
     const match = RHYTHM_PATTERN.exec(token);
     if (!match) {
       errors.push(
-        `Rhythm "${token}" isn't one of s, e, q, h, w with an optional dot and an optional count — q. is a dotted quarter, q14 is fourteen quarters.`,
+        `Rhythm "${token}" isn't one of s, e, q, h, w with an optional leading 3 for a triplet, an optional dot and an optional count — q. is a dotted quarter, 3e is an eighth triplet, q14 is fourteen quarters.`,
       );
       continue;
     }
-    const [, letter = "q", dot = "", digits = ""] = match;
+    const [, triplet, letter = "q", dot = "", digits = ""] = match;
     const base = RHYTHM_UNITS[letter]!;
+    const duration = dot ? base * 1.5 : base;
     const { count, error } = repeatCount(digits, token);
     if (error) {
       errors.push(error);
       continue;
     }
-    for (let i = 0; i < count; i++) durations.push(dot ? base * 1.5 : base);
+    for (let i = 0; i < count; i++) {
+      if (triplet) {
+        for (let index = 0; index < 3; index++) {
+          slots.push({ duration, occupies: duration * 2, tripletIndex: index });
+        }
+      } else {
+        slots.push({ duration, occupies: duration * 3, tripletIndex: null });
+      }
+    }
   }
 
-  if (durations.length === 0 && errors.length === 0) errors.push("Add a rhythm.");
-  return { durations, errors };
+  if (slots.length === 0 && errors.length === 0) errors.push("Add a rhythm.");
+  return { slots, errors };
 }
 
 export function parseBowing(input: string): { groups: number[]; errors: string[] } {
@@ -475,7 +509,7 @@ function rangeErrors(etude: Etude, notes: NoteEvent[], mode: Mode): string[] {
 export function buildEtude(etude: Etude): BuildResult {
   const mode = modeFor(etude.mode);
   const { notes, errors: noteErrors } = parseNotes(etude.notes);
-  const { durations, errors: rhythmErrors } = parseRhythm(etude.rhythm);
+  const { slots, errors: rhythmErrors } = parseRhythm(etude.rhythm);
   const { groups, errors: bowingErrors } = parseBowing(etude.bowing);
   const { fingers, errors: fingeringErrors } = parseFingering(etude.fingering, notes.length);
   const { techniques, errors: articulationErrors } = parseArticulation(etude.articulation);
@@ -532,14 +566,22 @@ export function buildEtude(etude: Etude): BuildResult {
   const beamGroup =
     Number(beatUnit) === 8 && Number(beats) % 3 === 0 ? unitsPerBeat * 3 : unitsPerBeat;
 
+  // Time taken is counted in thirds of a unit throughout, so triplets stay exact.
+  const barThirds = barUnits * 3;
+  const beamThirds = beamGroup * 3;
+
   const bowedNotes = groups.reduce((sum, group) => sum + group, 0);
-  const cycle = cycleLength(
-    notes.length,
-    durations.length,
-    bowedNotes,
-    techniques.length || 1,
-  );
-  const count = Math.min(etude.length ?? cycle, MAX_NOTES);
+  const cycle = cycleLength(notes.length, slots.length, bowedNotes, techniques.length || 1);
+
+  // A full cycle always ends on a slot boundary, but an explicit length need not, and
+  // `(3` promises abcjs three notes — so a count that would stop mid-triplet is nudged on
+  // to the end of it.
+  let count = Math.min(etude.length ?? cycle, MAX_NOTES);
+  for (;;) {
+    const last = slots[(count - 1) % slots.length]!;
+    if (last.tripletIndex === null || last.tripletIndex === 2) break;
+    count += 1;
+  }
 
   const body: string[] = [];
   let barText = "";
@@ -558,7 +600,7 @@ export function buildEtude(etude: Etude): BuildResult {
 
   for (let i = 0; i < count; i++) {
     const event = notes[i % notes.length]!;
-    const duration = durations[i % durations.length]!;
+    const slot = slots[i % slots.length]!;
     const fingered = fingers.length > 0 ? fingers[i % fingers.length]! : [];
     const startsGroup = remainingInGroup === groups[groupIndex]!;
     const groupSize = groups[groupIndex]!;
@@ -568,6 +610,9 @@ export function buildEtude(etude: Etude): BuildResult {
 
     let token = "";
     if (startsGroup && groupSize > 1) token += "(";
+    // The tuplet marker sits inside a slur that opens here and before the bow mark, which
+    // is the order abcjs reads as "this slur covers a triplet starting on a down-bow".
+    if (slot.tripletIndex === 0) token += "(3";
     // The symbols are shared — a dot is staccato, spiccato or sautillé — so what names
     // the stroke is the word above the run. It goes in where the stroke changes, and the
     // one being left writes its own cancellation first: that is pizzicato's `arco`.
@@ -590,7 +635,7 @@ export function buildEtude(etude: Etude): BuildResult {
       renderMember(member, mode, etude.rootOctave, fingered[m] ?? null, inForce),
     );
     token += members.length > 1 ? `[${members.join("")}]` : members[0]!;
-    if (duration !== 1) token += String(duration);
+    if (slot.duration !== 1) token += String(slot.duration);
     lastTechnique = technique;
 
     remainingInGroup -= 1;
@@ -601,19 +646,21 @@ export function buildEtude(etude: Etude): BuildResult {
       bowIsDown = !bowIsDown;
     }
 
-    const beam = Math.floor(filled / beamGroup);
+    const beam = Math.floor(filled / beamThirds);
     if (barText !== "" && beam !== lastGroup) barText += " ";
     barText += token;
     lastGroup = beam;
-    filled += duration;
+    filled += slot.occupies;
 
     // A note that overruns the bar is left whole and the barline goes after it, so the
-    // following bars stay aligned to the meter rather than to the overrun.
-    if (filled >= barUnits) {
+    // following bars stay aligned to the meter rather than to the overrun. A half-written
+    // triplet is never split, since its three notes have to stay together.
+    const tripletOpen = slot.tripletIndex !== null && slot.tripletIndex < 2;
+    if (filled >= barThirds && !tripletOpen) {
       body.push(barText);
       barText = "";
       lastGroup = -1;
-      filled -= barUnits;
+      filled -= barThirds;
       inForce = new Map();
     }
   }

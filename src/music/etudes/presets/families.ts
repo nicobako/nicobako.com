@@ -45,7 +45,7 @@ export const PRESET_FAMILIES: PresetFamily[] = [
     slug: "rhythms",
     name: "Rhythms",
     blurb:
-      "The durations the notes are said in: s sixteenth, e eighth, q quarter, h half, w whole, with a dot for dotted. A rhythm whose length does not divide the notes' is the point rather than a mistake — the two drift until they realign.",
+      "The durations the notes are said in: s sixteenth, e eighth, q quarter, h half, w whole, with a dot for dotted and a leading 3 for a triplet. A rhythm whose length does not divide the notes' is the point rather than a mistake — the two drift until they realign.",
     field: "rhythm",
     kind: "pattern",
     presets: RHYTHMS,
