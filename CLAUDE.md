@@ -213,13 +213,24 @@ is a child learning the words, not one who already has them.
   is. The **key** is a transposition handed to abcjs and picks a pitch *class* only; the
   **root octave** is the register the music is written in. Keeping those two apart is what
   lets changing the key never move the octave and changing the octave never move the key.
+  The **articulation** — how the bow strokes, as against how many notes it takes at
+  once — cycles with them, for the same reason: a stroke is a claim about the bow, and
+  the bow is a time axis. It is optional, and an empty field is the normal case: nothing
+  is marked and the generated length is exactly what it was before the axis existed.
+  A token that is a *word* may carry a trailing repeat count — `q14 h` is fourteen
+  quarters and a half, `stac3 mart` is three staccato then one hammered — which is
+  unambiguous precisely because a rhythm letter or a technique code is not a number. The
+  notes, bowing and fingering fields have no count, because there the number already *is*
+  the token; a long note pattern is what a preset is for. Each count is capped at
+  `MAX_NOTES` where it is read, since `MAX_NOTES` truncates the finished tune and would
+  otherwise never get the chance.
   `defineEtude` fills every default, so declaring an etude is a line. The clef is one token
   on the key line and nothing more: in ABC a letter names an absolute pitch whatever clef
   is in force, so `clef=alto` draws the same music lower on the staff and changes neither
   the arithmetic nor the playback — which is the entire viola and cello story.
 - `src/music/etudes/presets/` — the named constants, one module per family (`notes`,
-  `rhythms`, `bowings`, `instruments`), each entry carrying the prose that earns it a
-  name, plus `families.ts` listing them so `/music/etudes/presets/` and
+  `rhythms`, `bowings`, `articulations`, `instruments`), each entry carrying the prose
+  that earns it a name, plus `families.ts` listing them so `/music/etudes/presets/` and
   `presets/[family].astro` are maps over data rather than five hand-written pages. An
   `Instrument` is violin, viola or cello: a clef, a default root octave, and the open
   strings, which is all that actually differs. **Fingerings are not a family**: a finger
@@ -229,6 +240,21 @@ is a child learning the words, not one who already has them.
   picker is filled from whichever pattern is in the notes box, and the notes page
   documents each fingering beside the pattern it fingers. For the same reason a finger
   cannot be written inline with a note: it is said once, in the fingering.
+  `articulations.ts` is two layers for one reason: **a symbol cannot name a bow
+  stroke.** A dot is staccato on the string, spiccato off it or sautillé faster still,
+  and martelé is printed with dots, accents or hammer heads depending on the edition, so
+  each `Technique` declares the decoration drawn on every note of a run *and* the short
+  instruction written once above it — which is how a part actually tells a player.
+  Pizzicato also declares what to write when the bow comes back (`arco`) and that it is
+  not bowed, which is what drops the bow-direction marks while it lasts. `ARTICULATIONS`
+  on top of those is the named patterns *of* technique codes, the first of them empty,
+  because an unmarked etude is the normal case and deserves a name rather than an
+  absence. The three-octave note patterns sit near the top of the violin's range —
+  three octaves from root octave 4 reaches C7, and a mode that starts higher than Ionian
+  reaches past the instrument — so the range guard will refuse some mode-and-key
+  combinations and say which way to move. That is the guard working: a real three-octave
+  scale is played from the lowest string, which here means choosing the root octave and
+  key that put it there.
   `ascending-on-string.ts` is still violin only — its `STRINGS` table is violin open
   strings — and migrating it onto this model is the next step.
 - `src/music/etudes/ascending-on-string.ts` — climbing one string through the positions:

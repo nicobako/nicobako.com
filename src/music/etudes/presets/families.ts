@@ -10,6 +10,7 @@
 // one fingers.
 
 import { MODES, degreeLetters } from "../scale.ts";
+import { ARTICULATIONS } from "./articulations.ts";
 import { BOWINGS } from "./bowings.ts";
 import { INSTRUMENTS } from "./instruments.ts";
 import { NOTE_PATTERNS } from "./notes.ts";
@@ -17,7 +18,7 @@ import type { Preset } from "./preset.ts";
 import { RHYTHMS } from "./rhythms.ts";
 
 /** The builder field a family fills, for the families that fill one. */
-export type PresetField = "notes" | "rhythm" | "bowing";
+export type PresetField = "notes" | "rhythm" | "bowing" | "articulation";
 
 export interface PresetFamily {
   slug: string;
@@ -57,6 +58,15 @@ export const PRESET_FAMILIES: PresetFamily[] = [
     field: "bowing",
     kind: "pattern",
     presets: BOWINGS,
+  },
+  {
+    slug: "articulations",
+    name: "Articulations",
+    blurb:
+      "How the bow strokes, as against how many notes it takes at once \u2014 which is the bowing above. One technique code per note, with an optional count: stac3 mart is three staccato then one hammered. Leave it empty and nothing is marked, which is how most of these exercises are printed.",
+    field: "articulation",
+    kind: "pattern",
+    presets: ARTICULATIONS,
   },
   {
     slug: "modes",

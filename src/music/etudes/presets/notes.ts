@@ -29,7 +29,7 @@ export interface NotePattern extends Preset {
 export const NOTE_PATTERNS: NotePattern[] = [
   {
     slug: "scale",
-    name: "Scale",
+    name: "Scale, one octave",
     value: "1 2 3 4 5 6 7 1'",
     description:
       "One octave up. Eight notes against a rhythm or bowing of any other length is the simplest way to hear what the cycling does.",
@@ -58,11 +58,51 @@ export const NOTE_PATTERNS: NotePattern[] = [
     ],
   },
   {
+    slug: "scale-two-octaves",
+    name: "Scale, two octaves",
+    value: "1 2 3 4 5 6 7 1' 2' 3' 4' 5' 6' 7' 1''",
+    description:
+      "Fifteen notes up. Two octaves is where the left hand has to shift rather than reach, so the pattern is as much about getting there as about the notes.",
+    fingerings: [],
+  },
+  {
+    slug: "scale-three-octaves",
+    name: "Scale, three octaves",
+    value: "1 2 3 4 5 6 7 1' 2' 3' 4' 5' 6' 7' 1'' 2'' 3'' 4'' 5'' 6'' 7'' 1'''",
+    description:
+      "Twenty-two notes up, which on a violin written from root octave 4 reaches C7. It sits near the top of the instrument, so the range check will say so if the mode or the key pushes it over \u2014 a real three-octave scale is played from the lowest string, which here means picking the root octave and key that put it there.",
+    fingerings: [],
+  },
+  {
     slug: "up-and-down",
-    name: "Up and down",
+    name: "Up and down, one octave",
     value: "1 2 3 4 5 6 7 1' 7 6 5 4 3 2",
     description:
       "Up and back without repeating the top or the bottom note, so the pattern is fourteen notes and loops seamlessly.",
+    fingerings: [],
+  },
+  {
+    slug: "up-and-down-two-octaves",
+    name: "Up and down, two octaves",
+    value: "1 2 3 4 5 6 7 1' 2' 3' 4' 5' 6' 7' 1'' 7' 6' 5' 4' 3' 2' 1' 7 6 5 4 3 2",
+    description:
+      "Twenty-eight notes, up and back without repeating either end, so it loops seamlessly against a rhythm of any other length.",
+    fingerings: [],
+  },
+  {
+    slug: "up-and-down-three-octaves",
+    name: "Up and down, three octaves",
+    value: "1 2 3 4 5 6 7 1' 2' 3' 4' 5' 6' 7' 1'' 2'' 3'' 4'' 5'' 6'' 7'' 1''' 7'' 6'' 5'' 4'' 3'' 2'' 1'' 7' 6' 5' 4' 3' 2' 1' 7 6 5 4 3 2",
+    description:
+      "Forty-two notes, the full climb and descent. The longest plain pattern here, and the one where a bowing of three or five drifts furthest before it comes home.",
+    fingerings: [],
+  },
+  {
+    slug: "galamian-three-octaves",
+    name: "Galamian three-octave scale",
+    value: "1 3 2 1 2 3 4 5 6 7 1' 2' 3' 4' 5' 6' 7' 1'' 2'' 3'' 4'' 5'' 6'' 7'' 1''' 7'' 6'' 5'' 4'' 3'' 2'' 1'' 7' 6' 5' 4' 3' 2' 1' 7 6 5 4 3 2 1 3 2",
+    description:
+      "The three-octave scale with Galamian's turn at each end \u2014 1 3 2 before the climb and again after the descent. The turn is not ornament: it makes the scale forty-eight notes, which divides by 2, 3, 4, 6, 8, 12, 16 and 24, so every grouping of his acceleration comes out even. It also ends off the tonic, which is exactly what a pattern meant to be cycled wants.",
     fingerings: [],
   },
   {

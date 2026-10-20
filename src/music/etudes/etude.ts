@@ -7,6 +7,14 @@
 // 3 and a bowing of 2 do not repeat for 30 notes — so those three lists cycle
 // independently and the generated tune runs until they realign (see `cycleLength`).
 //
+// The articulation — how the bow strokes, as against how many notes it takes at once —
+// cycles with them, because a stroke is a claim about the bow and the bow is a time axis.
+// It is optional: an empty field marks nothing and contributes nothing to the cycle.
+//
+// A token that is a *word* may carry a trailing count, so `q14 h` is fourteen quarters
+// and a half and `stac3 mart` is three staccato then one hammered. The notes, bowing and
+// fingering fields have no count, because there the number already *is* the token.
+//
 // Three of the fields are not cycling axes, for reasons worth stating:
 //
 // - A **fingering** is an annotation. A finger means something only against a particular
@@ -37,6 +45,12 @@ import {
   instrumentMatching,
   type ClefSlug,
 } from "./presets/instruments.ts";
+import {
+  ARTICULATIONS,
+  TECHNIQUE_CODES,
+  techniqueFor,
+  type Technique,
+} from "./presets/articulations.ts";
 import { BOWINGS } from "./presets/bowings.ts";
 import { NOTE_PATTERNS, notePatternFor } from "./presets/notes.ts";
 import { findPreset, type Preset } from "./presets/preset.ts";
@@ -54,7 +68,11 @@ const RHYTHM_UNITS: Record<string, number> = { s: 2, e: 4, q: 8, h: 16, w: 32 };
 const MAX_NOTES = 192;
 
 const NOTE_PATTERN = /^([#b]*)([1-7])([',]*)$/;
-const RHYTHM_PATTERN = /^([seqhw])(\.?)$/;
+// The trailing digits are a repeat count: `q14` is fourteen quarters. A rhythm token is a
+// letter, so a number on the end can only be a count — which is exactly why the three
+// fields whose tokens are themselves numbers have no count.
+const RHYTHM_PATTERN = /^([seqhw])(\.?)(\d*)$/;
+const ARTICULATION_PATTERN = /^([a-z]+)(\d*)$/;
 const BOWING_PATTERN = /^[1-9][0-9]*$/;
 const FINGER_PATTERN = /^(?:[0-4]|-)$/;
 const METER_PATTERN = /^(\d+)\/(\d+)$/;
@@ -86,6 +104,8 @@ export interface Etude {
   bowing: string;
   /** Fingers by note, `-` for unmarked; empty for none. */
   fingering: string;
+  /** Bow strokes by note, by technique code; empty for an unmarked etude. */
+  articulation: string;
   mode: ModeSlug;
   /** Semitones handed to abcjs as `visualTranspose`, `[-6, 5]`. */
   keyOffset: number;
@@ -118,6 +138,7 @@ const DEFAULTS: Omit<Etude, "title" | "slug"> = {
   rhythm: "q",
   bowing: "1",
   fingering: "",
+  articulation: "",
   mode: "ionian",
   keyOffset: 0,
   clef: "treble",
@@ -165,6 +186,9 @@ export function describeEtude(etude: Etude): string {
     );
     parts.push(`${match ? match.name.toLowerCase() : etude.fingering.trim()} fingering`);
   }
+  if (etude.articulation.trim() !== "") {
+    parts.push(`${name(ARTICULATIONS, etude.articulation)} articulation`);
+  }
   parts.push(instrument ? instrument.name.toLowerCase() : `${etude.clef} clef`);
   return parts.join(", ") + ".";
 }
@@ -179,6 +203,28 @@ function gcd(a: number, b: number): number {
 
 function lcm(a: number, b: number): number {
   return (a / gcd(a, b)) * b;
+}
+
+/**
+ * The trailing count on a word token, or 1 when it has none.
+ *
+ * Capped at `MAX_NOTES` rather than left to the generator's own cap: `MAX_NOTES`
+ * truncates the finished tune, and without a cap here `q99999` would be expanded long
+ * before anything got to truncate it.
+ */
+function repeatCount(digits: string, token: string): { count: number; error?: string } {
+  if (digits === "") return { count: 1 };
+  const count = Number(digits);
+  if (count === 0) {
+    return { count: 0, error: `"${token}" asks for 0 of them — drop the 0 to say it once.` };
+  }
+  if (count > MAX_NOTES) {
+    return {
+      count: 0,
+      error: `"${token}" asks for ${count}, past the limit of ${MAX_NOTES} notes.`,
+    };
+  }
+  return { count };
 }
 
 function parseMember(part: string): NoteMember | null {
@@ -229,12 +275,19 @@ export function parseRhythm(input: string): { durations: number[]; errors: strin
   for (const token of tokenize(input)) {
     const match = RHYTHM_PATTERN.exec(token);
     if (!match) {
-      errors.push(`Rhythm "${token}" isn't one of s, e, q, h, w with an optional dot.`);
+      errors.push(
+        `Rhythm "${token}" isn't one of s, e, q, h, w with an optional dot and an optional count — q. is a dotted quarter, q14 is fourteen quarters.`,
+      );
       continue;
     }
-    const [, letter = "q", dot = ""] = match;
+    const [, letter = "q", dot = "", digits = ""] = match;
     const base = RHYTHM_UNITS[letter]!;
-    durations.push(dot ? base * 1.5 : base);
+    const { count, error } = repeatCount(digits, token);
+    if (error) {
+      errors.push(error);
+      continue;
+    }
+    for (let i = 0; i < count; i++) durations.push(dot ? base * 1.5 : base);
   }
 
   if (durations.length === 0 && errors.length === 0) errors.push("Add a rhythm.");
@@ -290,9 +343,54 @@ export function parseFingering(
   return { fingers, errors };
 }
 
-/** How many notes it takes for notes, rhythm and bowing to line up again from the start. */
-export function cycleLength(notes: number, rhythm: number, bowing: number): number {
-  return lcm(lcm(notes, rhythm), bowing);
+/**
+ * Bow strokes by note: one technique code per note, with an optional count — `stac3 mart`
+ * is three staccato then one hammered.
+ *
+ * An empty field is the normal case and not an error, as with the fingering: the notes,
+ * the rhythm and the bowing *are* the etude, while this is a marking on it.
+ */
+export function parseArticulation(input: string): {
+  techniques: Technique[];
+  errors: string[];
+} {
+  const techniques: Technique[] = [];
+  const errors: string[] = [];
+
+  for (const token of tokenize(input)) {
+    const match = ARTICULATION_PATTERN.exec(token);
+    const technique = match ? techniqueFor(match[1]!) : undefined;
+    if (!match || !technique) {
+      errors.push(
+        `Articulation "${token}" isn't one of ${TECHNIQUE_CODES.join(", ")}, each with an optional count — stac3 is three staccato.`,
+      );
+      continue;
+    }
+    const { count, error } = repeatCount(match[2]!, token);
+    if (error) {
+      errors.push(error);
+      continue;
+    }
+    for (let i = 0; i < count; i++) techniques.push(technique);
+  }
+
+  return { techniques, errors };
+}
+
+/**
+ * How many notes it takes for the cycling patterns to line up again from the start.
+ *
+ * The articulation is one of them — a stroke belongs to the bow, which is a time axis —
+ * and an unmarked etude passes 1, so its length is exactly what it was before the axis
+ * existed.
+ */
+export function cycleLength(
+  notes: number,
+  rhythm: number,
+  bowing: number,
+  articulation = 1,
+): number {
+  return lcm(lcm(lcm(notes, rhythm), bowing), articulation);
 }
 
 /**
@@ -380,6 +478,7 @@ export function buildEtude(etude: Etude): BuildResult {
   const { durations, errors: rhythmErrors } = parseRhythm(etude.rhythm);
   const { groups, errors: bowingErrors } = parseBowing(etude.bowing);
   const { fingers, errors: fingeringErrors } = parseFingering(etude.fingering, notes.length);
+  const { techniques, errors: articulationErrors } = parseArticulation(etude.articulation);
 
   const meterMatch = METER_PATTERN.exec(etude.meter.trim());
   const meterErrors = meterMatch ? [] : [`Meter "${etude.meter}" isn't a fraction like 4/4.`];
@@ -404,6 +503,7 @@ export function buildEtude(etude: Etude): BuildResult {
     ...rhythmErrors,
     ...bowingErrors,
     ...fingeringErrors,
+    ...articulationErrors,
     ...fingerShapeErrors,
     ...meterErrors,
     ...(noteErrors.length === 0 ? rangeErrors(etude, notes, mode) : []),
@@ -433,7 +533,12 @@ export function buildEtude(etude: Etude): BuildResult {
     Number(beatUnit) === 8 && Number(beats) % 3 === 0 ? unitsPerBeat * 3 : unitsPerBeat;
 
   const bowedNotes = groups.reduce((sum, group) => sum + group, 0);
-  const cycle = cycleLength(notes.length, durations.length, bowedNotes);
+  const cycle = cycleLength(
+    notes.length,
+    durations.length,
+    bowedNotes,
+    techniques.length || 1,
+  );
   const count = Math.min(etude.length ?? cycle, MAX_NOTES);
 
   const body: string[] = [];
@@ -447,6 +552,9 @@ export function buildEtude(etude: Etude): BuildResult {
   let groupIndex = 0;
   let remainingInGroup = groups[0]!;
   let bowIsDown = !etude.startUpBow;
+  // The technique is announced once per run rather than per note, so the loop has to
+  // remember the one before — across barlines too, unlike the accidentals.
+  let lastTechnique: Technique | null = null;
 
   for (let i = 0; i < count; i++) {
     const event = notes[i % notes.length]!;
@@ -455,9 +563,26 @@ export function buildEtude(etude: Etude): BuildResult {
     const startsGroup = remainingInGroup === groups[groupIndex]!;
     const groupSize = groups[groupIndex]!;
 
+    const technique = techniques.length > 0 ? techniques[i % techniques.length]! : null;
+    const bowed = technique?.bowed ?? true;
+
     let token = "";
     if (startsGroup && groupSize > 1) token += "(";
-    if (startsGroup && etude.showBowings) token += bowIsDown ? "!downbow!" : "!upbow!";
+    // The symbols are shared — a dot is staccato, spiccato or sautillé — so what names
+    // the stroke is the word above the run. It goes in where the stroke changes, and the
+    // one being left writes its own cancellation first: that is pizzicato's `arco`.
+    if (technique !== lastTechnique) {
+      if (lastTechnique?.cancel) token += `"^${lastTechnique.cancel}"`;
+      if (technique?.instruction) token += `"^${technique.instruction}"`;
+    }
+    // A bow direction under pizzicato would be nonsense; the alternation itself carries on
+    // underneath, so the bow comes back where it would have been.
+    if (startsGroup && etude.showBowings && bowed) {
+      token += bowIsDown ? "!downbow!" : "!upbow!";
+    }
+    // On the event, outside a double stop's brackets: a stroke is one thing the bow does,
+    // however many notes it sounds. The fingers stay inside, one per member.
+    if (technique?.mark) token += `!${technique.mark}!`;
 
     // A double stop is one event: its members go inside brackets and the duration sits
     // outside them, so the bow and the rhythm still see a single note.
@@ -466,6 +591,7 @@ export function buildEtude(etude: Etude): BuildResult {
     );
     token += members.length > 1 ? `[${members.join("")}]` : members[0]!;
     if (duration !== 1) token += String(duration);
+    lastTechnique = technique;
 
     remainingInGroup -= 1;
     if (remainingInGroup === 0) {

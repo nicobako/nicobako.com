@@ -14,6 +14,7 @@ const DEFAULTS = {
   notes: "1 2 3 4 5 6 7 1'",
   rhythm: "q e e",
   bowing: "2 1 1",
+  articulation: "",
   fingering: "",
   mode: "ionian",
   key: "0",
@@ -92,7 +93,8 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
             <>
               {RHYTHM_NAMES.map(([letter, name], i) => (
                 <>{i > 0 ? ", " : ""}<code>{letter}</code>{` ${name}`}</>
-              ))}. Add a dot for dotted: <code>q.</code>
+              ))}. Add a dot for dotted: <code>q.</code>, and a count to repeat
+              one: <code>q14 h</code> is fourteen quarter notes and a half.
             </>
           )}
           {family.field === "bowing" && (
@@ -100,6 +102,19 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
               Slur lengths — how many notes go under one bow. <code>2 2 1 1</code> is
               slur two, slur two, then two separate bows. Bow direction just alternates,
               so it is worked out for you rather than typed.
+            </>
+          )}
+          {family.field === "articulation" && (
+            <>
+              How the bow strokes, which is a separate question from how many notes it
+              takes at once. Leave it empty and nothing is marked. One code per note —
+              <code>leg</code>, <code>det</code>, <code>ten</code>, <code>acc</code>,
+              <code>marc</code>, <code>mart</code>, <code>stac</code>, <code>spic</code>,
+              <code>saut</code>, <code>coll</code>, <code>port</code>,
+              <code>pizz</code> — each with an optional count, so <code>stac3 mart</code>
+              is three staccato then one hammered, cycled against the notes like the
+              rhythm and the bowing. <code>pizz</code> drops the bow-direction marks while
+              it lasts and writes <em>arco</em> where the bow comes back.
             </>
           )}
         </p>
@@ -247,7 +262,7 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
   // Which control each URL parameter restores into. The builder's state is small and
   // flat, so the query string is the whole store — no localStorage to fall out of sync.
   const PARAMS = [
-    "title", "notes", "rhythm", "bowing", "fingering",
+    "title", "notes", "rhythm", "bowing", "articulation", "fingering",
     "mode", "key", "instrument", "octave", "meter", "tempo", "length",
   ];
 
@@ -261,6 +276,7 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
       notes: field("notes").value,
       rhythm: field("rhythm").value,
       bowing: field("bowing").value,
+      articulation: field("articulation").value,
       fingering: field("fingering").value,
       mode,
       keyOffset: Number(select("key").value) || 0,

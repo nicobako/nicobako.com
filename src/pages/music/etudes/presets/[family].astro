@@ -9,6 +9,7 @@ import {
 } from "../../../../music/etudes/presets/families.ts";
 import { INSTRUMENTS } from "../../../../music/etudes/presets/instruments.ts";
 import { NOTE_PATTERNS } from "../../../../music/etudes/presets/notes.ts";
+import { TECHNIQUES } from "../../../../music/etudes/presets/articulations.ts";
 import { MODES, degreeLetters } from "../../../../music/etudes/scale.ts";
 import {
   buildEtude,
@@ -47,7 +48,10 @@ const examples =
         const etude = defineEtude({
           ...FIXTURE,
           [family.field!]: preset.value,
-          length: family.field === "notes" ? null : 8,
+          // A note pattern and an articulation each run their own full cycle, since the
+          // length is the thing being shown; the others act on eight notes of the scale.
+          length:
+            family.field === "notes" || family.field === "articulation" ? null : 8,
         });
         return { preset, result: buildEtude(etude) };
       })
@@ -151,6 +155,50 @@ for (const { instrument, result } of clefExamples) {
           ))}
         </tbody>
       </table>
+    )
+  }
+
+  {
+    family.slug === "articulations" && (
+      <table class="degrees">
+        <thead>
+          <tr>
+            <>
+              <th>Code</th>
+              <th>Technique</th>
+              <th>Drawn</th>
+              <th>Written</th>
+            </>
+          </tr>
+        </thead>
+        <tbody>
+          {TECHNIQUES.map((technique) => (
+            <tr>
+              <th scope="row">
+                <code>{technique.code}</code>
+              </th>
+              <td>{technique.name}</td>
+              <td>{technique.mark ?? "\u2014"}</td>
+              <td>
+                {technique.instruction ?? "\u2014"}
+                {technique.cancel && `, then ${technique.cancel}`}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+
+  {
+    family.slug === "articulations" && (
+      <p class="description">
+        A dot means staccato on the string, spiccato off it, or sautillé faster
+        still, and martelé is printed with dots, accents or hammer heads depending
+        on the edition — so a symbol cannot name a stroke on its own. Each technique
+        that shares its symbol, or has none, writes its name once above the run instead,
+        which is how a part actually tells a player.
+      </p>
     )
   }
 
