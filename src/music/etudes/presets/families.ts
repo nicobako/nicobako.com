@@ -5,9 +5,8 @@
 // is the only thing they disagree about: a pattern family can be notated, and the modes
 // and instruments are reference tables instead.
 //
-// Fingerings are deliberately *not* a family. They belong to a note pattern — see
-// `notes.ts` — so they are documented on the note patterns' page beside the pattern each
-// one fingers.
+// Fingerings are deliberately *not* a family. A finger belongs to the note it plays, so
+// it is written on the note — see `notes.ts` — and a fingered scale is a note pattern.
 
 import { MODES, degreeLetters } from "../scale.ts";
 import { ARTICULATIONS } from "./articulations.ts";
@@ -36,7 +35,7 @@ export const PRESET_FAMILIES: PresetFamily[] = [
     slug: "notes",
     name: "Note patterns",
     blurb:
-      "The succession of scale degrees that is the etude itself. Degrees 1–7, with ' and , for octaves, # or b in front to alter one, and + to sound notes together as a double stop. Each pattern carries its own named fingerings, because a finger only means something against a particular note.",
+      "The succession of scale degrees that is the etude itself. Degrees 1–7, with u or d after for an octave up or down, s or b in front for sharp or flat, a dot and a finger last (3.2 is degree 3, second finger), and a comma to sound notes together as a double stop (1,3). The finger is written on the note because it only means something against that note.",
     field: "notes",
     kind: "pattern",
     presets: NOTE_PATTERNS,
