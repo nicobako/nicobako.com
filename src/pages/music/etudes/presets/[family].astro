@@ -8,7 +8,6 @@ import {
   type PresetFamily,
 } from "../../../../music/etudes/presets/families.ts";
 import { INSTRUMENTS } from "../../../../music/etudes/presets/instruments.ts";
-import { NOTE_PATTERNS } from "../../../../music/etudes/presets/notes.ts";
 import { TECHNIQUES } from "../../../../music/etudes/presets/articulations.ts";
 import { MODES, degreeLetters } from "../../../../music/etudes/scale.ts";
 import {
@@ -36,7 +35,7 @@ const { family } = Astro.props;
 type Fixture = Partial<Etude> & Pick<Etude, "title">;
 const FIXTURE: Fixture = {
   title: "Example",
-  notes: "1 2 3 4 5 6 7 1'",
+  notes: "1 2 3 4 5 6 7 1u",
   rhythm: "q",
   bowing: "1",
   keyOffset: 2,
@@ -55,26 +54,6 @@ const examples =
         });
         return { preset, result: buildEtude(etude) };
       })
-    : [];
-
-// A fingering belongs to a note pattern, so they are documented here beside the pattern
-// each one fingers rather than as a family of their own — and each is shown playing that
-// pattern, which is the only context a finger means anything in.
-const fingered =
-  family.slug === "notes"
-    ? NOTE_PATTERNS.flatMap((pattern) =>
-        pattern.fingerings.map((fingering) => ({
-          pattern,
-          fingering,
-          result: buildEtude(
-            defineEtude({
-              ...FIXTURE,
-              notes: pattern.value,
-              fingering: fingering.value,
-            }),
-          ),
-        })),
-      )
     : [];
 
 // The same eight notes on each instrument's clef: the clearest statement that a clef is
@@ -98,13 +77,6 @@ for (const { preset, result } of examples) {
   if (result.errors.length > 0) {
     throw new Error(
       `Preset "${preset.slug}" can't be built: ${result.errors.join(" ")}`,
-    );
-  }
-}
-for (const { pattern, fingering, result } of fingered) {
-  if (result.errors.length > 0) {
-    throw new Error(
-      `Fingering "${fingering.slug}" of "${pattern.slug}" can't be built: ${result.errors.join(" ")}`,
     );
   }
 }
@@ -257,28 +229,6 @@ for (const { instrument, result } of clefExamples) {
               audio={false}
             />
           ))}
-        {fingered.filter((example) => example.pattern.slug === preset.slug)
-          .length > 0 && (
-          <div class="fingerings">
-            <h3>Fingerings</h3>
-            {fingered
-              .filter((example) => example.pattern.slug === preset.slug)
-              .map((example) => (
-                <div class="fingering">
-                  <h4>{example.fingering.name}</h4>
-                  <p class="pattern">
-                    <code>{example.fingering.value}</code>
-                  </p>
-                  <p class="description">{example.fingering.description}</p>
-                  <AbcTrack
-                    abcText={example.result.abc}
-                    transposition={example.result.transposition}
-                    audio={false}
-                  />
-                </div>
-              ))}
-          </div>
-        )}
       </section>
     ))
   }
@@ -307,26 +257,6 @@ for (const { instrument, result } of clefExamples) {
     margin: 0 0 1rem;
     color: var(--muted);
     font-size: 0.95rem;
-  }
-
-  .fingerings {
-    margin-top: 1.5rem;
-    padding-left: 1rem;
-    border-left: 2px solid var(--border);
-  }
-
-  .fingerings h3 {
-    font-size: 1rem;
-    margin: 0 0 0.75rem;
-  }
-
-  .fingering {
-    margin-bottom: 1.5rem;
-  }
-
-  .fingering h4 {
-    font-size: 0.95rem;
-    margin: 0 0 0.25rem;
   }
 
   .degrees {

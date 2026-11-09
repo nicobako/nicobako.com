@@ -3,7 +3,6 @@ import Layout from "../../layouts/Layout.astro";
 import { KEYS, MODES } from "../../music/etudes/scale.ts";
 import { INSTRUMENTS } from "../../music/etudes/presets/instruments.ts";
 import { PRESET_FAMILIES, familyHref, PRESETS_PATH } from "../../music/etudes/presets/families.ts";
-import { notePatternFor } from "../../music/etudes/presets/notes.ts";
 import { RHYTHM_NAMES } from "../../music/etudes/presets/rhythms.ts";
 
 // The starting etude: a scale in broken thirds, slurred two at a time, against a rhythm
@@ -11,11 +10,10 @@ import { RHYTHM_NAMES } from "../../music/etudes/presets/rhythms.ts";
 // tool rather than a plain scale.
 const DEFAULTS = {
   title: "Etude",
-  notes: "1 2 3 4 5 6 7 1'",
+  notes: "1 2 3 4 5 6 7 1u",
   rhythm: "q e e",
   bowing: "2 1 1",
   articulation: "",
-  fingering: "",
   mode: "ionian",
   key: "0",
   instrument: "violin",
@@ -28,12 +26,9 @@ const DEFAULTS = {
 // picker over a text box: the names are the vocabulary, the box is what keeps any other
 // pattern possible.
 //
-// The fingering is not one of them. A fingering belongs to a note pattern rather than to
-// a list of its own, so its picker is filled from whichever pattern is in the notes box
-// and is written out separately below.
+// There is no fingering field: a finger belongs to the note it plays, so it is written on
+// the note in the notes box.
 const FIELDS = PRESET_FAMILIES.filter((family) => family.field !== undefined);
-
-const DEFAULT_FINGERINGS = notePatternFor(DEFAULTS.notes)?.fingerings ?? [];
 
 // The key options are per mode, so the page renders the default mode's and the script
 // relabels them when the mode changes. Every mode has the same twelve offsets.
@@ -44,7 +39,7 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
 
 <Layout
   title="Etude Builder — Nico Bako"
-  description="Build your own etude from a note pattern, a rhythm, a bowing and a fingering, in any mode and key, for violin, viola or cello."
+  description="Build your own etude from a fingered note pattern, a rhythm, a bowing and an articulation, in any mode and key, for violin, viola or cello."
 >
   <h1 class="no-print">Etude Builder</h1>
   <p class="no-print">
@@ -74,19 +69,22 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
           name={family.field}
           type="text"
           spellcheck="false"
+          autocapitalize="off"
+          autocorrect="off"
           value={DEFAULTS[family.field as keyof typeof DEFAULTS]}
         />
         <p class="hint">
           {family.field === "notes" && (
             <>
-              Scale degrees <code>1</code>–<code>7</code> of the mode. Add <code>'</code> for an
-              octave up and <code>,</code> for an octave down, and <code>#</code> or
-              <code>b</code> in front to alter a degree (<code>#7</code> raises the
-              seventh of whichever mode is selected, which is what gives harmonic minor
-              in Aeolian). Join notes with <code>+</code> for a double stop —
-              <code>1+3</code> — which takes one bow and one rhythm value, the same as
-              any single note. Which finger plays a note is the fingering's business,
-              below.
+              Scale degrees <code>1</code>–<code>7</code> of the mode. Add <code>u</code>
+              after for an octave up and <code>d</code> for an octave down
+              (<code>1u</code>, <code>5dd</code>), and <code>s</code> or <code>b</code>
+              in front for sharp or flat (<code>s7</code> raises the seventh of whichever
+              mode is selected, which is what gives harmonic minor in Aeolian). A finger
+              goes last, after a dot: <code>3.2</code> is degree 3 with the second
+              finger, and a note with no finger is left unmarked. Join notes with a comma
+              for a double stop — <code>1.1,3.3</code> — which takes one bow and one
+              rhythm value, the same as any single note.
             </>
           )}
           {family.field === "rhythm" && (
@@ -123,28 +121,6 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
         </p>
       </div>
     ))}
-
-    <div class="field">
-      <div class="field-head">
-        <label for="fingering">Fingering</label>
-        <select class="picker" id="fingering-picker" data-picker-for="fingering" aria-label="Fingerings for this note pattern">
-          <option value="">Unmarked</option>
-          {DEFAULT_FINGERINGS.map((fingering) => (
-            <option value={fingering.value}>{fingering.name}</option>
-          ))}
-          <option value="__custom__">Custom…</option>
-        </select>
-        <a class="about" href={familyHref("notes")}>About</a>
-      </div>
-      <input id="fingering" name="fingering" type="text" spellcheck="false" value={DEFAULTS.fingering} />
-      <p class="hint">
-        One finger per note, <code>0</code>–<code>4</code>, with <code>-</code> to leave a
-        note unmarked and <code>+</code> between the fingers of a double stop. A fingering
-        marks notes rather than drifting against them, so its length has to divide the note
-        pattern's. The named ones are the ways to play <em>this</em> pattern, so the list
-        changes with the notes above.
-      </p>
-    </div>
 
     <div class="row">
       <div class="field field-small">
@@ -245,10 +221,16 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
 </Layout>
 
 <script>
-  import { buildEtude, describeEtude, defineEtude, type Etude } from "../../music/etudes/etude.ts";
+  import {
+    buildEtude,
+    describeEtude,
+    defineEtude,
+    fromLegacyNotes,
+    parseNotes,
+    type Etude,
+  } from "../../music/etudes/etude.ts";
   import { KEYS, type ModeSlug } from "../../music/etudes/scale.ts";
   import { instrumentFor } from "../../music/etudes/presets/instruments.ts";
-  import { notePatternFor } from "../../music/etudes/presets/notes.ts";
   import { AbcEditor } from "../../music/abc-editor/abc-editor.ts";
 
   const form = document.getElementById("builder") as HTMLFormElement;
@@ -265,7 +247,7 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
   // Which control each URL parameter restores into. The builder's state is small and
   // flat, so the query string is the whole store — no localStorage to fall out of sync.
   const PARAMS = [
-    "title", "notes", "rhythm", "bowing", "articulation", "fingering",
+    "title", "notes", "rhythm", "bowing", "articulation",
     "mode", "key", "instrument", "octave", "meter", "tempo", "length",
   ];
 
@@ -280,7 +262,6 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
       rhythm: field("rhythm").value,
       bowing: field("bowing").value,
       articulation: field("articulation").value,
-      fingering: field("fingering").value,
       mode,
       keyOffset: Number(select("key").value) || 0,
       clef: instrumentFor(select("instrument").value).clef,
@@ -304,30 +285,6 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
       option.textContent = key.label;
     }
     select("key").value = chosen;
-  }
-
-  /**
-   * Refill the fingering picker from the note pattern now in the notes box.
-   *
-   * A fingering belongs to a pattern, so the named ones are whatever that pattern
-   * carries — and a typed pattern simply has none to offer. Built with
-   * `createElement` rather than assembled as markup.
-   */
-  function refreshFingerings(): void {
-    const picker = select("fingering-picker");
-    const fingerings = notePatternFor(field("notes").value)?.fingerings ?? [];
-
-    picker.textContent = "";
-    for (const [value, label] of [
-      ["", "Unmarked"],
-      ...fingerings.map((fingering) => [fingering.value, fingering.name] as const),
-      [CUSTOM, "Custom…"],
-    ] as [string, string][]) {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = label;
-      picker.appendChild(option);
-    }
   }
 
   /**
@@ -360,13 +317,21 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     if (params.has("mode")) select("mode").value = params.get("mode")!;
     relabelKeys();
 
+    // Notes used to be spelled `1'`, `7,` and `1+3`, with the fingers in a field of their
+    // own. A bookmark is an etude, so an old one is respelled — fingers moved onto the
+    // notes — rather than left to fail.
+    const notes = params.get("notes");
+    if (notes !== null && (params.has("fingering") || parseNotes(notes).errors.length > 0)) {
+      const respelled = fromLegacyNotes(notes, params.get("fingering") ?? "");
+      if (respelled !== null) params.set("notes", respelled);
+    }
+
     for (const name of PARAMS) {
       const value = params.get(name);
       if (value === null) continue;
       const el = document.getElementById(name) as HTMLInputElement | HTMLSelectElement | null;
       if (el) el.value = value;
     }
-    refreshFingerings();
     if (params.has("bows")) field("show-bowings").checked = params.get("bows") !== "0";
     if (params.has("up")) field("start-up-bow").checked = params.get("up") === "1";
     syncPickers();
@@ -416,9 +381,6 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     // A `<select>` fires `input` before `change`, so re-syncing the pickers here would
     // point one back at the box's old contents before its own handler had filled it.
     const target = event.target as HTMLElement;
-    // A new note pattern brings its own fingerings, so the picker is rebuilt before the
-    // pickers are re-synced against what is in the boxes.
-    if (target.id === "notes") refreshFingerings();
     if (!target.classList.contains("picker")) syncPickers();
     render();
   });
@@ -429,12 +391,6 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     picker.addEventListener("change", () => {
       if (picker.value === CUSTOM) return;
       field(picker.dataset.pickerFor!).value = picker.value;
-      // Changing the notes changes which fingerings exist; the one in the box may not be
-      // among them any more, which `syncPickers` then reports as Custom.
-      if (picker.dataset.pickerFor === "notes") {
-        refreshFingerings();
-        syncPickers();
-      }
       render();
     });
   }

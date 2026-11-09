@@ -206,11 +206,16 @@ is a child learning the words, not one who already has them.
 - `src/music/etudes/etude.ts` — what an etude *is*, and the generator that turns one into
   ABC. Notes, rhythm and bowing cycle independently and the tune runs until they realign
   (`cycleLength`), which is the whole premise: five notes against a rhythm of three
-  against a bowing of two do not repeat for thirty notes. Three fields are deliberately
-  *not* cycling axes. A **fingering** is an annotation — a finger means something only
-  against a particular note, so its length must divide the note pattern's and it stays out
-  of the lcm, or a marking would both land on the wrong note and change how long the etude
-  is. The **key** is a transposition handed to abcjs and picks a pitch *class* only; the
+  against a bowing of two do not repeat for thirty notes. A **finger is part of its note**,
+  written after it — `3.2` is degree 3, second finger — rather than a pattern of its own:
+  a finger means something only against a particular note, and a separate fingering that
+  had to be kept in step with the notes was hard to use. The notes are spelled for a phone
+  keyboard: digits, letters, `.` and `,` only — `u`/`d` after a degree for an octave up or
+  down, `s`/`b` in front for sharp or flat, `,` to join a double stop (`1.1,3.3`) — never
+  `'`, `+` or `-`, which sit on the symbol pages. Parsing is case-insensitive, since a phone
+  capitalises the first letter of a field. `fromLegacyNotes` respells the old `1'`/`7,`/`1+3`
+  syntax and folds in an old `fingering` parameter, so bookmarked builder links still open.
+  Two fields are deliberately *not* cycling axes. The **key** is a transposition handed to abcjs and picks a pitch *class* only; the
   **root octave** is the register the music is written in. Keeping those two apart is what
   lets changing the key never move the octave and changing the octave never move the key.
   The **articulation** — how the bow strokes, as against how many notes it takes at
@@ -220,7 +225,7 @@ is a child learning the words, not one who already has them.
   A token that is a *word* may carry a trailing repeat count — `q14 h` is fourteen
   quarters and a half, `stac3 mart` is three staccato then one hammered — which is
   unambiguous precisely because a rhythm letter or a technique code is not a number. The
-  notes, bowing and fingering fields have no count, because there the number already *is*
+  notes and bowing fields have no count, because there the number already *is*
   the token; a long note pattern is what a preset is for. Each count is capped at
   `MAX_NOTES` where it is read, since `MAX_NOTES` truncates the finished tune and would
   otherwise never get the chance. A *leading* `3` on a rhythm token is unambiguous for the
@@ -243,12 +248,9 @@ is a child learning the words, not one who already has them.
   `presets/[family].astro` are maps over data rather than five hand-written pages. An
   `Instrument` is violin, viola or cello: a clef, a default root octave, and the open
   strings, which is all that actually differs. **Fingerings are not a family**: a finger
-  only means something against a particular note, so a fingering belongs to a note
-  pattern and each `NotePattern` carries its own named ones ("open string, first
-  position", "single string", "shifting" for the plain scale). The builder's fingering
-  picker is filled from whichever pattern is in the notes box, and the notes page
-  documents each fingering beside the pattern it fingers. For the same reason a finger
-  cannot be written inline with a note: it is said once, in the fingering.
+  only means something against a particular note, so it is written on the note, and a
+  fingered scale is simply a note pattern of its own ("Scale, open string, first
+  position", "Scale, single string", "Scale, shifting" beside the plain scale).
   `articulations.ts` is two layers for one reason: **a symbol cannot name a bow
   stroke.** A dot is staccato on the string, spiccato off it or sautillé faster still,
   and martelé is printed with dots, accents or hammer heads depending on the edition, so
