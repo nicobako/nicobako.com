@@ -18,11 +18,16 @@ import {
   ITEM_SPAWNS,
   TEACHER_SPAWNS,
   MONITOR_SPAWNS,
+  MYSTERY_SPAWNS,
+  POWERS,
   PLAYER_START,
   MAX_HEALTH,
   START_LIVES,
   TOTAL_LEVELS,
+  BONUS_LIFE_LEVEL,
+  damageBonusFor,
   type Cell,
+  type Power,
 } from "./level";
 
 // ---------------------------------------------------------------------------
@@ -44,6 +49,7 @@ const ATTACK_GRACE = 1.2; // breathing room before the first hit
 const FLASH_TIME = 0.35; // how long an enemy glows red after attacking
 const HURT_TIME = 0.2; // how long an enemy flashes white when you hit it
 const STUN_TIME = 2.5; // how long a hall monitor stays dizzy after you hit it
+const POWER_FLASH = 0.5; // how long the board flashes when a mystery power goes off
 const PLAYER_GLIDE = 380; // px / sec the pawn visually slides between tiles
 const ENEMY_GLIDE = 240; // px / sec enemies visually slide between tiles
 
@@ -80,6 +86,8 @@ const COL = {
   monitor: k.rgb(196, 120, 232),
   attack: k.rgb(240, 70, 70), // flash colour while attacking
   stun: k.rgb(150, 215, 240), // pale blink while a monitor is dizzy
+  mystery: k.rgb(170, 130, 245), // the mystery square
+  spark: k.rgb(255, 240, 150), // the flash when a power goes off
   black: k.rgb(20, 20, 28),
   white: k.rgb(245, 245, 250),
 };
@@ -126,6 +134,11 @@ interface Item {
   y: number;
   key: string;
   collected: boolean;
+}
+
+interface Mystery extends Cell {
+  power: Power; // what's inside — unknown until you step on it
+  taken: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -185,6 +198,16 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
   const items: Item[] = ITEM_SPAWNS.map((s) => ({ x: s.x, y: s.y, key: s.key, collected: false }));
   const inventory: string[] = [];
 
+  // The mystery square: one spot, one power, both drawn at random this level.
+  // What's inside is only revealed when you walk onto it.
+  const mystery: Mystery = {
+    ...MYSTERY_SPAWNS[randInt(0, MYSTERY_SPAWNS.length - 1)],
+    power: POWERS[randInt(0, POWERS.length - 1)],
+    taken: false,
+  };
+  let held: Power | null = null; // the power you're carrying, until you set it off
+  let powerFlash = 0; // > 0 means the board is flashing from a power going off
+
   let health = MAX_HEALTH;
   let phase: Phase = "playing";
   let moveCd = 0;
@@ -193,12 +216,15 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
   const introByLevel: Record<number, string> = {
     1: "Level 1: the teachers stand still. Grab tools, then defeat them!",
     2: "Level 2: the teachers are roaming the halls — be careful!",
-    3: "Level 3: teachers AND hall monitors! You can't beat monitors, but Space stuns them — slip past!",
+    3: "Level 3: teachers AND hall monitors! You get a spare life and a harder punch — and Space stuns monitors so you can slip past.",
   };
   let message = introByLevel[level] ?? "Defeat every angry teacher!";
 
   // ----- helpers -----
   const power = () => inventory.reduce((s, key) => s + ITEM_TYPES[key].power, 0);
+  // What one press of Space takes off a teacher: your fists, your tools, and on
+  // the last level a bonus, so the hardest board is also the easiest to hit on.
+  const swing = () => 1 + power() + damageBonusFor(level);
   const enemyAt = (x: number, y: number) =>
     enemies.find((e) => e.alive && e.x === x && e.y === y);
   // Fighting is forgiving: any of the 8 surrounding squares counts as "next to".
@@ -230,6 +256,12 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
   }
 
   function collectAt(x: number, y: number): void {
+    if (!mystery.taken && mystery.x === x && mystery.y === y) {
+      mystery.taken = true;
+      held = mystery.power;
+      message = `Mystery square! You found ${mystery.power.name} — ${mystery.power.blurb}. Press Z to use it.`;
+      return;
+    }
     const item = items.find((i) => !i.collected && i.x === x && i.y === y);
     if (!item) return;
     item.collected = true;
@@ -261,25 +293,64 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
     }
     // Every hit lands. Your tools make each hit stronger, so a well-armed
     // player knocks a teacher out in one press.
-    const damage = 1 + power();
+    const damage = swing();
     t.hp -= damage;
     t.hurtTimer = HURT_TIME;
     if (t.hp <= 0) {
       t.alive = false;
       message = `You defeated ${t.name}!`;
-      if (teachersLeft() === 0) {
-        if (level < TOTAL_LEVELS) {
-          phase = "levelclear";
-          clearTimer = 1.8;
-          message = `Level ${level} cleared! Get ready...`;
-        } else {
-          phase = "won";
-          message = "You defeated every angry teacher in the whole school!";
-        }
-      }
+      checkCleared();
     } else {
       message = `You hit ${t.name}! ${t.hp} health left — keep going!`;
     }
+  }
+
+  // Called wherever a teacher goes down — a punch or a power, same ending.
+  function checkCleared(): void {
+    if (teachersLeft() > 0) return;
+    if (level < TOTAL_LEVELS) {
+      phase = "levelclear";
+      clearTimer = 1.8;
+      message =
+        level + 1 === BONUS_LIFE_LEVEL
+          ? `Level ${level} cleared! The last one is the worst — have an extra life.`
+          : `Level ${level} cleared! Get ready...`;
+    } else {
+      phase = "won";
+      message = "You defeated every angry teacher in the whole school!";
+    }
+  }
+
+  // Set off the power from the mystery square. It reaches the whole board, so
+  // it works from anywhere — there's no need to be next to anybody.
+  function unleash(): void {
+    if (phase !== "playing") return;
+    if (!held) {
+      message = "No special power yet — find the purple ? square!";
+      return;
+    }
+    const p = held;
+    held = null;
+    powerFlash = POWER_FLASH;
+    let felled = 0;
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      if (p.stuns === "teachers" && e.kind !== "teacher") continue;
+      e.stunTimer = p.stunSeconds;
+      e.flashTimer = 0;
+      e.attackTimer = Math.max(e.attackTimer, p.stunSeconds + 0.5);
+      if (e.kind !== "teacher" || p.damage === 0) continue;
+      e.hp -= p.damage;
+      e.hurtTimer = HURT_TIME;
+      if (e.hp <= 0) {
+        e.alive = false;
+        felled += 1;
+      }
+    }
+    message = felled
+      ? `${p.name.toUpperCase()}! ${felled} teacher${felled === 1 ? "" : "s"} went down!`
+      : `${p.name.toUpperCase()}! ${p.blurb}.`;
+    checkCleared();
   }
 
   // An adjacent enemy hits the player (and glows red) once its cooldown elapses.
@@ -328,9 +399,10 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
     if (phase === "won") return "You beat the whole school! Press R to play again.";
     if (phase === "lost") return "Press R to start over from Level 1.";
     if (phase === "levelclear") return "Level complete — here comes the next one!";
+    if (held) return `You're holding ${held.name} — press Z to set it off!`;
     const t = adjacentTeacher();
     if (t) {
-      return 1 + power() >= t.hp
+      return swing() >= t.hp
         ? `Press Space to defeat ${t.name}!`
         : `Press Space to hit ${t.name} (${t.hp} health left). Tools hit harder!`;
     }
@@ -340,12 +412,14 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
         ? `The ${mon.name} is dizzy — run past it now!`
         : `Press Space to stun the ${mon.name} and slip past it.`;
     }
+    if (!mystery.taken) return "There's a purple ? square somewhere — step on it for a special power.";
     return "Arrow keys / WASD to move. Collect tools, then fight the teachers.";
   }
 
   // ----- input -----
   k.onKeyPress("f", () => fight());
   k.onKeyPress("space", () => fight());
+  k.onKeyPress("z", () => unleash());
   k.onKeyPress("r", () => {
     if (phase === "won" || phase === "lost") k.go("game", 1, START_LIVES);
   });
@@ -368,7 +442,11 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
 
     if (phase === "levelclear") {
       clearTimer -= dt;
-      if (clearTimer <= 0) k.go("game", level + 1, lives);
+      if (clearTimer <= 0) {
+        // Arriving on the hardest level earns a spare life.
+        const next = level + 1;
+        k.go("game", next, lives + (next === BONUS_LIFE_LEVEL ? 1 : 0));
+      }
       return;
     }
 
@@ -377,6 +455,8 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
       if (diedTimer <= 0) k.go("game", level, lives); // retry this level, fresh health
       return;
     }
+
+    if (powerFlash > 0) powerFlash -= dt;
 
     if (phase === "playing") {
       // player walking (held arrow keys move at a steady pace)
@@ -554,9 +634,35 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
       k.drawText({ text: type.label, pos: ctr, size: 18, color: COL.black, anchor: "center" });
     }
 
+    // the mystery square — a gently pulsing "?" box
+    if (!mystery.taken) {
+      const ctr = tileCenter(mystery.x, mystery.y);
+      const pulse = 13 + Math.sin(k.time() * 4) * 2;
+      k.drawRect({
+        pos: ctr.sub(k.vec2(pulse, pulse)),
+        width: pulse * 2,
+        height: pulse * 2,
+        radius: 6,
+        color: COL.mystery,
+        outline: { color: COL.white, width: 2 },
+      });
+      k.drawText({ text: "?", pos: ctr, size: 20, color: COL.white, anchor: "center" });
+    }
+
     // enemies + player
     for (const e of enemies) if (e.alive) drawEnemy(e);
     drawFace(playerPix, "happy", COL.player);
+
+    // a bright wash over the board the moment a power goes off
+    if (powerFlash > 0) {
+      k.drawRect({
+        pos: k.vec2(BOARD_X, BOARD_Y),
+        width: COLS * TILE,
+        height: ROWS * TILE,
+        color: COL.spark,
+        opacity: (powerFlash / POWER_FLASH) * 0.45,
+      });
+    }
 
     // ----- top HUD -----
     k.drawRect({ pos: k.vec2(0, 0), width: GAME_W, height: BOARD_Y, color: COL.hud });
@@ -589,8 +695,13 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
     const tools = inventory.length
       ? inventory.map((key) => `${ITEM_TYPES[key].name} +${ITEM_TYPES[key].power}`).join("   ")
       : "none yet — grab weapons in the classrooms!";
+    const powerSlot = held
+      ? `     Special: ${held.name} (press Z)`
+      : mystery.taken
+        ? ""
+        : "     Special: find the ? square";
     k.drawText({
-      text: `Attack power +${power()}     Tools: ${tools}`,
+      text: `Attack power +${power()}     Tools: ${tools}${powerSlot}`,
       pos: k.vec2(16, BOARD_BOTTOM + 12),
       size: 13,
       color: COL.text,
@@ -607,7 +718,8 @@ k.scene("game", (level: number = 1, lives: number = START_LIVES) => {
       width: GAME_W - 32,
     });
     k.drawText({
-      text: "Arrow keys / WASD: move   •   Space (or F): fight a nearby teacher   •   R: restart",
+      text:
+        "Arrow keys / WASD: move   •   Space (or F): fight a nearby teacher   •   Z: special power   •   R: restart",
       pos: k.vec2(16, BOARD_BOTTOM + 64),
       size: 12,
       color: COL.dim,
