@@ -23,7 +23,31 @@ Requires Node `>=22.12.0`.
 
 - `src/layouts/Layout.astro` — the HTML document shell. Accepts `title` and `description` props (with defaults). Composes `Header` + `Footer`, exposes `<slot />` for page content. Owns **all global CSS** via `<style is:global>`, including the design-token `:root` custom properties and their `prefers-color-scheme: dark` overrides.
 - `src/pages/*.astro` — each file is a route. Pages import `Layout` and pass content into its slot. Data-driven sections (e.g., focus cards, stack tags on the home page) are defined as arrays in the page's frontmatter `---` block and mapped to markup — edit the arrays to change content rather than duplicating markup.
-- `src/components/` — shared UI pieces. `Header.astro` drives the primary navigation (nav links are an array in its frontmatter). It also carries a Share menu (Share…, Copy link, Print) on every page, because an installed PWA has no browser toolbar to do any of the three; Share… only appears where `navigator.share` exists. It is the only print, share or copy-link control on the site: pages don't carry their own. `Footer.astro` renders the copyright line. `SimpleLink.astro` and `Link.astro` are small link primitives.
+- `src/pages/index.astro` is the intro, the section cards (`SECTIONS`) and the three newest posts. `src/pages/about.astro` holds the longer version of who Nico is — the focus cards and the off-site links both moved there off the home page and the header, so each of those says one thing.
+- `src/site/navigation.ts` — the site's map of itself: `SECTIONS` (the cards on the home page, each with a one-sentence blurb) and the path-label table a breadcrumb trail is written from. Both live here because a section's name on its card and its name in a trail are otherwise the same fact said twice.
+- `src/components/` — shared UI pieces. `Header.astro` is the brand and a Share menu, and nothing else — **no section
+links and no off-site links**: the home page's cards are the way into the site,
+the breadcrumb every page carries is the way back out, and the links off the
+site are on `/about/`. It carries a Share menu (Share…, Copy link, Print) on every page, because an installed PWA has no browser toolbar to do any of the three; Share… only appears where `navigator.share` exists. It is the only print, share or copy-link control on the site: pages don't carry their own. `Footer.astro` renders the copyright line. `SimpleLink.astro` and `Link.astro` are small link primitives.
+
+### Breadcrumbs
+
+Every page but the home page carries one, and **no page passes its own trail**:
+`Layout.astro` derives it from `Astro.url.pathname` through `breadcrumbTrail`,
+so a new page cannot forget one and two pages cannot disagree about what a
+section is called. The trail is the ancestors only, Home first — a breadcrumb is
+the way *out* of where you are, so it doesn't repeat the page you are on. On a
+section index that leaves a single "Home", which is the point now that the
+header has no section links.
+
+A label comes from `PATH_LABELS` in `src/site/navigation.ts`, and otherwise from
+`titleize` of the segment, which is right more often than not. Only paths with
+pages *under* them can ever appear, so that table is the site's directories and
+nothing else. The exception is a segment that is itself generated — an etude's
+tonic, a planner layout — which no table can name: those pages pass
+`crumbLabels` to `Layout`, a path-to-name map merged in while deriving. Two
+pages do it (the single-octave etude leaf and `PlannerPage.astro`); a page
+needing anything more than that is a sign the path should have a table entry.
 
 ### How pages are built
 
@@ -67,6 +91,9 @@ of presets trades directly against install size. Keep it short and deliberate.
 | Route | File |
 |---|---|
 | `/` | `src/pages/index.astro` |
+| `/about/` | `src/pages/about.astro` |
+| `/blog/`, and a page per post | `src/pages/blog/` |
+| `/rss.xml` | `src/pages/rss.xml.ts` |
 | `/games/`, `/games/classrooms-and-angry-teachers`, `/games/word-steps/` and a page per ladder (English and Japanese) | `src/pages/games/` |
 | `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/` (including a page per ascending-on-string variant), `/music/etudes/presets/` and a page per preset family, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
@@ -101,6 +128,45 @@ month, week, day, lists and trackers, paper), and each layout has three pages �
 at `/printables/a5-planner/{slug}/` (`[layout].astro`), A5 at `{slug}/a5/` and B5
 at `{slug}/b5/` — the paper being its one axis. `b5-test.astro` is the one-off
 check to print before the B5 pages.
+
+### Blog
+
+The one part of the site whose content is prose rather than data, and the prose
+is Nico's own — **never write or rewrite a post's body.** Helping means the
+frame around it: the schema, the pages, the styling, and a skeleton to fill in.
+
+- `src/content/blog/*.md` — one Markdown file per post, the filename being the
+  slug. Frontmatter is `title`, `description` (one sentence; it is both the
+  index's summary and the page's meta description), `date`, and an optional
+  `draft`.
+- `src/content.config.ts` — the `blog` collection. It is the counterpart to
+  `etudes`: the etudes are generated by a loader because they are computed,
+  the posts are read by `glob()` because they are written.
+- `src/blog/blog.ts` — `publishedPosts()` (newest first, drafts dropped from a
+  production build but kept in `npm run dev`, so a half-written post is
+  readable in place without being published or precached) plus the two date
+  formatters. The query lives here rather than in a page so the index, a post
+  and anything added later agree without repeating it.
+- `src/pages/rss.xml.ts` — the feed, through `@astrojs/rss`, which is
+  first-party and writes the XML itself (escaping, dates, the channel link), so
+  the endpoint only declares what goes in it. The site hand-rolls its PWA
+  because no library supports Astro 6; here one does, and taking it is what
+  makes a later full-text feed (`content: renderedHtml`) a line rather than a
+  rewrite. It needs `site` in `astro.config.mjs` — `rss()` throws without it,
+  since a feed reader cannot resolve a relative URL — which is also what makes
+  the canonical and Open Graph URLs absolute.
+- `src/pages/blog/index.astro` — the list. `blog/[post].astro` — one post:
+  title, date, breadcrumb, `<Content />`, and the prose styles the global
+  stylesheet has no rule for (blockquotes, code blocks, tables, figures),
+  written with `:global()` because the markup comes from Markdown and carries
+  no scoping attribute.
+
+The home page ends with the three newest posts, from the same
+`publishedPosts()`; the section is omitted entirely when there are none, so it
+never advertises an empty blog.
+
+A draft is not a built page, so publishing a post is what adds it to the
+precache — the same trade as a printable preset, one page at a time.
 
 ### Game subsystem
 

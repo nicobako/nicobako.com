@@ -2,39 +2,18 @@
 // Site-wide header + primary navigation.
 // Layout styles the semantic <nav>/<a> elements; this component owns the
 // header's own layout (the bar, the brand, spacing).
-import SimpleLink, { type SimpleLinkProps } from "./SimpleLink.astro";
-const pageLinks: SimpleLinkProps[] = [
-  { label: "Home", href: "/" },
-  { label: "Games", href: "/games/" },
-  { label: "Music", href: "/music/" },
-  { label: "Printables", href: "/printables/" },
-  { label: "References", href: "/references/" },
-  { label: "Timers", href: "/timers/" },
-  { label: "Tools", href: "/tools/" },
-];
-const externalLinks: SimpleLinkProps[] = [
-  { label: "GitHub", href: "https://github.com/nicobako", external: true },
-];
+// The header is the brand and the Share menu, and nothing else. The feed sits
+// in that menu rather than beside it: subscribing is the same kind of act as
+// sharing or copying the link, and an installed PWA has no toolbar offering it. Section links
+// live on the home page as cards, the way back up is the breadcrumb every page
+// carries, and the links off the site are on /about/ — so the bar stays the
+// same width on a phone as on a desktop.
 ---
 
 <header class="site-header">
   <a class="brand" href="/">Nico Bako</a>
   <nav aria-label="Primary">
     <ul>
-      <li>
-        <details class="menu">
-          <summary>Pages</summary>
-          <ul class="menu-list">
-            {
-              pageLinks.map((link) => (
-                <li>
-                  <SimpleLink href={link.href} label={link.label} />
-                </li>
-              ))
-            }
-          </ul>
-        </details>
-      </li>
       <li>
         <details class="menu">
           <summary>Share</summary>
@@ -48,20 +27,10 @@ const externalLinks: SimpleLinkProps[] = [
             <li>
               <button type="button" data-action="print">Print</button>
             </li>
+            <li><a href="/rss.xml">RSS feed</a></li>
           </ul>
         </details>
       </li>
-      {
-        externalLinks.map((link) => (
-          <li>
-            <SimpleLink
-              href={link.href}
-              external={link.external}
-              label={link.label}
-            />
-          </li>
-        ))
-      }
     </ul>
   </nav>
 </header>

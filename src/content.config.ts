@@ -11,6 +11,7 @@
 // query `getCollection("etudes")` either way and never learn where an entry came from.
 
 import { defineCollection } from "astro:content";
+import { glob } from "astro/loaders";
 import { z } from "zod";
 import type { Loader } from "astro/loaders";
 import { generateSingleStringScaleEtudes } from "./music/etudes/single-octave-single-string.ts";
@@ -43,6 +44,24 @@ const etudeLoader: Loader = {
   },
 };
 
+// The blog is the opposite case: every post is hand-written prose, so the
+// loader reads Markdown files and this schema is only the frontmatter each one
+// has to carry. `date` is parsed by zod's coercion, so `date: 2026-11-12` in the
+// frontmatter arrives as a Date.
+const blogSchema = z.object({
+  title: z.string(),
+  // Shown under the title on the index and used as the page's meta description,
+  // so it is one sentence, not a paragraph.
+  description: z.string(),
+  date: z.coerce.date(),
+  // Left out of a production build but visible in `npm run dev`.
+  draft: z.boolean().default(false),
+});
+
 export const collections = {
   etudes: defineCollection({ loader: etudeLoader, schema: etudeSchema }),
+  blog: defineCollection({
+    loader: glob({ pattern: "**/*.md", base: "./src/content/blog" }),
+    schema: blogSchema,
+  }),
 };

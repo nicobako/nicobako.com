@@ -1,0 +1,95 @@
+---
+// The post list. Nothing here knows how a post is written — it maps the
+// collection to rows, newest first.
+import Layout from "../../layouts/Layout.astro";
+import { publishedPosts, formatDate, isoDate } from "../../blog/blog.ts";
+
+const posts = await publishedPosts();
+---
+
+<Layout
+  title="Blog — Nico Bako"
+  description="Writing by Nico Bako on software, music, and whatever else I'm building."
+>
+  <h1>Blog</h1>
+  <p class="lede">
+    Notes on what I'm building, what I'm learning, and what I keep coming back
+    to.
+  </p>
+  <p class="feed"><a href="/rss.xml">RSS feed</a></p>
+
+  {
+    posts.length === 0 ? (
+      <p>Nothing published yet.</p>
+    ) : (
+      <ul class="posts">
+        {posts.map((post) => (
+          <li>
+            <a href={`/blog/${post.id}/`}>{post.data.title}</a>
+            <p class="meta">
+              <time datetime={isoDate(post.data.date)}>
+                {formatDate(post.data.date)}
+              </time>
+              {post.data.draft && <span class="draft">Draft</span>}
+            </p>
+            <p class="summary">{post.data.description}</p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</Layout>
+
+<style>
+  .lede {
+    color: var(--muted);
+  }
+
+  .feed {
+    font-size: 0.9rem;
+  }
+
+  .posts {
+    list-style: none;
+    padding: 0;
+    margin-top: 2rem;
+  }
+
+  .posts > li + li {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .posts a {
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .posts a:hover {
+    text-decoration: underline;
+  }
+
+  .meta {
+    margin: 0.2rem 0 0.4rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .draft {
+    margin-left: 0.6rem;
+    padding: 0.05em 0.45em;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75em;
+    letter-spacing: 0.04em;
+  }
+
+  .summary {
+    margin: 0;
+  }
+</style>

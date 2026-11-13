@@ -1,6 +1,5 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
-import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 import { LANGUAGES, charactersOf } from "../../../games/word-steps/languages.ts";
 import {
   LADDERS,
@@ -46,7 +45,6 @@ if (clash) throw new Error(`Word Steps: two ladders both want the URL "${clash}"
   title="Word Steps — a word game by Nico Bako"
   description="A word ladder game for children, in English and Japanese: change one letter at a time to climb from one word to another. Playable offline."
 >
-  <Breadcrumbs trail={[{ label: "Games", href: "/games/" }]} />
   <h1>Word Steps</h1>
   <p class="lede">
     Climb from one word to another by changing a single letter at a time. Every step has

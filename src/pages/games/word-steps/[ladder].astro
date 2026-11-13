@@ -1,6 +1,5 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
-import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 import { charactersOf, keypadFor } from "../../../games/word-steps/languages.ts";
 import {
   LADDERS,
@@ -38,12 +37,6 @@ const keypad = keypadFor(language, length);
   title={`Word Steps — ${ladderName(ladder)} — Nico Bako`}
   description={`A word ladder puzzle for children: change one ${language.unit} at a time to climb from ${start} to ${target}.`}
 >
-  <Breadcrumbs
-    trail={[
-      { label: "Games", href: "/games/" },
-      { label: "Word Steps", href: "/games/word-steps/" },
-    ]}
-  />
   <h1 lang={language.slug}>{ladderName(ladder)}</h1>
   {gloss && <p class="gloss">{gloss}</p>}
   <p class="lede">

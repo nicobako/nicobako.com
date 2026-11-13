@@ -1,6 +1,5 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
-import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 import DotGridDivisions from "../../../components/DotGridDivisions.astro";
 import DotCountPicker from "../../../components/DotCountPicker.astro";
 import DotStrip from "../../../components/DotStrip.astro";
@@ -35,12 +34,6 @@ const spreadLayouts = spaceLayouts(spreadCells);
   title={`${dots} dots — Nico Bako`}
   description={`How to divide a run of ${dots} dots (${cells} cells) on a dot grid — equally, as columns on a page or spread, and as rows.`}
 >
-  <Breadcrumbs
-    trail={[
-      { label: "References", href: "/references/" },
-      { label: "Dot Grid", href: "/references/dot-grid/" },
-    ]}
-  />
 
   <h1>{dots} dots</h1>
   <p class="intro">

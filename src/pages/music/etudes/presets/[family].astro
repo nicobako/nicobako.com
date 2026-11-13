@@ -1,10 +1,8 @@
 ---
 import Layout from "../../../../layouts/Layout.astro";
-import Breadcrumbs from "../../../../components/Breadcrumbs.astro";
 import AbcTrack from "../../../../components/AbcTrack.astro";
 import {
   PRESET_FAMILIES,
-  PRESETS_PATH,
   type PresetFamily,
 } from "../../../../music/etudes/presets/families.ts";
 import { INSTRUMENTS } from "../../../../music/etudes/presets/instruments.ts";
@@ -93,13 +91,6 @@ for (const { instrument, result } of clefExamples) {
   title={`${family.name} — Etude Presets — Nico Bako`}
   description={family.blurb}
 >
-  <Breadcrumbs
-    trail={[
-      { label: "Music", href: "/music/" },
-      { label: "Etudes", href: "/music/etudes/" },
-      { label: "Presets", href: PRESETS_PATH },
-    ]}
-  />
   <h1>{family.name}</h1>
   <p>{family.blurb}</p>
 

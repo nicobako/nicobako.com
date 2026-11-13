@@ -1,0 +1,117 @@
+---
+// One post. The Markdown file is the whole of the content; this page is the
+// frame around it — title and date — plus the prose styling the global
+// stylesheet doesn't cover (blockquotes, code blocks, figures). The trail back
+// to the blog comes from Layout, as it does on every page.
+import { render } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import Layout from "../../layouts/Layout.astro";
+import { publishedPosts, formatDate, isoDate } from "../../blog/blog.ts";
+
+export const getStaticPaths = (async () => {
+  const posts = await publishedPosts();
+  return posts.map((post) => ({ params: { post: post.id }, props: { post } }));
+}) satisfies GetStaticPaths;
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Layout
+  title={`${post.data.title} — Nico Bako`}
+  description={post.data.description}
+>
+  <article>
+    <h1>{post.data.title}</h1>
+    <p class="meta">
+      <time datetime={isoDate(post.data.date)}>
+        {formatDate(post.data.date)}
+      </time>
+      {post.data.draft && <span class="draft">Draft</span>}
+    </p>
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+</Layout>
+
+<style>
+  .meta {
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .draft {
+    margin-left: 0.6rem;
+    padding: 0.05em 0.45em;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75em;
+    letter-spacing: 0.04em;
+  }
+
+  /* The elements Markdown produces that the global stylesheet has no rule for.
+     `:global()` is required because the markup comes from <Content />, which
+     never carries this file's scoping attribute. */
+  .prose :global(blockquote) {
+    margin: 1.5rem 0;
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    border-left: 3px solid var(--border);
+    color: var(--muted);
+  }
+
+  .prose :global(blockquote p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .prose :global(pre) {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  /* Inside a block, `code` is the block — it shouldn't carry the inline
+     pill's own background and padding on top. */
+  .prose :global(pre code) {
+    padding: 0;
+    background: none;
+    font-size: inherit;
+  }
+
+  .prose :global(img) {
+    margin: 1.5rem auto;
+    border-radius: 8px;
+  }
+
+  .prose :global(figure) {
+    margin: 1.5rem 0;
+  }
+
+  .prose :global(figcaption) {
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .prose :global(table) {
+    width: 100%;
+    margin: 1.5rem 0;
+    border-collapse: collapse;
+  }
+
+  .prose :global(th),
+  .prose :global(td) {
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+</style>

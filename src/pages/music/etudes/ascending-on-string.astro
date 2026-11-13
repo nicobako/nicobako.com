@@ -1,6 +1,5 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
-import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 import AscendingEtude from "../../../components/AscendingEtude.astro";
 import { DEFAULT_ETUDE } from "../../../music/etudes/ascending-on-string.ts";
 
@@ -14,12 +13,6 @@ const etude = DEFAULT_ETUDE;
   title="Ascending on String — Nico Bako"
   description="Climb one violin string through the positions, playing the four fingers in any order, with the shift between each position written out."
 >
-  <Breadcrumbs
-    trail={[
-      { label: "Music", href: "/music/" },
-      { label: "Etudes", href: "/music/etudes/" },
-    ]}
-  />
   <h1>Ascending on String</h1>
   <p>
     Stay on one string. Play the four fingers in the order you have picked, shift up a step

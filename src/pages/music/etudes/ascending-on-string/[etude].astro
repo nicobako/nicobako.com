@@ -1,6 +1,5 @@
 ---
 import Layout from "../../../../layouts/Layout.astro";
-import Breadcrumbs from "../../../../components/Breadcrumbs.astro";
 import AscendingEtudeBody from "../../../../components/AscendingEtude.astro";
 import {
   describeEtude,
@@ -30,13 +29,6 @@ const { etude } = Astro.props;
   title={`Ascending on String — ${etudeName(etude)} — Nico Bako`}
   description={describeEtude(etude)}
 >
-  <Breadcrumbs
-    trail={[
-      { label: "Music", href: "/music/" },
-      { label: "Etudes", href: "/music/etudes/" },
-      { label: "Ascending on String", href: "/music/etudes/ascending-on-string/" },
-    ]}
-  />
   <h1>Ascending on String</h1>
 
   <AscendingEtudeBody etude={etude} />

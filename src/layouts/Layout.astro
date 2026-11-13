@@ -1,11 +1,21 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { breadcrumbTrail } from '../site/navigation.ts';
 
 const {
 	title = 'Nico Bako — Software Engineer',
 	description = 'Nico Bako is a software engineer who builds clean, reliable software with a focus on the Python ecosystem.',
+	crumbLabels,
 } = Astro.props;
+
+// Every page but the home page carries a trail, and it is derived here rather
+// than passed in, so no page can forget one and no two pages can disagree about
+// what a section is called. A page only speaks up (`crumbLabels`) about a path
+// `src/site/navigation.ts` cannot name on its own — a segment that is itself
+// generated, like an etude's tonic or a planner layout.
+const trail = breadcrumbTrail(Astro.url.pathname, crumbLabels);
 
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : Astro.url.pathname;
 ---
@@ -25,6 +35,12 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : As
 		<meta name="theme-color" content="#16161a" media="(prefers-color-scheme: dark)" />
 		<meta name="theme-color" content="#fdfdfc" media="(prefers-color-scheme: light)" />
 		<link rel="canonical" href={canonical} />
+		<link
+			rel="alternate"
+			type="application/rss+xml"
+			title="Nico Bako — Blog"
+			href="/rss.xml"
+		/>
 
 		<!-- Installable web app -->
 		<link rel="manifest" href="/manifest.webmanifest" />
@@ -50,6 +66,7 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : As
 	<body>
 		<Header />
 		<main>
+			{Astro.url.pathname !== '/' && <Breadcrumbs trail={trail} />}
 			<slot />
 		</main>
 		<Footer />

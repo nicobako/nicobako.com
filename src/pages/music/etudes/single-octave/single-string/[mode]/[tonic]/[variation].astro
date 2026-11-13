@@ -1,10 +1,8 @@
 ---
 import { getCollection } from "astro:content";
 import Layout from "../../../../../../../layouts/Layout.astro";
-import Breadcrumbs from "../../../../../../../components/Breadcrumbs.astro";
 import AbcTrack from "../../../../../../../components/AbcTrack.astro";
 import {
-  modeHref,
   tonicHref,
   VARIATIONS,
 } from "../../../../../../../music/etudes/single-octave-single-string.ts";
@@ -31,17 +29,10 @@ const description = VARIATIONS.find((v) => v.slug === etude.variationSlug)!.desc
 <Layout
   title={`${etude.title} — Nico Bako`}
   description={`A single-octave ${etude.modeName.toLowerCase()} scale on one string, starting on ${etude.tonicName}. ${description}`}
+  crumbLabels={{
+    [tonicHref(etude.modeSlug, etude.tonicSlug)]: `${etude.tonicName} ${etude.modeName}`,
+  }}
 >
-  <Breadcrumbs
-    trail={[
-      { label: "Music", href: "/music/" },
-      { label: "Etudes", href: "/music/etudes/" },
-      { label: "Single octave", href: "/music/etudes/single-octave/" },
-      { label: "Single string", href: "/music/etudes/single-octave/single-string/" },
-      { label: etude.modeName, href: modeHref(etude.modeSlug) },
-      { label: etude.tonicName, href: tonicHref(etude.modeSlug, etude.tonicSlug) },
-    ]}
-  />
   <h1>{etude.tonicName} {etude.modeName}</h1>
   <p class="variation">{etude.variationName} — {description}</p>
 

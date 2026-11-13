@@ -13,6 +13,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/rss": "^4.0.19",
     "abcjs": "^6.6.3",
     "astro": "^6.4.7",
     "kaplay": "^3001.0.19",

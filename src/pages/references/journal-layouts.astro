@@ -1,6 +1,5 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import JournalPage from "../../components/JournalPage.astro";
 import {
   COMPOSITIONS,
@@ -27,7 +26,6 @@ const sections: { title: string; lead: string; layouts: JournalLayout[] }[] = [
   title="Journal Layouts — Nico Bako"
   description="Journal page layouts drawn blank: the grids you rule before you write — daily log, Cornell, weekly, monthly — and the compositions you arrange, where a drawing, a table and a few lines of writing have to hold a page together."
 >
-  <Breadcrumbs trail={[{ label: "References", href: "/references/" }]} />
 
   <h1>Journal Layouts</h1>
   <p>

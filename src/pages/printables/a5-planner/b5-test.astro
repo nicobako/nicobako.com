@@ -7,7 +7,6 @@
 // each line to its edge tells which way the sheet sits. The 100 mm rule says
 // whether the print was scaled.
 import Layout from "../../../layouts/Layout.astro";
-import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 ---
 
 <Layout
@@ -15,12 +14,6 @@ import Breadcrumbs from "../../../components/Breadcrumbs.astro";
   description="A test print that checks a printer centres B5 paper when printing with the A4 size, before printing the B5 planner pages."
 >
   <div class="controls no-print">
-    <Breadcrumbs
-      trail={[
-        { label: "Printables", href: "/printables/" },
-        { label: "A5 Planner", href: "/printables/a5-planner/" },
-      ]}
-    />
     <h1>B5 Test Sheet</h1>
     <p>
       Print this once before the B5 pages. Load a sheet of B5 (182 × 257 mm)

@@ -1,10 +1,8 @@
 ---
 import { getCollection } from "astro:content";
 import Layout from "../../../../../../../layouts/Layout.astro";
-import Breadcrumbs from "../../../../../../../components/Breadcrumbs.astro";
 import {
   etudeHref,
-  modeHref,
 } from "../../../../../../../music/etudes/single-octave-single-string.ts";
 
 // One page per mode and starting note.
@@ -37,15 +35,6 @@ const variations = entries.map((e) => e.data);
   title={`${tonicName} ${modeName} Single String Scale — Nico Bako`}
   description={`A single-octave ${modeName.toLowerCase()} scale starting on ${tonicName}, played on one string.`}
 >
-  <Breadcrumbs
-    trail={[
-      { label: "Music", href: "/music/" },
-      { label: "Etudes", href: "/music/etudes/" },
-      { label: "Single octave", href: "/music/etudes/single-octave/" },
-      { label: "Single string", href: "/music/etudes/single-octave/single-string/" },
-      { label: modeName, href: modeHref(modeSlug) },
-    ]}
-  />
   <h1>{tonicName} {modeName}</h1>
   <p>Pick how much the shifts are spelled out.</p>
   <ul class="variations">

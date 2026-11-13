@@ -1,7 +1,6 @@
 ---
 import { getCollection } from "astro:content";
 import Layout from "../../../../../../layouts/Layout.astro";
-import Breadcrumbs from "../../../../../../components/Breadcrumbs.astro";
 import { MODES, tonicHref } from "../../../../../../music/etudes/single-octave-single-string.ts";
 
 export function getStaticPaths() {
@@ -31,14 +30,6 @@ const octaves = [...new Set(tonics.map((t) => t.octave))].map((octave) => ({
   title={`${modeName} Single String Scales — Nico Bako`}
   description={`Single-octave ${modeName.toLowerCase()} scales played on one string, starting on any note from C3 to C6.`}
 >
-  <Breadcrumbs
-    trail={[
-      { label: "Music", href: "/music/" },
-      { label: "Etudes", href: "/music/etudes/" },
-      { label: "Single octave", href: "/music/etudes/single-octave/" },
-      { label: "Single string", href: "/music/etudes/single-octave/single-string/" },
-    ]}
-  />
   <h1>{modeName}</h1>
   <p>Pick the note the scale starts on.</p>
 

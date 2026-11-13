@@ -4,6 +4,9 @@ import pwa from './src/pwa/integration.mjs';
 
 // https://astro.build/config
 export default defineConfig({
+	// Absolute URLs: the canonical link tags, the Open Graph URLs and every link
+	// inside /rss.xml, which a feed reader cannot resolve relatively.
+	site: 'https://nicobako.com',
 	integrations: [pwa()],
 	// Astro's default inlines any stylesheet under 4 KB, which put a byte-identical
 	// copy of Layout's global CSS (5.7 KB) into all 562 pages. Extracting it instead

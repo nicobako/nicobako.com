@@ -1,0 +1,89 @@
+---
+// About me. The focus cards and the GitHub link moved here off the home page,
+// which now opens with the sections and the latest writing instead.
+//
+// The prose is Nico's — replace the paragraph below with your own words.
+import Layout from "../layouts/Layout.astro";
+import SimpleLink from "../components/SimpleLink.astro";
+
+const focus = [
+  {
+    title: "Backend & APIs",
+    body: "Designing clean, well-tested services and APIs that are a pleasure to build on and easy to maintain.",
+  },
+  {
+    title: "The Python Ecosystem",
+    body: "Deep in Python day to day — from typing and tooling to packaging and the libraries.",
+  },
+  {
+    title: "Reliable Software",
+    body: "Favoring simplicity, strong tests, and thoughtful design so software keeps working long after launch.",
+  },
+];
+
+const elsewhere = [{ label: "GitHub", href: "https://github.com/nicobako", external: true }];
+---
+
+<Layout
+  title="About Me — Nico Bako"
+  description="Nico Bako is a software engineer who builds clean, reliable software with a focus on the Python ecosystem."
+>
+  <h1>About Me</h1>
+  <p class="lede">
+    I'm Nico Bako, a software engineer. I like to build clean and reliable
+    software, and I care about thoughtful design, solid tests, and tools that
+    improve the lives of those who use them.
+  </p>
+
+  <h2>What I focus on</h2>
+  <div class="focus">
+    {
+      focus.map((item) => (
+        <article>
+          <h3>{item.title}</h3>
+          <p>{item.body}</p>
+        </article>
+      ))
+    }
+  </div>
+
+  <h2>Elsewhere</h2>
+  <ul>
+    {
+      elsewhere.map((link) => (
+        <li>
+          <SimpleLink href={link.href} external={link.external} label={link.label} />
+        </li>
+      ))
+    }
+  </ul>
+</Layout>
+
+<style>
+  .lede {
+    color: var(--muted);
+  }
+
+  /* Focus: plain bordered cards, no shadows or motion. */
+  .focus {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1rem;
+  }
+
+  .focus article {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  .focus h3 {
+    margin-top: 0;
+  }
+
+  .focus p {
+    margin-bottom: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+</style>

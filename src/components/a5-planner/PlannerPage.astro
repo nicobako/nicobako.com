@@ -4,7 +4,6 @@
 // comes in the slot, from the route: each paper's sheet sets its own `@page`
 // size, and a page that imported both would carry both rules.
 import Layout from "../../layouts/Layout.astro";
-import Breadcrumbs from "../Breadcrumbs.astro";
 import PaperPicker from "./PaperPicker.astro";
 import {
   B5,
@@ -25,14 +24,9 @@ const { layout, paper } = Astro.props;
 <Layout
   title={`${layout.name} — A5 Planner — Nico Bako`}
   description={`A printable A5 binder page. ${layout.description}`}
+  crumbLabels={{ [`/printables/a5-planner/${layout.slug}/`]: layout.name }}
 >
   <div class="controls no-print">
-    <Breadcrumbs
-      trail={[
-        { label: "Printables", href: "/printables/" },
-        { label: "A5 Planner", href: "/printables/a5-planner/" },
-      ]}
-    />
     <h1>{layout.name}</h1>
     <p>{layout.description}</p>
     <PaperPicker layout={layout} paper={paper} />
