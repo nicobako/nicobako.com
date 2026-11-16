@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`nicobako.com` — a personal portfolio site for Nico Bako (software engineer, Python focus), built with **Astro 6** as a static site. No backend, no client-side framework, no database. The site has a home page, a games section with a playable browser game, and a music section with interactive tools (metronome, drone, violin scale fingerings).
+`nicobako.com` — a personal portfolio site for Nico Bako (software engineer, Python focus), built with **Astro 6** as a static site. No backend, no client-side framework, no database. The site has a home page, a games section with a word-ladder puzzle for children, and a music section with interactive tools (metronome, drone, violin scale fingerings).
 
 ## Commands
 
@@ -94,7 +94,7 @@ of presets trades directly against install size. Keep it short and deliberate.
 | `/about/` | `src/pages/about.astro` |
 | `/blog/`, and a page per post | `src/pages/blog/` |
 | `/rss.xml` | `src/pages/rss.xml.ts` |
-| `/games/`, `/games/classrooms-and-angry-teachers`, `/games/word-steps/` and a page per ladder (English and Japanese) | `src/pages/games/` |
+| `/games/`, `/games/word-steps/` and a page per ladder (English and Japanese) | `src/pages/games/` |
 | `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/` (including a page per ascending-on-string variant), `/music/etudes/presets/` and a page per preset family, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/tools/`, `/tools/relations` | `src/pages/tools/` |
@@ -170,13 +170,9 @@ precache — the same trade as a printable preset, one page at a time.
 
 ### Game subsystem
 
-`src/games/` holds two entirely client-side games, each a logic module (or three) imported
-by its page through a side-effect `<script>`.
-
-`classrooms-and-angry-teachers/`, built with [Kaplay](https://kaplayjs.com/):
-
-- `level.ts` — pure data: grid constants, tile types, spawn positions, item definitions.
-- `game.ts` — Kaplay initialisation and all game logic (immediate-mode rendering, per-frame update loop, input handling). Mounted into the `#game-root` div on the game page via a `<script>` import; Kaplay runs with `global: false` so it doesn't pollute the surrounding site.
+`src/games/` holds one entirely client-side game, its logic modules imported by its pages
+through a side-effect `<script>`. (Classrooms & Angry Teachers, the Kaplay game that used to
+live here, moved to the Bamboo Crossbows site.)
 
 `word-steps/` — Lewis Carroll's word ladder, for children, in **English and Japanese**:
 climb from `cat` to `dog`, or `ねこ` to `いぬ`, by changing one character at a time, every

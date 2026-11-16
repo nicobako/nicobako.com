@@ -53,7 +53,7 @@ export const SECTIONS: Section[] = [
   {
     label: "Games",
     href: "/games/",
-    blurb: "Small browser games — a word ladder in English and Japanese, and a platformer.",
+    blurb: "A word ladder puzzle for children, in English and Japanese.",
   },
   {
     label: "References",

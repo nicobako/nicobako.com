@@ -16,7 +16,6 @@
     "@astrojs/rss": "^4.0.19",
     "abcjs": "^6.6.3",
     "astro": "^6.4.7",
-    "kaplay": "^3001.0.19",
     "zod": "^4.4.3"
   },
   "devDependencies": {
