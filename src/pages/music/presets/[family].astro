@@ -1,18 +1,18 @@
 ---
-import Layout from "../../../../layouts/Layout.astro";
-import AbcTrack from "../../../../components/AbcTrack.astro";
+import Layout from "../../../layouts/Layout.astro";
+import AbcTrack from "../../../components/AbcTrack.astro";
 import {
   PRESET_FAMILIES,
   type PresetFamily,
-} from "../../../../music/etudes/presets/families.ts";
-import { INSTRUMENTS } from "../../../../music/etudes/presets/instruments.ts";
-import { TECHNIQUES } from "../../../../music/etudes/presets/articulations.ts";
-import { MODES, degreeLetters } from "../../../../music/etudes/scale.ts";
+} from "../../../music/etudes/presets/families.ts";
+import { INSTRUMENTS } from "../../../music/etudes/presets/instruments.ts";
+import { TECHNIQUES } from "../../../music/etudes/presets/articulations.ts";
+import { MODES, degreeLetters } from "../../../music/etudes/scale.ts";
 import {
   buildEtude,
   defineEtude,
   type Etude,
-} from "../../../../music/etudes/etude.ts";
+} from "../../../music/etudes/etude.ts";
 
 export function getStaticPaths() {
   return PRESET_FAMILIES.map((family) => ({
@@ -89,10 +89,8 @@ for (const { instrument, result } of clefExamples) {
 
 <Layout
   title={`${family.name} — Etude Presets — Nico Bako`}
-  description={family.blurb}
 >
   <h1>{family.name}</h1>
-  <p>{family.blurb}</p>
 
   {
     family.slug === "modes" && (
@@ -150,18 +148,6 @@ for (const { instrument, result } of clefExamples) {
           ))}
         </tbody>
       </table>
-    )
-  }
-
-  {
-    family.slug === "articulations" && (
-      <p class="description">
-        A dot means staccato on the string, spiccato off it, or sautillé faster
-        still, and martelé is printed with dots, accents or hammer heads depending
-        on the edition — so a symbol cannot name a stroke on its own. Each technique
-        that shares its symbol, or has none, writes its name once above the run instead,
-        which is how a part actually tells a player.
-      </p>
     )
   }
 

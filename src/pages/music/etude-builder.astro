@@ -39,17 +39,9 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
 
 <Layout
   title="Etude Builder — Nico Bako"
-  description="Build your own etude from a fingered note pattern, a rhythm, a bowing and an articulation, in any mode and key, for violin, viola or cello."
 >
   <h1 class="no-print">Etude Builder</h1>
-  <p class="no-print">
-    An etude is a short pattern said several ways at once: which notes, which
-    rhythm, which bowing, which fingers. The three time patterns are cycled
-    against each other — five notes against a rhythm of three against a bowing of
-    two do not repeat for thirty notes — and the tune runs until they line up
-    again. Every pattern has <a href={PRESETS_PATH}>named presets</a> behind its
-    box, and the URL updates as you type, so a bookmark is an etude.
-  </p>
+  <p class="no-print"><a href={PRESETS_PATH}>Presets</a></p>
 
   <form class="builder no-print" id="builder" autocomplete="off">
     {FIELDS.map((family) => (

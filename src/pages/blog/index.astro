@@ -9,13 +9,8 @@ const posts = await publishedPosts();
 
 <Layout
   title="Blog — Nico Bako"
-  description="Writing by Nico Bako on software, music, and whatever else I'm building."
 >
   <h1>Blog</h1>
-  <p class="lede">
-    Notes on what I'm building, what I'm learning, and what I keep coming back
-    to.
-  </p>
   <p class="feed"><a href="/rss.xml">RSS feed</a></p>
 
   {
@@ -41,9 +36,6 @@ const posts = await publishedPosts();
 </Layout>
 
 <style>
-  .lede {
-    color: var(--muted);
-  }
 
   .feed {
     font-size: 0.9rem;

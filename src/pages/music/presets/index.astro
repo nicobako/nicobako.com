@@ -1,21 +1,12 @@
 ---
-import Layout from "../../../../layouts/Layout.astro";
-import { PRESET_FAMILIES, familyHref } from "../../../../music/etudes/presets/families.ts";
+import Layout from "../../../layouts/Layout.astro";
+import { PRESET_FAMILIES, familyHref } from "../../../music/etudes/presets/families.ts";
 ---
 
 <Layout
   title="Etude Presets — Nico Bako"
-  description="The named note patterns, rhythms, bowings, fingerings, modes and instruments that etudes are built from."
 >
   <h1>Presets</h1>
-  <p>
-    An etude is a handful of patterns said at once. Each of them takes any pattern you
-    care to write, and these are the ones that turned out to be worth a name — so a
-    declared etude can say "broken thirds, slurred two, détaché" instead of repeating
-    the strings. Every family has its own page, with the pattern written out and a bar
-    or two of notation.
-  </p>
-
   {PRESET_FAMILIES.map((family) => (
     <section class="family">
       <h2><a href={familyHref(family.slug)}>{family.name}</a></h2>

@@ -12,8 +12,6 @@ export interface Crumb {
 export interface Section {
   label: string;
   href: string;
-  /** One sentence on the card. Written as what you can do there. */
-  blurb: string;
 }
 
 /**
@@ -22,49 +20,11 @@ export interface Section {
  * every page carries is the way back out.
  */
 export const SECTIONS: Section[] = [
-  {
-    label: "About Me",
-    href: "/about/",
-    blurb: "Who I am, what I work on, and where else to find me.",
-  },
-  {
-    label: "Blog",
-    href: "/blog/",
-    blurb: "Notes on what I'm building, what I'm learning, and what I keep coming back to.",
-  },
-  {
-    label: "Music",
-    href: "/music/",
-    blurb:
-      "Practice tools that run in the browser — metronome, drone, ear training, sight reading, and generated etudes.",
-  },
-  {
-    label: "Printables",
-    href: "/printables/",
-    blurb:
-      "Pages made to be printed: planners, calendars, staff paper, perspective grids and fold-up booklets.",
-  },
-  {
-    label: "Timers",
-    href: "/timers/",
-    blurb:
-      "A timer, stopwatch, Pomodoro, interval and meditation clock, each notifying you when it finishes.",
-  },
-  {
-    label: "Games",
-    href: "/games/",
-    blurb: "A word ladder puzzle for children, in English and Japanese.",
-  },
-  {
-    label: "References",
-    href: "/references/",
-    blurb: "Short reference pages: the facts I keep looking up, one page each.",
-  },
-  {
-    label: "Tools",
-    href: "/tools/",
-    blurb: "Odds and ends that work on your own data, kept in the browser.",
-  },
+  { label: "About Me", href: "/about/" },
+  { label: "Blog", href: "/blog/" },
+  { label: "Music", href: "/music/" },
+  { label: "Printables", href: "/printables/" },
+  { label: "Timers", href: "/timers/" },
 ];
 
 /**
@@ -73,32 +33,17 @@ export const SECTIONS: Section[] = [
  * nothing else — a leaf is the page you are on, which a trail doesn't repeat.
  *
  * Anything missing falls back to `titleize`, which is right far more often than
- * not; an entry here is for where it isn't ("Abc Editor", "A5 Planner"), or
+ * not; an entry here is for where it isn't ("Abc Editor"), or
  * where a page is called something other than its slug.
  */
 const PATH_LABELS: Record<string, string> = {
   "/about/": "About Me",
   "/blog/": "Blog",
-  "/games/": "Games",
-  "/games/word-steps/": "Word Steps",
   "/music/": "Music",
-  "/music/etudes/": "Etudes",
-  "/music/etudes/ascending-on-string/": "Ascending on String",
-  "/music/etudes/presets/": "Presets",
-  "/music/etudes/single-octave/": "Single octave",
-  "/music/etudes/single-octave/single-string/": "Single string",
+  "/music/presets/": "Presets",
   "/printables/": "Printables",
-  "/printables/a5-planner/": "A5 Planner",
-  "/printables/blank-sheet-music/": "Blank Sheet Music",
-  "/printables/booklets/": "Booklets",
   "/printables/bookmark-calendar/": "Bookmark Calendar",
-  "/printables/perspective-grid/": "Perspective Grids",
-  "/printables/weekly-activity-planner/": "Weekly Activity Planner",
-  "/printables/year-calendar/": "Year Calendar",
-  "/references/": "References",
-  "/references/dot-grid/": "Dot Grid",
   "/timers/": "Timers",
-  "/tools/": "Tools",
 };
 
 /** `word-steps` → `Word Steps`; `a3` → `A3`. */

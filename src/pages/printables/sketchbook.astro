@@ -1,17 +1,20 @@
 ---
-import BookletLayout from "../../../components/BookletLayout.astro";
-import MiniZine from "../../../components/MiniZine.astro";
-import Page from "../../../components/paper/Page.astro";
-import CoverTitle from "../../../components/paper/CoverTitle.astro";
-import Heading from "../../../components/paper/Heading.astro";
-import Blank from "../../../components/paper/Blank.astro";
-import Box from "../../../components/paper/Box.astro";
-import Grid from "../../../components/paper/Grid.astro";
+import Layout from "../../layouts/Layout.astro";
+import MiniZineSteps from "../../components/MiniZineSteps.astro";
+import MiniZine from "../../components/MiniZine.astro";
+import Page from "../../components/paper/Page.astro";
+import CoverTitle from "../../components/paper/CoverTitle.astro";
+import Heading from "../../components/paper/Heading.astro";
+import Blank from "../../components/paper/Blank.astro";
+import Box from "../../components/paper/Box.astro";
+import Grid from "../../components/paper/Grid.astro";
 
 // A prompt on every page, because an empty page is the hardest one to start.
 ---
 
-<BookletLayout slug="sketchbook">
+<Layout title="Sketchbook — Nico Bako">
+  <h1 class="no-print">Sketchbook</h1>
+  <MiniZineSteps />
   <MiniZine>
     <Page slot="page-1">
       <CoverTitle text="Sketchbook" />
@@ -55,4 +58,4 @@ import Grid from "../../../components/paper/Grid.astro";
       <Box />
     </Page>
   </MiniZine>
-</BookletLayout>
+</Layout>

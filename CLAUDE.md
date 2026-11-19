@@ -2,9 +2,30 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## The one rule
+
+**The words on this site are Nico's. Never write or rewrite them.**
+
+Not a blog post, not an About paragraph, not a section blurb, not a `description`
+prop, not a tagline. Helping means the frame around the words: the schema, the
+pages, the layout, the styling, and — where he asks for one — an empty skeleton
+to fill in.
+
+This site was cut from 646 pages to 31 precisely because it had filled up with
+prose nobody wrote. If a change would add a sentence a visitor reads, don't; add
+the markup and leave the sentence to Nico. Code comments are the exception —
+they explain how things work and they should stay thorough.
+
+The second rule follows from the first: **a page has to earn its keep.** The test
+is whether Nico opens it. Not whether it is clever, not whether it generates
+nicely from a table. Anything a visitor would sooner ask their own AI to make for
+them does not belong here.
+
 ## What this is
 
-`nicobako.com` — a personal portfolio site for Nico Bako (software engineer, Python focus), built with **Astro 6** as a static site. No backend, no client-side framework, no database. The site has a home page, a games section with a word-ladder puzzle for children, and a music section with interactive tools (metronome, drone, violin scale fingerings).
+`nicobako.com` — Nico Bako's personal site, built with **Astro 6** as a static
+site. No backend, no client-side framework, no database. A home page, an about
+page, a blog, violin practice tools, a few timers, and two printables.
 
 ## Commands
 
@@ -17,18 +38,30 @@ Requires Node `>=22.12.0`.
 
 `tsconfig.json` extends `astro/tsconfigs/strict`.
 
+## Pages
+
+| Route | File |
+|---|---|
+| `/` | `src/pages/index.astro` |
+| `/about/` | `src/pages/about.astro` |
+| `/blog/`, and a page per post | `src/pages/blog/` |
+| `/rss.xml` | `src/pages/rss.xml.ts` |
+| `/music/`, `/music/{metronome,drone,vibrato,ear-training,etude-builder,abc-editor}`, `/music/presets/` and a page per family | `src/pages/music/` |
+| `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
+| `/printables/`, `/printables/bookmark-calendar` (+ a page per year), `/printables/sketchbook` | `src/pages/printables/` |
+| `/offline` | `src/pages/offline.astro` |
+
+31 pages. Keep it that way: every page is precached by the service worker, so a
+new one costs install size as well as attention.
+
 ## Architecture
 
 ### Rendering chain
 
 - `src/layouts/Layout.astro` — the HTML document shell. Accepts `title` and `description` props (with defaults). Composes `Header` + `Footer`, exposes `<slot />` for page content. Owns **all global CSS** via `<style is:global>`, including the design-token `:root` custom properties and their `prefers-color-scheme: dark` overrides.
-- `src/pages/*.astro` — each file is a route. Pages import `Layout` and pass content into its slot. Data-driven sections (e.g., focus cards, stack tags on the home page) are defined as arrays in the page's frontmatter `---` block and mapped to markup — edit the arrays to change content rather than duplicating markup.
-- `src/pages/index.astro` is the intro, the section cards (`SECTIONS`) and the three newest posts. `src/pages/about.astro` holds the longer version of who Nico is — the focus cards and the off-site links both moved there off the home page and the header, so each of those says one thing.
-- `src/site/navigation.ts` — the site's map of itself: `SECTIONS` (the cards on the home page, each with a one-sentence blurb) and the path-label table a breadcrumb trail is written from. Both live here because a section's name on its card and its name in a trail are otherwise the same fact said twice.
-- `src/components/` — shared UI pieces. `Header.astro` is the brand and a Share menu, and nothing else — **no section
-links and no off-site links**: the home page's cards are the way into the site,
-the breadcrumb every page carries is the way back out, and the links off the
-site are on `/about/`. It carries a Share menu (Share…, Copy link, Print) on every page, because an installed PWA has no browser toolbar to do any of the three; Share… only appears where `navigator.share` exists. It is the only print, share or copy-link control on the site: pages don't carry their own. `Footer.astro` renders the copyright line. `SimpleLink.astro` and `Link.astro` are small link primitives.
+- `src/pages/*.astro` — each file is a route. Pages import `Layout` and pass content into its slot.
+- `src/site/navigation.ts` — the site's map of itself: `SECTIONS` (the list on the home page) and the path-label table a breadcrumb trail is written from. Both live here because a section's name in the list and its name in a trail are otherwise the same fact said twice. Neither carries a blurb — see the one rule.
+- `src/components/` — shared UI pieces. `Header.astro` is the brand and a Share menu, and nothing else — **no section links and no off-site links**: the home page's list is the way into the site, the breadcrumb every page carries is the way back out, and the links off the site are on `/about/`. The Share menu (Share…, Copy link, Print) is on every page because an installed PWA has no browser toolbar to do any of the three; Share… only appears where `navigator.share` exists. It is the only print, share or copy-link control on the site. `Footer.astro` renders the copyright line. `SimpleLink.astro` and `Link.astro` are small link primitives.
 
 ### Breadcrumbs
 
@@ -36,18 +69,12 @@ Every page but the home page carries one, and **no page passes its own trail**:
 `Layout.astro` derives it from `Astro.url.pathname` through `breadcrumbTrail`,
 so a new page cannot forget one and two pages cannot disagree about what a
 section is called. The trail is the ancestors only, Home first — a breadcrumb is
-the way *out* of where you are, so it doesn't repeat the page you are on. On a
-section index that leaves a single "Home", which is the point now that the
-header has no section links.
+the way *out* of where you are, so it doesn't repeat the page you are on.
 
 A label comes from `PATH_LABELS` in `src/site/navigation.ts`, and otherwise from
-`titleize` of the segment, which is right more often than not. Only paths with
-pages *under* them can ever appear, so that table is the site's directories and
-nothing else. The exception is a segment that is itself generated — an etude's
-tonic, a planner layout — which no table can name: those pages pass
-`crumbLabels` to `Layout`, a path-to-name map merged in while deriving. Two
-pages do it (the single-octave etude leaf and `PlannerPage.astro`); a page
-needing anything more than that is a sign the path should have a table entry.
+`titleize` of the segment. Only paths with pages *under* them can ever appear, so
+that table is the site's directories and nothing else. A generated segment that
+no table can name is passed in as `crumbLabels`; nothing needs that today.
 
 ### How pages are built
 
@@ -58,418 +85,88 @@ of them should be a deliberate decision:
 1. **Markup is written as markup.** Never build HTML by concatenating strings and
    injecting it with `set:html` or `innerHTML`. Logic modules under `src/` return
    *data* (arrays, records); `.astro` templates map that data to elements. Where the
-   browser genuinely has to re-render, it builds nodes with `document.createElement`,
-   as `speed-reading.astro` does.
+   browser genuinely has to re-render, it builds nodes with `document.createElement`.
 2. **Prefer a static component over a control.** The default answer to "the user might
    want this a bit different" is a component with props plus a short, hand-picked list
-   of presets — not a panel of sliders. Pick the handful of variants that are actually
-   worth printing or using, name them, and generate a page for each. A knob is only
-   worth its weight when the useful values are genuinely continuous and personal
-   (there is no sensible preset), and even then it must not be the thing that decides
-   what the page contains.
+   of presets — not a panel of sliders.
 3. **Variation that is purely visual belongs in CSS.** Prefer setting a CSS custom
-   property over rebuilding DOM. `SheetMusic.astro` resolves every dimension in its
-   `---` block and passes them down as five custom properties, so the CSS stays
-   readable while the values are plain build-time constants.
+   property over rebuilding DOM.
 4. **Variation that changes content belongs in a route.** A control that picks between
    a known, finite set of contents should be links to pre-rendered pages, not client
-   rendering. The calendars use `[year].astro` + `getStaticPaths()` and the sheet music
-   uses `[sheet].astro`, which is why they ship no rendering code at all. The default
-   variant keeps the bare path (`/printables/blank-sheet-music`) so existing links
-   resolve; the rest hang off it, and the picker is rows of links — one row per axis,
-   each swapping its own axis and keeping the rest.
+   rendering — as the bookmark calendar's `[year].astro` + `getStaticPaths()` does.
 
 Client `<script>` is for what only the browser can do: audio, timing, persistence,
-font measurement, `window.print()`. Selection state that CSS can express — the circle
-of fifths uses `:target` — should not become JavaScript.
+font measurement, `window.print()`.
 
-Every generated variant is a real page that the service worker precaches, so the list
-of presets trades directly against install size. Keep it short and deliberate.
-
-### Pages
-
-| Route | File |
-|---|---|
-| `/` | `src/pages/index.astro` |
-| `/about/` | `src/pages/about.astro` |
-| `/blog/`, and a page per post | `src/pages/blog/` |
-| `/rss.xml` | `src/pages/rss.xml.ts` |
-| `/games/`, `/games/word-steps/` and a page per ladder (English and Japanese) | `src/pages/games/` |
-| `/music/`, `/music/metronome`, `/music/drone`, `/music/vibrato`, `/music/abc-editor`, `/music/circle-of-fifths`, `/music/ear-training`, `/music/vocal-sight-reading`, `/music/etudes/` (including a page per ascending-on-string variant), `/music/etudes/presets/` and a page per preset family, `/music/etude-builder`, `/music/violin-3-octave-fingerings` | `src/pages/music/` |
-| `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
-| `/tools/`, `/tools/relations` | `src/pages/tools/` |
-| `/printables/`, and the sheets listed below | `src/pages/printables/` |
-| `/offline` | `src/pages/offline.astro` |
-
-Printables: `blank-sheet-music`, `speed-reading`, `scribal-abbreviations`,
-`weekly-time-tracker`, `daily-practice-schedule`, `weekly-practice-schedule`,
-`weekly-schedule`, `weekly-activity-planner`, plus
-`year-calendar` and `bookmark-calendar`, which each also generate a page per year
-(`year-calendar/[year].astro`). `src/printables/calendar/years.ts` sets that range —
-widening it multiplies real, precached pages, so keep it small. `blank-sheet-music`
-works the same way, over two axes: `SIZES` × `PAGE_COUNTS` in `staff-paper.ts` is
-expanded into `SHEETS`, and `blank-sheet-music/[sheet].astro` generates a page for
-each (`compact`, `compact-2-pages`, …). `weekly-activity-planner` has one axis,
-`PLANS` in `activity-planner.ts` — the school week at the bare path and the full
-week under it — so the picker is a single row of links and the pages carry no
-script at all. `perspective-grid` is one-, two-, three-, four- and five-point
-perspective, each with its own short list of layouts (`PERSPECTIVES` in
-`perspective-grid.ts`), one page per layout under the bare path.
-Booklets have their own section: `/printables/booklets/` is an index grouped
-as `BOOKLET_GROUPS` in `src/printables/booklet/booklets.ts` (planners, study and
-work, practice, for kids), and each booklet is its own page file beside it, named
-by its slug. The printables index lists them in a section of their own from the
-same list. The booklets index fails the build if a listed slug has no page file.
-All the dated booklets are undated: the reader writes in the week, month or year,
-so one page serves every one rather than a page per date.
-The A5 planner is a section of its own too: `/printables/a5-planner/` lists
-`PLANNER_GROUPS` from `src/printables/a5-planner/a5-planner.ts` (year, quarter,
-month, week, day, lists and trackers, paper), and each layout has three pages — A4
-at `/printables/a5-planner/{slug}/` (`[layout].astro`), A5 at `{slug}/a5/` and B5
-at `{slug}/b5/` — the paper being its one axis. `b5-test.astro` is the one-off
-check to print before the B5 pages.
+Rule 4 cuts both ways. Generating a page per variant is cheap to write and
+expensive to own: this is how the site ended up with 418 etude pages and a
+74-page planner. Generate a route only when a reader would actually open each one.
 
 ### Blog
 
-The one part of the site whose content is prose rather than data, and the prose
-is Nico's own — **never write or rewrite a post's body.** Helping means the
-frame around it: the schema, the pages, the styling, and a skeleton to fill in.
+The one part of the site whose content is prose, and the prose is Nico's.
 
 - `src/content/blog/*.md` — one Markdown file per post, the filename being the
   slug. Frontmatter is `title`, `description` (one sentence; it is both the
   index's summary and the page's meta description), `date`, and an optional
   `draft`.
-- `src/content.config.ts` — the `blog` collection. It is the counterpart to
-  `etudes`: the etudes are generated by a loader because they are computed,
-  the posts are read by `glob()` because they are written.
+- `src/content.config.ts` — the `blog` collection, read by `glob()`.
 - `src/blog/blog.ts` — `publishedPosts()` (newest first, drafts dropped from a
   production build but kept in `npm run dev`, so a half-written post is
   readable in place without being published or precached) plus the two date
   formatters. The query lives here rather than in a page so the index, a post
   and anything added later agree without repeating it.
-- `src/pages/rss.xml.ts` — the feed, through `@astrojs/rss`, which is
-  first-party and writes the XML itself (escaping, dates, the channel link), so
-  the endpoint only declares what goes in it. The site hand-rolls its PWA
-  because no library supports Astro 6; here one does, and taking it is what
-  makes a later full-text feed (`content: renderedHtml`) a line rather than a
-  rewrite. It needs `site` in `astro.config.mjs` — `rss()` throws without it,
-  since a feed reader cannot resolve a relative URL — which is also what makes
-  the canonical and Open Graph URLs absolute.
+- `src/pages/rss.xml.ts` — the feed, through `@astrojs/rss`. It needs `site` in
+  `astro.config.mjs` — `rss()` throws without it — which is also what makes the
+  canonical and Open Graph URLs absolute.
 - `src/pages/blog/index.astro` — the list. `blog/[post].astro` — one post:
   title, date, breadcrumb, `<Content />`, and the prose styles the global
   stylesheet has no rule for (blockquotes, code blocks, tables, figures),
   written with `:global()` because the markup comes from Markdown and carries
   no scoping attribute.
 
-The home page ends with the three newest posts, from the same
-`publishedPosts()`; the section is omitted entirely when there are none, so it
-never advertises an empty blog.
-
-A draft is not a built page, so publishing a post is what adds it to the
-precache — the same trade as a printable preset, one page at a time.
-
-### Game subsystem
-
-`src/games/` holds one entirely client-side game, its logic modules imported by its pages
-through a side-effect `<script>`. (Classrooms & Angry Teachers, the Kaplay game that used to
-live here, moved to the Bamboo Crossbows site.)
-
-`word-steps/` — Lewis Carroll's word ladder, for children, in **English and Japanese**:
-climb from `cat` to `dog`, or `ねこ` to `いぬ`, by changing one character at a time, every
-rung a real word. It leans on the same build-time habits as the printables rather than on a
-game engine, and nothing in it branches on the language — the words, the alphabet, the
-keypad and the nouns the game uses in its replies all come from one language record.
-
-- `words/english.ts`, `words/japanese.ts` — the vocabularies, by word length, hand-picked
-  rather than taken from a dictionary. A dense list is what makes the game forgiving, since
-  a stuck player usually has several ways forward; hand-picking is what keeps a four-letter
-  word list suitable for a seven-year-old. **Every word has at least one neighbour**: a word
-  no other word is one character from can never be reached or played, so it would only pad a
-  vocabulary the game cannot use. Japanese leans on two families the language gives for free
-  — adjectives all end in `い`, plain verbs in `う` or `る` — which is what makes the
-  three-character list connect at all.
-- `kana.ts` — the gojūon as it is written (five vowels across, one consonant row down), plus
-  the romanisation that turns `ねこ → いぬ` into `/games/word-steps/neko-to-inu/`. A dakuten
-  mark makes a *different* character here, which is what makes `はし → はじ` one step; the
-  small kana `ゃゅょっ` are characters in their own right for the same reason. Neither needs a
-  rule of its own, because a rung only counts if it is a word in the list.
-- `languages.ts` — the two language records: word lists, difficulty tiers, what one square of
-  a word is called ("letter" / "character"), how a word becomes a URL, and the keypad. The
-  keypad is the one real asymmetry: any device can type Latin letters, so English declares
-  none, while hiragana needs an IME a family tablet has not got, so Japanese declares the
-  grid and the page draws it as buttons. `keypadFor` blanks any key no word of that length
-  uses, and drops a row that empties completely.
-- `ladders.ts` — the puzzles and the breadth-first search over the word graph. A puzzle is
-  declared as its language, its two ends, and (for Japanese) an English gloss no derivation
-  could supply; its par, name, slug and group are all derived, so adding one is a line.
-  Imported by the pages *and* the browser, because the build walks the graph to check every
-  puzzle is solvable (`ladderPar` throws, failing the build, rather than shipping a page no
-  child can finish) and the browser walks it again to answer a hint.
-- `progress.ts` — which ladders have been finished, in `localStorage`. Kept separate so the
-  index can tick them off without pulling the word lists along with it.
-- `game.ts` — the browser half: judging entered words, drawing the chain, and typing from the
-  keypad. The puzzle's language, ends and par arrive as data attributes, and the start rung,
-  the target rung and the keypad are markup; the played rungs are the only thing the script
-  creates, and it builds them with `document.createElement`.
-
-Each ladder is its own pre-rendered route (`[ladder].astro` + `getStaticPaths()`), so the
-list in `LADDERS` trades against install size exactly as the printable presets do — and a
-Japanese page carries the kana grid as markup, which costs about 7 KB more than an English
-one. A hint searches with the words already played excluded, so what it offers is always a
-legal move and a player in a dead end is told so instead of being handed a word the game then
-rejects. The interface is in English throughout, including on the Japanese pages: the reader
-is a child learning the words, not one who already has them.
+The home page ends with the three newest posts, from the same `publishedPosts()`;
+the section is omitted entirely when there are none. **There are none right now** —
+the collection is empty and the build prints a warning saying so, which is
+correct and clears the moment Nico publishes his first post.
 
 ### Music subsystem
 
-`src/music/` mirrors the game subsystem pattern — pure TypeScript logic modules imported by their Astro pages via `<script>`:
+`src/music/` holds pure TypeScript logic modules imported by their Astro pages via `<script>`:
 
-- `src/music/metronome/metronome.ts` — `Metronome` class using the Web Audio API scheduler (look-ahead scheduling with `setInterval`). Accepts a `skipPercent` to randomly drop beats. Mounted by `metronome.astro`.
-- `src/music/drone/drone.ts` — `Drone` class and `NOTES` array (one octave C4–C5). Supports one-shot `pluck()` and sustained `startNote`/`stopNote`. Mounted by `drone.astro`, which also computes piano key layout in its frontmatter. The piano key colours are hardcoded (not CSS tokens) because the visual realism requires fixed white/black key colours regardless of theme.
-- `src/music/vibrato/vibrato.ts` — `Vibrato`, a sustained tone whose pitch swings *below*
-  the note and back up to it, plus the `SPEEDS` and `WIDTHS` preset tables. The note is the
-  ceiling of the swing rather than its centre, which is what vibrato actually is, so the
-  modulation is two nodes and not one: a sine LFO scaled to half the width plus a constant
-  offset of *minus* half the width, summed into `detune` so the swing lands in
-  `[-width, 0]` cents. Width is in cents for the same reason a finger's travel is a
-  distance: it means the same thing on every note. `vibrato.astro` builds its note buttons
-  at build time from `pitch.ts`, so the tables that reach the browser are only the two
-  preset lists; the pitch gauge is a CSS animation over two custom properties (`--cents`,
-  `--period`) rather than anything drawn per frame. Settings live in the query string, as
-  the ear trainer's do.
-- `src/music/violin/scales.ts` — the Carl Flesch fingering tables. Reference data only; `violin-3-octave-fingerings.astro` is a pure template over it.
-- `src/music/abc-track/abc-track.ts` — mounting logic for `components/AbcTrack.astro`, one
-  self-contained tune: SVG notation plus abcjs's playback widget. Its only props are
-  `abcText`, `transposition` and `audio`, because everything else abcjs understands is said
-  in the ABC source itself — a prop is only warranted for what has to reach abcjs's
-  JavaScript. The source travels to the browser as data attributes on the track's root
-  element and the component's `<script>` (hoisted and bundled once per page, however many
-  tracks a page renders) hands it to abcjs, which draws the DOM itself. `transposition` shifts the
-  notation *and* playback: abcjs reads `visualTranspose` as a transposing-instrument offset
-  and subtracts it back out of the MIDI, so the synth gets a matching `midiTranspose`.
-  Playback fetches soundfonts from abcjs's CDN at first Play, so it is the one part of the
-  site that needs the network even though the page itself is precached. `audio={false}`
-  draws notation alone, which is what the preset pages use: a transport bar under each of
-  nine short examples is clutter rather than use.
-- `src/music/abc-pitch.ts` — `abcPitch`, which writes the letter and octave marks for a
-  note *n* letters above written middle C, and `accidentalMark`. A white-key scale degree
-  never amounts to more than that one integer, which is why a mode, a root octave and an
-  open string are all arithmetic on it; both etude generators share this copy.
-  `src/music/abc-key.ts` holds `TONIC_SPELLINGS`, the table that mirrors abcjs's own
-  unconfigurable key-signature spellings, because two unrelated features have to agree
-  with them.
-- `src/music/etudes/scale.ts` — the seven diatonic modes, as **rotations** of one parent
-  scale rather than sets of intervals over a fixed tonic: the mode decides which letter
-  degree 1 sits on (Ionian C, Dorian D, Aeolian A), so every unaltered degree is a white
-  key, the tune is always written `K:C`, and there is no table of semitone offsets or key
-  signatures per mode. `KEYS` resolves all 7 × 12 keys at build time, and each label comes
-  from the *parent major* at that offset so the page and the staff can never disagree —
-  the mode never reaches abcjs, which sees only `K:C` and a transposition.
-- `src/music/etudes/etude.ts` — what an etude *is*, and the generator that turns one into
-  ABC. Notes, rhythm and bowing cycle independently and the tune runs until they realign
-  (`cycleLength`), which is the whole premise: five notes against a rhythm of three
-  against a bowing of two do not repeat for thirty notes. A **finger is part of its note**,
-  written after it — `3.2` is degree 3, second finger — rather than a pattern of its own:
-  a finger means something only against a particular note, and a separate fingering that
-  had to be kept in step with the notes was hard to use. The notes are spelled for a phone
-  keyboard: digits, letters, `.` and `,` only — `u`/`d` after a degree for an octave up or
-  down, `s`/`b` in front for sharp or flat, `,` to join a double stop (`1.1,3.3`) — never
-  `'`, `+` or `-`, which sit on the symbol pages. Parsing is case-insensitive, since a phone
-  capitalises the first letter of a field. `fromLegacyNotes` respells the old `1'`/`7,`/`1+3`
-  syntax and folds in an old `fingering` parameter, so bookmarked builder links still open.
-  Two fields are deliberately *not* cycling axes. The **key** is a transposition handed to abcjs and picks a pitch *class* only; the
-  **root octave** is the register the music is written in. Keeping those two apart is what
-  lets changing the key never move the octave and changing the octave never move the key.
-  The **articulation** — how the bow strokes, as against how many notes it takes at
-  once — cycles with them, for the same reason: a stroke is a claim about the bow, and
-  the bow is a time axis. It is optional, and an empty field is the normal case: nothing
-  is marked and the generated length is exactly what it was before the axis existed.
-  A token that is a *word* may carry a trailing repeat count — `q14 h` is fourteen
-  quarters and a half, `stac3 mart` is three staccato then one hammered — which is
-  unambiguous precisely because a rhythm letter or a technique code is not a number. The
-  notes and bowing fields have no count, because there the number already *is*
-  the token; a long note pattern is what a preset is for. Each count is capped at
-  `MAX_NOTES` where it is read, since `MAX_NOTES` truncates the finished tune and would
-  otherwise never get the chance. A *leading* `3` on a rhythm token is unambiguous for the
-  same reason, and makes a triplet: `3e` is one token that yields three notes. It is
-  expanded at parse time into a flat list of one slot per note, so nothing downstream
-  knows about tuplets — a triplet just counts as three notes against the other patterns,
-  which is what makes it cycle against them. A slot carries the duration it is *written*
-  at and, separately, the time it *takes*, counted in thirds of a unit so a triplet
-  member's two-thirds stays a whole number and barlines land where they should. The two
-  things a tuplet needs that a plain note does not: an explicit length that would stop
-  mid-triplet is nudged on to the end of it, and a bar is never broken with a triplet half
-  written.
-  `defineEtude` fills every default, so declaring an etude is a line. The clef is one token
-  on the key line and nothing more: in ABC a letter names an absolute pitch whatever clef
-  is in force, so `clef=alto` draws the same music lower on the staff and changes neither
-  the arithmetic nor the playback — which is the entire viola and cello story.
-- `src/music/etudes/presets/` — the named constants, one module per family (`notes`,
-  `rhythms`, `bowings`, `articulations`, `instruments`), each entry carrying the prose
-  that earns it a name, plus `families.ts` listing them so `/music/etudes/presets/` and
-  `presets/[family].astro` are maps over data rather than five hand-written pages. An
-  `Instrument` is violin, viola or cello: a clef, a default root octave, and the open
-  strings, which is all that actually differs. **Fingerings are not a family**: a finger
-  only means something against a particular note, so it is written on the note, and a
-  fingered scale is simply a note pattern of its own ("Scale, open string, first
-  position", "Scale, single string", "Scale, shifting" beside the plain scale).
-  `articulations.ts` is two layers for one reason: **a symbol cannot name a bow
-  stroke.** A dot is staccato on the string, spiccato off it or sautillé faster still,
-  and martelé is printed with dots, accents or hammer heads depending on the edition, so
-  each `Technique` declares the decoration drawn on every note of a run *and* the short
-  instruction written once above it — which is how a part actually tells a player.
-  Pizzicato also declares what to write when the bow comes back (`arco`) and that it is
-  not bowed, which is what drops the bow-direction marks while it lasts. `ARTICULATIONS`
-  on top of those is the named patterns *of* technique codes, the first of them empty,
-  because an unmarked etude is the normal case and deserves a name rather than an
-  absence. The three-octave note patterns sit near the top of the violin's range —
-  three octaves from root octave 4 reaches C7, and a mode that starts higher than Ionian
-  reaches past the instrument — so the range guard will refuse some mode-and-key
-  combinations and say which way to move. That is the guard working: a real three-octave
-  scale is played from the lowest string, which here means choosing the root octave and
-  key that put it there.
-  `ascending-on-string.ts` is still violin only — its `STRINGS` table is violin open
-  strings — and migrating it onto this model is the next step.
-- `src/music/etudes/ascending-on-string.ts` — climbing one string through the positions:
-  the four fingers played in a chosen order in first position, a shift up a step, the same
-  order again, all the way up. Two facts collapse the whole family into tables. The notes
-  are consecutive scale degrees above the open string — finger `f` in position `p` sounds
-  the `(p - 1) + f`th degree — so a note is one integer and the score is written as degrees
-  rather than pitches. And played in the major scale rooted on the open string, the shape is
-  identical on all four strings, so one source is generated on C and handed to abcjs with a
-  `transposition`, exactly as `single-octave-single-string.ts` does; the four strings come
-  out in G, D, A and E major, which is how a violinist plays them anyway. `buildAbc` writes
-  a subdivision ladder per position — the pattern as half, quarter, eighth and sixteenth
-  notes, each stage filling the same two bars, so it is stated once, twice, four and eight
-  times — and every slur is half a bar whatever the note value, which is what keeps the bow
-  at one speed while the notes accelerate. The shift bar carries `fingers[0]` up one degree,
-  which lands it exactly on the first note of the next position's block, for every one of
-  the twenty-four finger orders. Rendered by `components/AscendingEtude.astro` with
-  `components/AscendingPicker.astro` as three rows of links, in the `SheetMusicPicker`
-  idiom. The pages carry no script beyond the shared `AbcTrack` mount.
+- `metronome/metronome.ts` — `Metronome`, a Web Audio scheduler (look-ahead scheduling with `setInterval`). Accepts a `skipPercent` to randomly drop beats.
+- `drone/drone.ts` — `Drone` and `NOTES` (one octave C4–C5), one-shot `pluck()` and sustained `startNote`/`stopNote`. `drone.astro` computes the piano key layout in its frontmatter. The key colours are hardcoded, not CSS tokens, because white and black keys have to stay white and black in either theme.
+- `vibrato/vibrato.ts` — `Vibrato`, a sustained tone whose pitch swings *below* the note and back up to it, plus the `SPEEDS` and `WIDTHS` preset tables. The note is the ceiling of the swing rather than its centre, which is what vibrato actually is, so the modulation is two nodes and not one: a sine LFO scaled to half the width plus a constant offset of *minus* half the width, summed into `detune` so the swing lands in `[-width, 0]` cents. Width is in cents because a finger's travel is a distance: it means the same thing on every note. Settings live in the query string.
+- `ear-training/ear-training.ts` — derives the twenty-four keys from a tonic letter plus an accidental plus a mode (so a key is three values, not seven spellings), and returns the note pool for the selected octaves and the I–IV–V–I cadence that fixes the key. A key is described as all twelve semitones above its tonic, each marked diatonic or not, which is what lets the accidentals be a filter over one table rather than a second table. These tables are the only ones under `src/music/` that also reach the browser rather than resolving at build time, because the reader changes key while listening. Only *text* is rebuilt — the twelve answer buttons are markup, and both the solfège/letter choice and whether accidentals are in play are attributes (`data-labels`, `data-accidentals`) that CSS reads. Auto-play schedules each part from the length of the one before it, which the synth reports, so `setTimeout` only ever waits out silence. It answers by ear — `answerRun` climbs the notes in play from the tonic up to the question — and holds a screen wake lock while it runs.
+- `synth.ts` — `ToneSynth`, single notes, chords and melodies placed on the audio clock rather than held by hand the way `Drone` is. Used by the ear trainer.
+- `abc-track/abc-track.ts` — mounting logic for `components/AbcTrack.astro`, one self-contained tune: SVG notation plus abcjs's playback widget. Its only props are `abcText`, `transposition` and `audio`, because everything else abcjs understands is said in the ABC source itself. The source travels to the browser as data attributes and the component's `<script>` (hoisted and bundled once per page) hands it to abcjs. `transposition` shifts notation *and* playback: abcjs reads `visualTranspose` as a transposing-instrument offset and subtracts it back out of the MIDI, so the synth gets a matching `midiTranspose`. Playback fetches soundfonts from abcjs's CDN at first Play, so it is the one part of the site that needs the network even though the page itself is precached.
+- `abc-editor/` — the ABC editor page's logic and its `localStorage` persistence.
+- `abc-pitch.ts` / `abc-key.ts` — `abcPitch` writes the letter and octave marks for a note *n* letters above written middle C; `TONIC_SPELLINGS` mirrors abcjs's own unconfigurable key-signature spellings.
 
-  **The preset count is the thing to watch here.** Four strings × 24 finger orders × 2
-  position spans is 192 real, precached pages (~2.4 MB of the precache). The 24 orders
-  are the exercise itself and the four strings are not negotiable, so the span list is
-  where the restraint went: there are only two because a span starting
-  at first position is already contained in the longer one — each position is its own block
-  of systems, so "first through fifth" is the first five blocks of `1-7`, read and stopped
-  early. Only `5-10` is a genuinely different exercise (different register, entered by a
-  shift rather than from the open hand). Adding a third span costs 96 pages to print
-  something a reader can already stop early on. Violin only; viola would be a second table
-  of open strings plus the alto clef.
+#### Etudes
 
-- `src/music/circle-of-fifths/circle.ts` — the twelve keys plus the wheel's SVG geometry, all resolved at build time into `SEGMENTS`. The page maps that to static SVG and ships **no** JavaScript: each wedge is an `<a href="#key-N">` and the matching panel is revealed by `:target`.
-- `src/music/ear-training/` — `ear-training.ts` derives the twenty-four keys from a tonic
-  letter plus an accidental plus a mode (so a key is three values, not seven spellings),
-  and returns the note pool for the selected octaves and the I–IV–V–I cadence that fixes
-  the key; the voice it speaks with is `src/music/synth.ts`. A key is described as all twelve
-  semitones above its tonic, each marked diatonic or not, which is what lets the
-  accidentals be a filter over one table rather than a second table: an off-scale note
-  carries both of its names (`Di/Ra`, `C♯/D♭`) because either reading of it is right.
-  These tables are the only ones under `src/music/` that also reach the browser rather
-  than resolving at build time: the reader changes key while listening, so the pool and
-  the answer labels are rebuilt there. Only *text* is rebuilt — the twelve answer buttons
-  are written as markup once, and both the solfège/letter choice and whether the
-  accidentals are in play are attributes (`data-labels`, `data-accidentals`) that CSS
-  reads. The settings live in the query string, as in the etude builder, so a bookmark is
-  a practice setup. Auto-play is the same round the buttons play, on a timer: each part is
-  scheduled from the length of the one before it, which the synth reports, so `setTimeout`
-  only ever waits out silence while the audio inside a part stays on the audio clock. It
-  answers by ear rather than on screen — `answerRun` climbs the notes in play from the
-  tonic up to the question, so counting `Do Re Mi Fa` names it without looking — and holds
-  a screen wake lock while it runs, since the point of it is practising away from a screen.
-- `src/music/synth.ts` — `ToneSynth`, the voice the ear trainer and the vocal sight reader
-  share: single notes, chords, and melodies, all placed on the audio clock rather than held
-  by hand the way `Drone` is (a cadence needs its chords to follow each other to the beat).
-  It sits at the root of `src/music/` rather than inside a feature because two of them need
-  it. Using it, rather than abcjs's synth, is what lets the sight reader sound offline.
-- `src/music/sight-reading/sight-reading.ts` — a fresh singable line, quarter notes only:
-  the rhythm is not a variable because the exercise is pitch. Keys, octaves and the cadence
-  come from the ear trainer; the line is written on C and handed to abcjs with a
-  transposition, exactly as the generated etudes are, so abcjs spells the key signature and
-  picks the accidentals. Two things are worth knowing. The leap limit is measured in
-  *scale steps* against a diatonic index, so it survives a reader picking two octaves with
-  a gap between them, and a leap of n steps is weighted `n^-1.5` — raising the limit widens
-  what can happen without much changing what usually does, and an upward leap is rarer
-  again than the same leap down. And the line must close on the tonic, which the last note
-  cannot decide on its own (with steps only, Fa is three notes from home and no note
-  repeats), so `endings` works the possibilities backwards before a note is drawn and each
-  note is taken only from those that still leave a way home. `vocal-sight-reading.astro`
-  draws the staff with abcjs and nothing else; the settings are in the query string, as
-  the ear trainer's are.
+`src/music/etudes/` is now **data for the etude builder**, not a page generator.
+The 418 pre-generated etude pages are gone; what survives is the model, and Nico
+intends to extend the presets.
+
+- `scale.ts` — the seven diatonic modes, as **rotations** of one parent scale rather than sets of intervals over a fixed tonic: the mode decides which letter degree 1 sits on (Ionian C, Dorian D, Aeolian A), so every unaltered degree is a white key, the tune is always written `K:C`, and there is no table of semitone offsets or key signatures per mode. `KEYS` resolves all 7 × 12 keys at build time, and each label comes from the *parent major* at that offset so the page and the staff can never disagree.
+- `etude.ts` — what an etude *is*, and the generator that turns one into ABC. Notes, rhythm and bowing cycle independently and the tune runs until they realign (`cycleLength`), which is the whole premise: five notes against a rhythm of three against a bowing of two do not repeat for thirty notes. A **finger is part of its note**, written after it — `3.2` is degree 3, second finger. The notes are spelled for a phone keyboard: digits, letters, `.` and `,` only — `u`/`d` after a degree for an octave up or down, `s`/`b` in front for sharp or flat, `,` to join a double stop (`1.1,3.3`). Parsing is case-insensitive, since a phone capitalises the first letter of a field. `fromLegacyNotes` respells the old `1'`/`7,`/`1+3` syntax so bookmarked builder links still open. The **key** is a transposition handed to abcjs and picks a pitch *class* only; the **root octave** is the register the music is written in — keeping those apart is what lets changing the key never move the octave. The **articulation** cycles with the other axes, and is optional. A token that is a *word* may carry a trailing repeat count (`q14 h`), unambiguous because a rhythm letter is not a number; each count is capped at `MAX_NOTES` where it is read. A *leading* `3` on a rhythm token makes a triplet, expanded at parse time into one slot per note so nothing downstream knows about tuplets. A slot carries the duration it is *written* at and, separately, the time it *takes*, counted in thirds of a unit so a triplet member's two-thirds stays a whole number. `defineEtude` fills every default. The clef is one token on the key line and nothing more: in ABC a letter names an absolute pitch whatever clef is in force, which is the entire viola and cello story.
+- `presets/` — the named constants, one module per family (`notes`, `rhythms`, `bowings`, `articulations`, `instruments`), plus `families.ts` listing them so `/music/presets/` and `presets/[family].astro` are maps over data. An `Instrument` is violin, viola or cello: a clef, a default root octave, and the open strings. **Fingerings are not a family**: a finger only means something against a particular note, so it is written on the note. `articulations.ts` is two layers because **a symbol cannot name a bow stroke** — a dot is staccato on the string, spiccato off it or sautillé faster still — so each `Technique` declares the decoration drawn on every note *and* the short instruction written once above the run. `ARTICULATIONS` on top of those is the named patterns *of* technique codes, the first of them empty, because an unmarked etude is the normal case.
+
+Each preset carries a `description`. **Those descriptions are AI-written and
+Nico has not replaced them yet** — they are the one body of prose still on the
+site that isn't his. When he adds presets, he writes their descriptions; don't
+write them for him, and don't backfill the existing ones.
 
 ### Printables subsystem
 
-`src/printables/` holds the same kind of DOM-free logic modules, returning data rather than markup:
+- `calendar/calendar.ts` — ISO-8601 week maths and the row builders; `calendar/years.ts` decides which years get pages (one back, three forward — each is a real precached page, so keep the range small). Rendered by `components/BookmarkTable.astro` and `BookmarkSheet.astro`, with `YearPicker.astro` as a pair of links.
+- `booklet/mini-zine.ts` — the eight-page mini zine: one side of a landscape US Letter sheet, folded into a 2 × 4 grid with one slit along the middle crease, and collapsed into a booklet with no staples. It declares only the page layout (which page is in which panel, and which are upside down); the folds, the cut and each fold's direction are *derived*, because the paper is a single ring running through the pages in reading order — neighbouring panels are joined exactly when their pages are consecutive, a leaf folds printing-out, a spread folds printing-in. The module throws, failing the build, if a layout cannot form that ring.
 
-- `staff-paper/staff-paper.ts` — staff geometry maths plus the two preset axes: `SIZES` (four staff sizes) and `PAGE_COUNTS` (`1`, and `2` for printing double-sided onto one sheet of paper). `SHEETS` is their cross product, so the page count is a variant like any other rather than a stepper. A size is declared as "this many staves, this rastral size"; the gap between staves is *derived* so the staves fill the printable area exactly, which is what lets a preset be one line of data. Rendered by `components/SheetMusic.astro` (pure props, no state) with `components/SheetMusicPicker.astro` as two rows of links — each row swaps one axis and keeps the other. This page used to expose six sliders and rebuild itself in the browser; it is now eight static pages with no script of their own. Adding a size means adding an entry to `SIZES`, which costs one page per page count.
-- `calendar/calendar.ts` — ISO-8601 week maths and the grid/row builders; `calendar/years.ts` decides which years get pages. Rendered by `components/YearGrid.astro` and `components/BookmarkTable.astro`.
-- `perspective-grid/perspective-grid.ts` — perspective drawing grids on A4 landscape.
-  A layout is declared as where its vanishing points sit, in fractions of the frame
-  (values outside 0–1 put a point off the sheet), and the module resolves it into
-  strokes in millimetres: straight lines for one, two and three-point, circular arcs
-  for the curvilinear four and five-point grids. Strokes are allowed to run far past
-  the sheet — `PerspectiveGrid.astro` clips them to the frame in SVG — so no code works
-  out where a line meets the border. Each arc fan is spaced by the angle its arcs leave
-  a vanishing point at, which is what makes curves fan out of a point the way straight
-  rays do. Rendered by `components/PerspectiveGrid.astro` (static SVG, one unit per
-  millimetre) with `components/PerspectiveGridPicker.astro` as two rows of links: the
-  perspective, and the layouts of that perspective.
-- `booklet/mini-zine.ts` — the eight-page mini zine: one side of a landscape US Letter
-  sheet, folded into a 2 × 4 grid with one slit along the middle crease, and collapsed
-  into a booklet with no staples. It declares only the page layout (which page is in
-  which panel, and which are upside down); the folds, the cut and each fold's
-  direction are *derived*, because the paper is a single ring running through the
-  pages in reading order — neighbouring panels are joined exactly when their pages are
-  consecutive, a leaf (odd → even, and the covers) folds printing-out, a spread folds
-  printing-in. The module throws, failing the build, if a layout cannot form that ring.
+  `components/MiniZine.astro` is the sheet: eight named slots, `page-1` to `page-8`, in reading order and written the right way up; it places them (through `MiniZinePanel.astro`), turns over the upside-down ones, numbers the inside pages and draws the cut. `MiniZineSteps.astro` is the screen-only folding instructions. What goes in the slots comes from `components/paper/`: `Page`, `CoverTitle`, `Heading`, `Blank`, `Box` and `Grid` (dots or squares, drawn as an SVG pattern because CSS background hairlines drop out of print). They are sized in `em` — the sheet sets a panel's font size to a tenth of a printed inch. Astro only accepts static slot names, which is why the eight panels are written out rather than mapped.
 
-  A booklet is composed from components rather than described as data, so a new one is
-  a new page file and nothing else. `components/MiniZine.astro` is the sheet: eight
-  named slots, `page-1` to `page-8`, in reading order and written the right way up; it
-  places them (through `MiniZinePanel.astro`), turns over the upside-down ones, numbers
-  the inside pages and draws the cut. It knows nothing about what is on the pages.
-  `BookletLayout.astro` wraps a booklet's page: it takes the slug, reads the name and
-  description from `booklets.ts`, and adds the breadcrumbs and `MiniZineSteps.astro`
-  (the screen-only folding instructions), so a booklet's page file holds only its
-  `MiniZine`. What goes in the slots comes from `components/paper/`: `Page`,
-  `Section` (shares a page's height with its siblings), `CoverTitle`, `Heading`,
-  `Label`, `Blank`, `Box`, `Lines` (counted, or one per label), `CheckGrid`,
-  `CalendarGrid` (a blank month), `Ledger`, `Panels` (comic frames, as panels per
-  row), `Grid` (dots or squares, drawn as an SVG pattern because CSS background
-  hairlines drop out of print), `WritingSquares` (character boxes with a centre
-  cross), and `Day`, a composition of them. A composition only one booklet uses
-  lives in `components/booklets/` instead (`BookEntry` for the reading log). They are sized in `em` — the sheet sets
-  a panel's font size to a tenth of a printed inch — so they also work on any other
-  printable that sets a font size. Keep each one's props short; a part that would need
-  a long list of options is two parts. Astro only accepts static slot names, on both
-  sides, which is why the eight panels and each booklet's pages are written out rather
-  than mapped.
-- `a5-planner/a5-planner.ts` — binder pages for a six-ring A5 binder: the layouts,
-  grouped, each with its page count (`1`, or `2` for a spread), and the two papers.
-  A layout is a component in `components/a5-planner/layouts/`, rendering its one or
-  two `A5Page`s from the `components/paper/` parts; `PlannerLayout.astro` maps a slug
-  to its component and fails the build if one is missing. `A5Page` is 148.5 × 210 mm
-  drawn in `--mm`, with a wider margin on the ring edge (left, or right for the left
-  page of a spread) and 2.5 mm type, so a `Grid` step of 2 is a 5 mm grid.
-  `A4Sheet` puts two pages on landscape A4 with cut marks at the middle — a spread
-  fills it, a single page prints twice so one cut makes two — and `A5Sheets` prints
-  them one to a sheet. `B5Sheet` is for a printer (or a phone's print dialog)
-  with no B5 size: A4 and B5 share a shape, so the A4 sheet's two pages shrink by
-  128.5/148.5 onto B5, turned on their side, one above the other, to cut into two B6
-  pages. It is laid out as A4 portrait, the size the dialog offers, with everything
-  inside the 182 × 257 mm a tray that centres the paper puts a B5 sheet on — 14 mm in
-  from each side, against the top — and at least 6 mm in from its edges, because a
-  printer that thinks it holds A4 would put anything else past the paper (on a laser,
-  onto the roller). `b5-test.astro` checks that the tray does centre the sheet,
-  drawing only between 34 and 176 mm across, which is on the paper whichever way the
-  tray lines it up. Each route imports only its own sheet, because each sheet
-  sets its own `@page` size and a page importing both would carry both rules. The
-  parts added for it — `TrackerGrid` (dense habit / day grids), `Hours`,
-  `Timetable`, `Boxes`, `Marks`, `Row` and `Column` — work on any printable that
-  sets a font size, as the rest of `paper/` do.
-- `speed-reading/speed-reading.ts` — line wrapping and column dealing. The one page that must re-render in the browser: where a line breaks depends on the reader's actual font metrics, so the build uses `estimateWidth` for first paint and the browser re-runs the layout with canvas measurements.
+  Only one booklet survives, `/printables/sketchbook`. Its drawing prompts are
+  AI-written placeholder content; they are Nico's to replace.
 
 ### Timers subsystem
 
@@ -478,39 +175,17 @@ pause-safe `Countdown` every timer but the stopwatch runs on. It keeps an end-ti
 timeout next to its 200 ms tick, because a hidden tab may run a repeating tick only
 once a minute, and the finish is what the notification hangs on.
 
-- `shared/notify.ts` — the system notification sent when a timer finishes (and, for
-  the Pomodoro and interval timers, when each phase or interval does). They are
-  written to read on a **watch**: Android mirrors them to a paired Fitbit as the
-  title then the body, on a screen a few words wide with no glyphs for most emoji,
-  so a title is two or three words, a body one short sentence, and there are no
-  emoji. They go through the service worker's `showNotification`, because Android
-  Chrome throws on `new Notification()`; one tag per page with `renotify`, so a new
-  one replaces the last and still buzzes. Permission is asked on Start (it needs a
-  user gesture), a skipped phase sends nothing, and `components/TimerNotifications.astro`
-  is the one line under each timer saying whether notifications are on and, if not,
-  what to do. The service worker's `notificationclick` focuses the timer's tab.
-
-### Tools subsystem
-
-`src/tools/` holds tools whose content is the reader's own, so unlike the printables
-there is nothing to pre-render and the page builds its view in the browser.
-
-- `relations/relations.ts` — the relation grid: a list of items and the set of related
-  pairs, kept in `localStorage` (`relations:grid`). A relation has no direction, so it is
-  stored once under an order-independent `pairKey`, and the grid's symmetry comes from
-  that rather than from keeping two cells in step. Removing an item drops its pairs.
-  `relations.astro` draws the table with `document.createElement` (the items are the
-  reader's, so there is no markup to write in advance); the headers stick inside a
-  scrolling container — `border-collapse: separate`, because collapsed borders scroll
-  away from under a sticky cell — and picking a name opens a panel listing what it is
-  related to, as links to jump between items. A filter hides the rows *or* the columns
-  whose names don't contain the text (`matching`), never both: the other axis stays whole,
-  so a filtered row still shows everything it relates to. The panel's "Add related"
-  field (`relateByName`) links the selected item to a name, creating the item if it is
-  new, so a group's members can be typed in one after another. Selecting an item —
-  including by adding it, or typing a name already in the grid into "New item" — puts
-  the cursor in that field, so a whole group goes in from the keyboard; it and the filter share a
-  `<datalist>` of every name as suggestions.
+`shared/notify.ts` — the system notification sent when a timer finishes (and, for
+the Pomodoro and interval timers, when each phase or interval does). They are
+written to read on a **watch**: Android mirrors them to a paired Fitbit as the
+title then the body, on a screen a few words wide with no glyphs for most emoji,
+so a title is two or three words, a body one short sentence, and there are no
+emoji. They go through the service worker's `showNotification`, because Android
+Chrome throws on `new Notification()`; one tag per page with `renotify`, so a new
+one replaces the last and still buzzes. Permission is asked on Start (it needs a
+user gesture), a skipped phase sends nothing, and `components/TimerNotifications.astro`
+is the one line under each timer saying whether notifications are on. The service
+worker's `notificationclick` focuses the timer's tab.
 
 ### PWA subsystem
 
@@ -520,7 +195,8 @@ The site is an installable, offline-capable PWA. No PWA library is used —
 - `public/manifest.webmanifest` — name, colours, icons, and app shortcuts. Its
   `theme_color`/`background_color` must be the **light** theme values, since a
   manifest can only carry one of each (the per-scheme `<meta name="theme-color">`
-  tags in `Layout.astro` still handle the browser UI).
+  tags in `Layout.astro` still handle the browser UI). Audit `shortcuts` whenever
+  a route is removed.
 - `src/pwa/service-worker.js` — the service worker source. It is *not* bundled by
   Astro; `__CACHE_NAME__` and `__PRECACHE_MANIFEST__` are placeholders.
 - `src/pwa/integration.mjs` — an Astro integration (registered in
@@ -532,11 +208,11 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site (~15 MB across ~750 files, most of it the generated etude and
-printable variants) is precached, so every page works offline after the first
-visit. `npm run build` prints the file count; check it when adding presets. Caching is network-first for navigations, cache-first for hashed
-`/_astro/` assets, and stale-while-revalidate for everything else same-origin.
-A navigation to a page that was never cached falls back to `src/pages/offline.astro`.
+The whole site is precached (78 files, ~1.4 MB), so every page works offline after
+the first visit. `npm run build` prints the file count; check it when adding pages.
+Caching is network-first for navigations, cache-first for hashed `/_astro/` assets,
+and stale-while-revalidate for everything else same-origin. A navigation to a page
+that was never cached falls back to `src/pages/offline.astro`.
 
 Icons in `public/icons/` are PNG renders of `public/icon.svg` (rounded, for
 `purpose: any`) and `public/icon-maskable.svg` (full-bleed, glyph inside the 80%
@@ -546,8 +222,5 @@ safe zone). Edit the SVG sources and re-render the PNGs if the mark changes.
 
 - All colours are CSS custom properties defined in `Layout.astro` (e.g. `--bg`, `--text`, `--muted`, `--border`, `--surface`, `--accent`, `--accent-text`), with `prefers-color-scheme: dark` overrides. Never hardcode colours in page or component files — consume the tokens.
 - `--measure: 46rem` is the shared max-width used by header, main, and footer.
-- `--font-jp` is the stack for Japanese text (the Word Steps hiragana ladders). It names
-  real faces before falling back, because a bare `system-ui` renders kana in whatever the
-  OS happens to pick.
 - Styles in page and component files are Astro-scoped by default; only `Layout.astro`'s `<style is:global>` affects the whole document.
-- `build.inlineStylesheets: 'never'` in `astro.config.mjs` keeps stylesheets as shared, hashed files in `/_astro/` instead of inlining them. Astro's default inlines anything under 4 KB, which copied `Layout.astro`'s global CSS into every page; with hundreds of pages, most of them generated variants, one cached stylesheet is far cheaper than a copy per page (measured at ~560 pages, it cut the built HTML from 9.0 to 7.2 MB). The cost is a stylesheet request per page, which the service worker serves from cache.
+- `build.inlineStylesheets: 'never'` in `astro.config.mjs` keeps stylesheets as shared, hashed files in `/_astro/` instead of inlining them. This mattered far more at 646 pages than at 31, but one cached stylesheet is still cheaper than a copy per page.

@@ -33,23 +33,8 @@ const defaultWidth = WIDTHS[DEFAULT_WIDTH]!;
 
 <Layout
   title="Vibrato — Nico Bako"
-  description="Hear vibrato at any speed and width: the note is the top of the swing, and the pitch rolls below it and back."
 >
   <h1>Vibrato</h1>
-  <p>
-    Vibrato swings the pitch <strong>below</strong> the note and back up to it — it never
-    goes above. The note you are playing is the ceiling of the swing, which is why a
-    rolled-back finger still sounds in tune: the ear takes the top of each cycle as the
-    pitch. Switch the vibrato off while a note is sounding and you will hear that the
-    steady tone matches the top, not the middle.
-  </p>
-  <p>
-    Two things vary. <strong>Speed</strong> is how many oscillations happen per second —
-    around four is slow, around eight is fast, and everything worth playing is in between.
-    <strong>Width</strong> is how far below the note each swing reaches, measured in cents
-    (a half step is 100). An extremely wide vibrato on F really does dip all the way to
-    E; most playing lives nearer a fifth of that.
-  </p>
 
   <fieldset class="notes" id="notes">
     <legend>Note</legend>
@@ -88,9 +73,6 @@ const defaultWidth = WIDTHS[DEFAULT_WIDTH]!;
           <span class="gauge-label floor-label" id="floor-label">−{defaultWidth.cents} ¢</span>
         </div>
       </div>
-      <p class="gauge-caption">
-        Drawn to scale over a half step: the note on top, the swing hanging below it.
-      </p>
     </div>
 
     <div class="controls">

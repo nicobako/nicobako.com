@@ -6,16 +6,6 @@ import { SECTIONS } from "../site/navigation.ts";
 // The three newest posts. The section disappears entirely when there are none,
 // so the home page never advertises an empty blog.
 const latestPosts = (await publishedPosts()).slice(0, 3);
-
-const stack = [
-  "Python",
-  "Django",
-  "FastAPI",
-  "SQL",
-  "Docker",
-  "TypeScript",
-  "Git",
-];
 ---
 
 <Layout>
@@ -30,16 +20,11 @@ const stack = [
   </section>
 
   <h2>Around the site</h2>
-  <div class="sections">
+  <ul class="sections">
     {SECTIONS.map((section) => (
-      <article>
-        <h3>
-          <a href={section.href}>{section.label}</a>
-        </h3>
-        <p>{section.blurb}</p>
-      </article>
+      <li><a href={section.href}>{section.label}</a></li>
     ))}
-  </div>
+  </ul>
 
   {latestPosts.length > 0 && (
     <>
@@ -61,58 +46,18 @@ const stack = [
       </p>
     </>
   )}
-
-  <h2>Tools I reach for</h2>
-  <ul class="stack">
-    {stack.map((tech) => (
-      <li>{tech}</li>
-    ))}
-  </ul>
 </Layout>
 
 <style>
-  /* One card per section — the way into the site now that the header has no
-     dropdown. Plain bordered cards, no shadows or motion; the whole
-     card is clickable, with the heading's link as the accessible target. */
-  .sections {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    gap: 1rem;
-  }
-
-  .sections article {
-    position: relative;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.25rem;
-    transition: border-color 0.12s;
-  }
-
-  .sections article:hover {
-    border-color: var(--accent);
-  }
-
-  .sections h3 {
-    margin-top: 0;
-  }
-
-  .sections h3 a {
-    text-decoration: none;
-  }
-
-  /* The heading's link covers the card, so the whole card is the target
-     without nesting the paragraph inside an <a>. */
-  .sections h3 a::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 10px;
-  }
-
-  .sections p {
-    margin-bottom: 0;
+  .intro p {
     color: var(--muted);
-    font-size: 0.95rem;
+    max-width: 46ch;
+  }
+
+  .role {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1rem;
   }
 
   .posts {
@@ -137,57 +82,5 @@ const stack = [
     margin: 0;
     font-size: 0.9rem;
     color: var(--muted);
-  }
-
-  .intro p {
-    color: var(--muted);
-    max-width: 46ch;
-  }
-
-  .role {
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 1rem;
-  }
-
-  /* Stack: list rendered as inline pills. */
-  .stack {
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0;
-  }
-
-  .stack li {
-    margin-top: 0;
-    font-size: 0.9rem;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 0.3rem 0.8rem;
-  }
-
-  .game {
-    display: block;
-    color: var(--text);
-    text-decoration: none;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.25rem;
-  }
-
-  .game:hover {
-    border-color: var(--accent);
-  }
-
-  .game strong {
-    display: block;
-    margin-bottom: 0.25rem;
-  }
-
-  .game span {
-    color: var(--muted);
-    font-size: 0.95rem;
   }
 </style>

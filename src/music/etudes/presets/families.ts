@@ -101,7 +101,7 @@ export function familyFor(slug: string): PresetFamily {
   return family;
 }
 
-export const PRESETS_PATH = "/music/etudes/presets";
+export const PRESETS_PATH = "/music/presets";
 
 export function familyHref(slug: string): string {
   return `${PRESETS_PATH}/${slug}`;
