@@ -1,0 +1,408 @@
+---
+// One cycling axis of an etude, as a row of chips you can tap.
+//
+// `etude.ts` reads four little languages, and they are the only way to say every pattern
+// the model allows — but they are a manual you have to read before you can make a scale.
+// A lane is the other door: the pattern as chips, and under the selected chip a keypad of
+// that lane's whole vocabulary. Tapping spells the same tokens the box always held, so
+// the languages are still there for anyone who would rather type them.
+//
+// All four lanes share their scaffolding — a name, the length the lane contributes to the
+// cycle, the named patterns that fill it, the chip strip, the text box the model is
+// actually read from, and a keypad — so it is written once. The keypads differ, and are
+// branched on below rather than slotted in, so that one component owns a lane's markup
+// *and* its styles: a chip is built in the browser, and `:global()` reaches it only from
+// the component whose template holds the strip it lives in.
+//
+// The text box keeps its lane's `id`, because it is still what the query string and the
+// etude model are written from. The chips are a view of it; nothing is stored twice.
+import {
+  ACCIDENTALS,
+  DEGREES,
+  FINGERS,
+  RHYTHM_VALUES,
+  SLURS,
+  type LaneSpec,
+} from "../music/etudes/lanes.ts";
+import { TECHNIQUES } from "../music/etudes/tables/articulations.ts";
+
+interface Props {
+  lane: LaneSpec;
+  value: string;
+}
+
+const { lane, value } = Astro.props;
+const { id, name } = lane;
+---
+
+<section class="lane" data-lane={id} data-mode="chips">
+  <div class="lane-head">
+    <label class="lane-name" for={id}>{name}</label>
+    <span class="lane-length" data-length></span>
+    <button type="button" class="lane-mode" data-text-toggle aria-pressed="false">
+      Text
+    </button>
+  </div>
+
+  <div class="chips" data-chips role="group" aria-label={name}></div>
+
+  <input
+    class="lane-input"
+    id={id}
+    name={id}
+    type="text"
+    spellcheck="false"
+    autocapitalize="off"
+    autocorrect="off"
+    value={value}
+  />
+
+  <p class="lane-error" data-error aria-live="polite"></p>
+
+  <div class="keypad" data-keypad hidden>
+    {id === "notes" && (
+      <>
+        <div class="keypad-row">
+          <span class="keypad-label">Note</span>
+          <span class="members" data-members></span>
+          <button type="button" data-act="add-note">+ note</button>
+          <button type="button" data-act="drop-note">− note</button>
+        </div>
+        <div class="keypad-row">
+          <span class="keypad-label">Degree</span>
+          {DEGREES.map((degree) => (
+            <button type="button" data-act="degree" data-value={degree}>
+              {degree}
+            </button>
+          ))}
+        </div>
+        <div class="keypad-row">
+          <span class="keypad-label">Accidental</span>
+          {ACCIDENTALS.map((accidental) => (
+            <button type="button" data-act="acc" data-value={accidental.value}>
+              {accidental.label}
+            </button>
+          ))}
+        </div>
+        <div class="keypad-row">
+          <span class="keypad-label">Octave</span>
+          <button type="button" data-act="oct" data-value="-1">−</button>
+          <output class="readout" data-oct>0</output>
+          <button type="button" data-act="oct" data-value="1">+</button>
+        </div>
+        <div class="keypad-row">
+          <span class="keypad-label">Finger</span>
+          {FINGERS.map((finger) => (
+            <button type="button" data-act="finger" data-value={finger.value}>
+              {finger.label}
+            </button>
+          ))}
+        </div>
+      </>
+    )}
+
+    {id === "rhythm" && (
+      <>
+        <div class="keypad-row">
+          <span class="keypad-label">Value</span>
+          {RHYTHM_VALUES.map((rhythm) => (
+            <button
+              type="button"
+              class="wide"
+              data-act="value"
+              data-value={rhythm.value}
+            >
+              {rhythm.label}
+              <small>{rhythm.name}</small>
+            </button>
+          ))}
+        </div>
+        <div class="keypad-row">
+          <span class="keypad-label">Shape</span>
+          <button type="button" data-act="dot">Dotted</button>
+          <button type="button" data-act="triplet">Triplet</button>
+        </div>
+        <div class="keypad-row">
+          <span class="keypad-label">Repeat</span>
+          <button type="button" data-act="count" data-value="-1">−</button>
+          <output class="readout" data-count>1</output>
+          <button type="button" data-act="count" data-value="1">+</button>
+        </div>
+      </>
+    )}
+
+    {id === "bowing" && (
+      <div class="keypad-row">
+        <span class="keypad-label">Notes per bow</span>
+        {SLURS.map((slur) => (
+          <button type="button" data-act="slur" data-value={slur}>
+            {slur}
+          </button>
+        ))}
+      </div>
+    )}
+
+    {id === "articulation" && (
+      <>
+        <div class="keypad-row">
+          <span class="keypad-label">Stroke</span>
+          {TECHNIQUES.map((technique) => (
+            <button
+              type="button"
+              class="wide"
+              data-act="code"
+              data-value={technique.code}
+            >
+              {technique.name}
+            </button>
+          ))}
+        </div>
+        <div class="keypad-row">
+          <span class="keypad-label">Repeat</span>
+          <button type="button" data-act="count" data-value="-1">−</button>
+          <output class="readout" data-count>1</output>
+          <button type="button" data-act="count" data-value="1">+</button>
+        </div>
+      </>
+    )}
+
+    <div class="keypad-row keypad-foot">
+      <button type="button" data-chip-act="duplicate">Duplicate</button>
+      <button type="button" data-chip-act="remove">Remove</button>
+      <button type="button" data-chip-act="close">Done</button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .lane {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.9rem 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .lane-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .lane-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* How many notes this lane contributes to the cycle — one chip can be many notes. */
+  .lane-length {
+    min-width: 2ch;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .lane-mode {
+    margin-left: auto;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.8rem;
+  }
+
+  .lane-mode {
+    cursor: pointer;
+  }
+
+  .lane-mode[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    min-height: 2.4rem;
+  }
+
+  /*
+   * The chip strip and the text box are two views of one value, so which of them is shown
+   * is a purely visual variation and belongs here rather than in a branch of the script.
+   */
+  .lane[data-mode="chips"] .lane-input,
+  .lane[data-mode="text"] .chips,
+  .lane[data-mode="text"] .keypad {
+    display: none;
+  }
+
+  .lane-input {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+  }
+
+  /* Built in the browser — the one place on this site where the DOM is written by hand. */
+  .chips :global(.chip) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.6rem;
+    padding: 0.3rem 0.45rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    line-height: 1.25;
+    cursor: pointer;
+  }
+
+  .chips :global(.chip[aria-pressed="true"]) {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    color: var(--accent);
+  }
+
+  /* A token the lane cannot read — a typo, or an old link. It says so and stays put. */
+  .chips :global(.chip.invalid) {
+    border-color: #c0392b;
+    border-style: dashed;
+    color: #c0392b;
+  }
+
+  .chips :global(.chip-add) {
+    border-style: dashed;
+    color: var(--muted);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .chips :global(.chip.invalid) {
+      border-color: #ff8a80;
+      color: #ff8a80;
+    }
+  }
+
+  .lane-error {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: #c0392b;
+  }
+
+  .lane-error:empty {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .lane-error {
+      color: #ff8a80;
+    }
+  }
+
+  .keypad {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.7rem;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+
+  .keypad[hidden] {
+    display: none;
+  }
+
+  .keypad-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .keypad-label {
+    flex: 0 0 5.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .keypad button {
+    min-width: 2.4rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.9rem;
+    line-height: 1.2;
+    cursor: pointer;
+  }
+
+  .keypad button.wide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 3.4rem;
+  }
+
+  .keypad button small {
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  .keypad button[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .keypad button[aria-pressed="true"] small {
+    color: var(--accent);
+  }
+
+  .readout {
+    min-width: 2.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .members {
+    display: inline-flex;
+    gap: 0.3rem;
+  }
+
+  .members :global(.member) {
+    min-width: 2.4rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .members :global(.member[aria-pressed="true"]) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .keypad-foot {
+    margin-top: 0.2rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border);
+  }
+</style>

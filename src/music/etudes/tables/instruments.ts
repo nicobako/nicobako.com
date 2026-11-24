@@ -21,7 +21,6 @@ export interface Instrument {
   /** The lowest and a generously high note, in semitones from middle C. */
   lowest: number;
   highest: number;
-  description: string;
 }
 
 export const INSTRUMENTS: Instrument[] = [
@@ -33,8 +32,6 @@ export const INSTRUMENTS: Instrument[] = [
     strings: ["G3", "D4", "A4", "E5"],
     lowest: -5,
     highest: 40,
-    description:
-      "Treble clef, written from middle C up. The open strings are a fifth apart, so a scale rooted on one of them is the same shape on all four.",
   },
   {
     slug: "viola",
@@ -44,8 +41,6 @@ export const INSTRUMENTS: Instrument[] = [
     strings: ["C3", "G3", "D4", "A4"],
     lowest: -12,
     highest: 33,
-    description:
-      "Alto clef, a fifth below the violin and written an octave lower. The same note pattern as a violin study, read on the middle-C line instead.",
   },
   {
     slug: "cello",
@@ -55,8 +50,6 @@ export const INSTRUMENTS: Instrument[] = [
     strings: ["C2", "G2", "D3", "A3"],
     lowest: -24,
     highest: 24,
-    description:
-      "Bass clef, an octave below the viola. Real cello writing changes clef mid-piece for the high register; these studies stay in bass clef and so stay low.",
   },
 ];
 

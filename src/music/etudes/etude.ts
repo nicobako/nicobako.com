@@ -39,26 +39,17 @@
 import { NATURAL_OFFSETS, abcPitch, accidentalMark } from "../abc-pitch.ts";
 import {
   degreeIndex,
-  keyFor,
   modeFor,
   normaliseOffset,
   type Mode,
   type ModeSlug,
 } from "./scale.ts";
+import { instrumentMatching, type ClefSlug } from "./tables/instruments.ts";
 import {
-  instrumentMatching,
-  type ClefSlug,
-} from "./presets/instruments.ts";
-import {
-  ARTICULATIONS,
   TECHNIQUE_CODES,
   techniqueFor,
   type Technique,
-} from "./presets/articulations.ts";
-import { BOWINGS } from "./presets/bowings.ts";
-import { NOTE_PATTERNS } from "./presets/notes.ts";
-import { findPreset, type Preset } from "./presets/preset.ts";
-import { RHYTHMS } from "./presets/rhythms.ts";
+} from "./tables/articulations.ts";
 
 /**
  * The unit note length. At 1/32 every duration the rhythm box can spell — including the
@@ -69,18 +60,22 @@ const UNIT_DENOMINATOR = 32;
 const RHYTHM_UNITS: Record<string, number> = { s: 2, e: 4, q: 8, h: 16, w: 32 };
 
 /** Runaway patterns are capped rather than allowed to generate thousands of bars. */
-const MAX_NOTES = 192;
+export const MAX_NOTES = 192;
 
+// The four token grammars. They are exported because the chip editor in the builder is
+// the *writer* of this spelling and these are what read it: one grammar, two directions,
+// so a chip can never spell something its own lane cannot parse.
+//
 // Sharps and flats in front (`#` is accepted beside `s`, being where a musician looks for
 // it), `u` and `d` after for an octave up or down, and `.` with a finger last.
-const NOTE_PATTERN = /^([s#b]*)([1-7])([ud]*)(?:\.([0-4]))?$/;
+export const NOTE_TOKEN = /^([s#b]*)([1-7])([ud]*)(?:\.([0-4]))?$/;
 // The trailing digits are a repeat count: `q14` is fourteen quarters. A rhythm token is a
 // letter, so a number on the end can only be a count — which is exactly why the three
 // fields whose tokens are themselves numbers have no count. A *leading* 3 is unambiguous
 // for the same reason, and makes a triplet: `3e` is three eighths in the time of two.
-const RHYTHM_PATTERN = /^(3)?([seqhw])(\.?)(\d*)$/;
-const ARTICULATION_PATTERN = /^([a-z]+)(\d*)$/;
-const BOWING_PATTERN = /^[1-9][0-9]*$/;
+export const RHYTHM_TOKEN = /^(3)?([seqhw])(\.?)(\d*)$/;
+export const ARTICULATION_TOKEN = /^([a-z]+)(\d*)$/;
+export const BOWING_TOKEN = /^[1-9][0-9]*$/;
 const METER_PATTERN = /^(\d+)\/(\d+)$/;
 
 export interface NoteMember {
@@ -131,6 +126,8 @@ export interface BuildResult {
   abc: string;
   /** How many notes were generated. */
   noteCount: number;
+  /** How many bars they filled — what the reader is actually looking at. */
+  bars: number;
   /** How many notes one full cycle of notes, rhythm and bowing takes. */
   cycle: number;
   /** Semitones to hand abcjs; the source itself is always written on C. */
@@ -172,25 +169,6 @@ export function defineEtude(spec: Partial<Etude> & { title: string }): Etude {
   };
 }
 
-/** A sentence naming what this etude asks for, by preset name wherever one matches. */
-export function describeEtude(etude: Etude): string {
-  const mode = modeFor(etude.mode);
-  const name = (list: Preset[], value: string) =>
-    findPreset(list, value)?.name.toLowerCase() ?? value.trim();
-
-  const instrument = instrumentMatching(etude.clef, etude.rootOctave);
-  const parts = [
-    `${name(NOTE_PATTERNS, etude.notes)} in ${keyFor(mode, etude.keyOffset).label}`,
-    `${name(RHYTHMS, etude.rhythm)} rhythm`,
-    `${name(BOWINGS, etude.bowing)} bowing`,
-  ];
-  if (etude.articulation.trim() !== "") {
-    parts.push(`${name(ARTICULATIONS, etude.articulation)} articulation`);
-  }
-  parts.push(instrument ? instrument.name.toLowerCase() : `${etude.clef} clef`);
-  return parts.join(", ") + ".";
-}
-
 /**
  * Lower-cased, because a phone keyboard capitalises the first letter of a field and every
  * pattern here is written in lower case.
@@ -229,8 +207,8 @@ function repeatCount(digits: string, token: string): { count: number; error?: st
   return { count };
 }
 
-function parseMember(part: string): NoteMember | null {
-  const match = NOTE_PATTERN.exec(part);
+export function parseMember(part: string): NoteMember | null {
+  const match = NOTE_TOKEN.exec(part);
   if (!match) return null;
   const [, accidentals = "", degree = "1", octaves = "", finger] = match;
   return {
@@ -334,7 +312,7 @@ export function parseRhythm(input: string): { slots: RhythmSlot[]; errors: strin
   const errors: string[] = [];
 
   for (const token of tokenize(input)) {
-    const match = RHYTHM_PATTERN.exec(token);
+    const match = RHYTHM_TOKEN.exec(token);
     if (!match) {
       errors.push(
         `Rhythm "${token}" isn't one of s, e, q, h, w with an optional leading 3 for a triplet, an optional dot and an optional count — q. is a dotted quarter, 3e is an eighth triplet, q14 is fourteen quarters.`,
@@ -369,7 +347,7 @@ export function parseBowing(input: string): { groups: number[]; errors: string[]
   const errors: string[] = [];
 
   for (const token of tokenize(input)) {
-    if (!BOWING_PATTERN.test(token)) {
+    if (!BOWING_TOKEN.test(token)) {
       errors.push(`Bowing "${token}" isn't a slur length — use whole numbers, 1 for a separate bow.`);
       continue;
     }
@@ -395,7 +373,7 @@ export function parseArticulation(input: string): {
   const errors: string[] = [];
 
   for (const token of tokenize(input)) {
-    const match = ARTICULATION_PATTERN.exec(token);
+    const match = ARTICULATION_TOKEN.exec(token);
     const technique = match ? techniqueFor(match[1]!) : undefined;
     if (!match || !technique) {
       errors.push(
@@ -467,6 +445,25 @@ function memberSemitones(member: NoteMember, mode: Mode, rootOctave: number): nu
 }
 
 /**
+ * The lowest and highest note this etude sounds, in semitones from middle C.
+ *
+ * The builder shows it next to the instrument, because the one mistake this model makes
+ * easy — a three-octave scale that walks off the top of the fingerboard — is invisible
+ * until it is a complaint. Null when the notes cannot be read at all.
+ */
+export function soundingRange(etude: Etude): { low: number; high: number } | null {
+  const { notes, errors } = parseNotes(etude.notes);
+  if (errors.length > 0) return null;
+  const mode = modeFor(etude.mode);
+  const sounding = notes.flatMap((event) =>
+    event.members.map(
+      (member) => memberSemitones(member, mode, etude.rootOctave) + etude.keyOffset,
+    ),
+  );
+  return { low: Math.min(...sounding), high: Math.max(...sounding) };
+}
+
+/**
  * Whether the music fits on the instrument the clef and root octave name.
  *
  * Only checked when the pair matches a known instrument, so an unusual combination is
@@ -484,7 +481,6 @@ function rangeErrors(etude: Etude, notes: NoteEvent[], mode: Mode): string[] {
   );
   const low = Math.min(...sounding);
   const high = Math.max(...sounding);
-
   const errors: string[] = [];
   if (low < instrument.lowest) {
     errors.push(
@@ -527,7 +523,7 @@ export function buildEtude(etude: Etude): BuildResult {
     ...(noteErrors.length === 0 ? rangeErrors(etude, notes, mode) : []),
   ];
   if (errors.length > 0 || !meterMatch) {
-    return { abc: "", noteCount: 0, cycle: 0, transposition: etude.keyOffset, errors };
+    return { abc: "", noteCount: 0, bars: 0, cycle: 0, transposition: etude.keyOffset, errors };
   }
 
   const [, beats = "4", beatUnit = "4"] = meterMatch;
@@ -536,6 +532,7 @@ export function buildEtude(etude: Etude): BuildResult {
     return {
       abc: "",
       noteCount: 0,
+      bars: 0,
       cycle: 0,
       transposition: etude.keyOffset,
       errors: [`Meter "${etude.meter}" doesn't divide evenly.`],
@@ -670,5 +667,12 @@ export function buildEtude(etude: Etude): BuildResult {
     ...lines,
   ].join("\n");
 
-  return { abc, noteCount: count, cycle, transposition: etude.keyOffset, errors: [] };
+  return {
+    abc,
+    noteCount: count,
+    bars: body.length,
+    cycle,
+    transposition: etude.keyOffset,
+    errors: [],
+  };
 }

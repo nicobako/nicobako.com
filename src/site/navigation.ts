@@ -36,7 +36,6 @@ export const SECTIONS: Section[] = [
  */
 const PATH_LABELS: Record<string, string> = {
   "/music/": "Music",
-  "/music/presets/": "Presets",
   "/printables/": "Printables",
   "/printables/bookmark-calendar/": "Bookmark Calendar",
   "/timers/": "Timers",

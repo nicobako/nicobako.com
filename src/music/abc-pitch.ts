@@ -35,3 +35,31 @@ export function accidentalMark(alteration: number): string {
   if (alteration === 1) return "^";
   return "^^";
 }
+
+/**
+ * The sounding name of a note `semitones` above middle C — `G3`, `C7`.
+ *
+ * Spelled from one table of twelve, sharps below the tonic's half of the octave and
+ * flats above, which is how a player names a pitch out loud when no key is in force.
+ * This is a *sounding* pitch, unlike `abcPitch`: it names what comes out of the
+ * instrument once the key offset is in, so it is what a range reads as.
+ */
+const PITCH_NAMES = [
+  "C",
+  "C#",
+  "D",
+  "Eb",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "Ab",
+  "A",
+  "Bb",
+  "B",
+] as const;
+
+export function pitchName(semitones: number): string {
+  const octave = 4 + Math.floor(semitones / 12);
+  return PITCH_NAMES[semitones - (octave - 4) * 12]! + octave;
+}

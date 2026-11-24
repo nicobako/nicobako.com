@@ -1,19 +1,31 @@
 ---
+// The etude builder.
+//
+// The page is laid out in the order it is used: the staff first and always visible, then
+// the key, then the four cycling lanes, then how long to run them, and the rest of the
+// setup folded away behind one line that says what it currently is. The music is the
+// point of the tool, so it is not at the bottom of a form.
+//
+// This is the one page on the site with a lot of client-side script, and deliberately so:
+// every other page *shows* something, while this one is used to *make* something. A built
+// etude can be opened in the ABC editor, which is the quiet version of the same thing.
 import Layout from "../../layouts/Layout.astro";
+import EtudeLane from "../../components/EtudeLane.astro";
 import { KEYS, MODES } from "../../music/etudes/scale.ts";
-import { INSTRUMENTS } from "../../music/etudes/presets/instruments.ts";
-import { PRESET_FAMILIES, familyHref, PRESETS_PATH } from "../../music/etudes/presets/families.ts";
-import { RHYTHM_NAMES } from "../../music/etudes/presets/rhythms.ts";
+import { INSTRUMENTS } from "../../music/etudes/tables/instruments.ts";
+import { LANES, type LaneId } from "../../music/etudes/lanes.ts";
 
-// The starting etude: a scale in broken thirds, slurred two at a time, against a rhythm
-// that does not divide the pattern — so the default page already shows the point of the
-// tool rather than a plain scale.
+// The starting etude: a scale up and down, plainly bowed, so the page opens on something
+// playable and the drift is something you do to it rather than something it arrives with.
+const LANE_DEFAULTS: Record<LaneId, string> = {
+  notes: "1 2 3 4 5 6 7 1u 7 6 5 4 3 2",
+  rhythm: "q",
+  bowing: "1",
+  articulation: "",
+};
+
 const DEFAULTS = {
   title: "Etude",
-  notes: "1 2 3 4 5 6 7 1u",
-  rhythm: "q e e",
-  bowing: "2 1 1",
-  articulation: "",
   mode: "ionian",
   key: "0",
   instrument: "violin",
@@ -22,178 +34,156 @@ const DEFAULTS = {
   tempo: 72,
 };
 
-// One field per pattern family, in the order they are read. Each is a named-preset
-// picker over a text box: the names are the vocabulary, the box is what keeps any other
-// pattern possible.
-//
-// There is no fingering field: a finger belongs to the note it plays, so it is written on
-// the note in the notes box.
-const FIELDS = PRESET_FAMILIES.filter((family) => family.field !== undefined);
-
 // The key options are per mode, so the page renders the default mode's and the script
-// relabels them when the mode changes. Every mode has the same twelve offsets.
+// relabels them when the mode changes. Every mode has the same twelve offsets, in the
+// same order, which is what lets the labels be rewritten without touching the values.
 const DEFAULT_KEYS = KEYS[DEFAULTS.mode as keyof typeof KEYS];
 
 const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
 ---
 
-<Layout
-  title="Etude Builder — Nico Bako"
->
+<Layout title="Etude Builder — Nico Bako">
   <h1 class="no-print">Etude Builder</h1>
-  <p class="no-print"><a href={PRESETS_PATH}>Presets</a></p>
 
-  <form class="builder no-print" id="builder" autocomplete="off">
-    {FIELDS.map((family) => (
-      <div class="field">
-        <div class="field-head">
-          <label for={family.field}>{family.name}</label>
-          <select class="picker" data-picker-for={family.field} aria-label={`${family.name} presets`}>
-            {family.presets.map((preset) => (
-              <option value={preset.value}>{preset.name}</option>
-            ))}
-            <option value="__custom__">Custom…</option>
-          </select>
-          <a class="about" href={familyHref(family.slug)}>About</a>
-        </div>
-        <input
-          id={family.field}
-          name={family.field}
-          type="text"
-          spellcheck="false"
-          autocapitalize="off"
-          autocorrect="off"
-          value={DEFAULTS[family.field as keyof typeof DEFAULTS]}
-        />
-        <p class="hint">
-          {family.field === "notes" && (
-            <>
-              Scale degrees <code>1</code>–<code>7</code> of the mode. Add <code>u</code>
-              after for an octave up and <code>d</code> for an octave down
-              (<code>1u</code>, <code>5dd</code>), and <code>s</code> or <code>b</code>
-              in front for sharp or flat (<code>s7</code> raises the seventh of whichever
-              mode is selected, which is what gives harmonic minor in Aeolian). A finger
-              goes last, after a dot: <code>3.2</code> is degree 3 with the second
-              finger, and a note with no finger is left unmarked. Join notes with a comma
-              for a double stop — <code>1.1,3.3</code> — which takes one bow and one
-              rhythm value, the same as any single note.
-            </>
-          )}
-          {family.field === "rhythm" && (
-            <>
-              {RHYTHM_NAMES.map(([letter, name], i) => (
-                <>{i > 0 ? ", " : ""}<code>{letter}</code>{` ${name}`}</>
-              ))}. Add a dot for dotted: <code>q.</code>, and a count to repeat
-              one: <code>q14 h</code> is fourteen quarter notes and a half. A
-              leading <code>3</code> makes a triplet — <code>3e</code> is three
-              eighths in the time of two, and counts as three notes against the
-              other patterns.
-            </>
-          )}
-          {family.field === "bowing" && (
-            <>
-              Slur lengths — how many notes go under one bow. <code>2 2 1 1</code> is
-              slur two, slur two, then two separate bows. Bow direction just alternates,
-              so it is worked out for you rather than typed.
-            </>
-          )}
-          {family.field === "articulation" && (
-            <>
-              How the bow strokes, which is a separate question from how many notes it
-              takes at once. Leave it empty and nothing is marked. One code per note —
-              <code>leg</code>, <code>det</code>, <code>ten</code>, <code>acc</code>,
-              <code>marc</code>, <code>mart</code>, <code>stac</code>, <code>spic</code>,
-              <code>saut</code>, <code>coll</code>, <code>port</code>,
-              <code>pizz</code> — each with an optional count, so <code>stac3 mart</code>
-              is three staccato then one hammered, cycled against the notes like the
-              rhythm and the bowing. <code>pizz</code> drops the bow-direction marks while
-              it lasts and writes <em>arco</em> where the bow comes back.
-            </>
-          )}
-        </p>
-      </div>
-    ))}
+  <div class="shelf no-print">
+    <ul class="shelf-list" id="shelf"></ul>
+    <button type="button" id="save">Save</button>
+  </div>
 
-    <div class="row">
-      <div class="field field-small">
-        <label for="mode">Mode</label>
-        <select id="mode" name="mode">
-          {MODES.map((mode) => (
-            <option value={mode.slug} selected={mode.slug === DEFAULTS.mode}>{mode.name}</option>
-          ))}
-        </select>
-      </div>
-
-      <div class="field field-small">
-        <label for="key">Key</label>
-        <select id="key" name="key">
-          {DEFAULT_KEYS.map((key) => (
-            <option value={String(key.offset)} selected={String(key.offset) === DEFAULTS.key}>
-              {key.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div class="field field-small">
-        <label for="instrument">Instrument</label>
-        <select id="instrument" name="instrument">
-          {INSTRUMENTS.map((instrument) => (
-            <option
-              value={instrument.slug}
-              data-octave={instrument.rootOctave}
-              selected={instrument.slug === DEFAULTS.instrument}
-            >
-              {instrument.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div class="field field-small">
-        <label for="octave">Root octave</label>
-        <input id="octave" name="octave" type="number" min="1" max="6" value={DEFAULTS.octave} />
-      </div>
-
-      <div class="field field-small">
-        <label for="meter">Meter</label>
-        <select id="meter" name="meter">
-          {METERS.map((meter) => (
-            <option value={meter} selected={meter === DEFAULTS.meter}>{meter}</option>
-          ))}
-        </select>
-      </div>
-
-      <div class="field field-small">
-        <label for="tempo">Tempo</label>
-        <input id="tempo" name="tempo" type="number" min="30" max="208" value={DEFAULTS.tempo} />
-      </div>
-
-      <div class="field field-small">
-        <label for="length">Length</label>
-        <input id="length" name="length" type="number" min="1" max="192" placeholder="auto" />
-      </div>
-
-      <div class="field field-small">
-        <label for="title">Title</label>
-        <input id="title" name="title" type="text" value={DEFAULTS.title} />
-      </div>
-    </div>
-
-    <div class="row checks">
-      <label class="check"><input id="show-bowings" type="checkbox" checked /> Mark bow directions</label>
-      <label class="check"><input id="start-up-bow" type="checkbox" /> Start up-bow</label>
-    </div>
-  </form>
+  <div id="etude-track" class="etude-track"></div>
 
   <p id="errors" class="errors no-print" aria-live="polite"></p>
-  <p id="summary" class="summary no-print" aria-live="polite"></p>
+
+  <form class="builder no-print" id="builder" autocomplete="off">
+    <fieldset class="picks">
+      <legend>Mode</legend>
+      <div class="pick-row">
+        {MODES.map((mode) => (
+          <label class="pick">
+            <input
+              type="radio"
+              name="mode"
+              value={mode.slug}
+              checked={mode.slug === DEFAULTS.mode}
+            />
+            <span>{mode.name}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <fieldset class="picks">
+      <legend>Key</legend>
+      <div class="pick-row">
+        {DEFAULT_KEYS.map((key) => (
+          <label class="pick">
+            <input
+              type="radio"
+              name="key"
+              value={String(key.offset)}
+              checked={String(key.offset) === DEFAULTS.key}
+            />
+            <span data-key-label>{key.label}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <div class="lanes">
+      {LANES.map((lane) => (
+        <EtudeLane lane={lane} value={LANE_DEFAULTS[lane.id]} />
+      ))}
+    </div>
+
+    <div class="length">
+      <button type="button" id="one-cycle">One cycle</button>
+      <label for="length">Notes</label>
+      <input
+        id="length"
+        name="length"
+        type="number"
+        min="1"
+        max="192"
+        placeholder="auto"
+      />
+    </div>
+
+    <p id="cycle" class="cycle" aria-live="polite"></p>
+
+    <details class="setup">
+      <summary><span id="setup-summary"></span></summary>
+
+      <div class="setup-grid">
+        <div class="field">
+          <label for="instrument">Instrument</label>
+          <select id="instrument" name="instrument">
+            {INSTRUMENTS.map((instrument) => (
+              <option
+                value={instrument.slug}
+                data-octave={instrument.rootOctave}
+                selected={instrument.slug === DEFAULTS.instrument}
+              >
+                {instrument.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="octave">Root octave</label>
+          <input
+            id="octave"
+            name="octave"
+            type="number"
+            min="1"
+            max="6"
+            value={DEFAULTS.octave}
+          />
+        </div>
+
+        <div class="field">
+          <label for="meter">Meter</label>
+          <select id="meter" name="meter">
+            {METERS.map((meter) => (
+              <option value={meter} selected={meter === DEFAULTS.meter}>
+                {meter}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="tempo">Tempo</label>
+          <input
+            id="tempo"
+            name="tempo"
+            type="number"
+            min="30"
+            max="208"
+            value={DEFAULTS.tempo}
+          />
+        </div>
+
+        <div class="field">
+          <label for="title">Title</label>
+          <input id="title" name="title" type="text" value={DEFAULTS.title} />
+        </div>
+      </div>
+
+      <div class="checks">
+        <label class="check">
+          <input id="show-bowings" type="checkbox" checked /> Mark bow directions
+        </label>
+        <label class="check">
+          <input id="start-up-bow" type="checkbox" /> Start up-bow
+        </label>
+      </div>
+    </details>
+  </form>
 
   <div class="actions no-print">
     <a id="open-in-editor" href="/music/abc-editor">Open in ABC editor</a>
   </div>
-
-  <div id="etude-track" class="etude-track"></div>
 
   <template id="track-template">
     <section class="abc-track">
@@ -202,12 +192,15 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
       </div>
       <div class="abc-warnings no-print" data-warnings aria-live="polite"></div>
       <div class="abc-audio no-print" data-audio></div>
-      <div class="abc-controls no-print">
-        <button type="button" data-download-abc>Download .abc</button>
-        <button type="button" data-download-wav>Download WAV</button>
-        <button type="button" data-download-midi>Download MIDI</button>
-      </div>
-      <p class="abc-download-status no-print" data-status aria-live="polite"></p>
+      <details class="abc-downloads no-print">
+        <summary>Download</summary>
+        <div class="abc-controls">
+          <button type="button" data-download-abc>.abc</button>
+          <button type="button" data-download-wav>WAV</button>
+          <button type="button" data-download-midi>MIDI</button>
+        </div>
+        <p class="abc-download-status" data-status aria-live="polite"></p>
+      </details>
     </section>
   </template>
 </Layout>
@@ -215,80 +208,306 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
 <script>
   import {
     buildEtude,
-    describeEtude,
     defineEtude,
     fromLegacyNotes,
+    parseArticulation,
+    parseBowing,
     parseNotes,
+    parseRhythm,
+    soundingRange,
     type Etude,
   } from "../../music/etudes/etude.ts";
   import { KEYS, type ModeSlug } from "../../music/etudes/scale.ts";
-  import { instrumentFor } from "../../music/etudes/presets/instruments.ts";
+  import { instrumentFor } from "../../music/etudes/tables/instruments.ts";
+  import { pitchName } from "../../music/abc-pitch.ts";
+  import {
+    LANES,
+    applyKey,
+    chipLines,
+    defaultToken,
+    formatLane,
+    formatToken,
+    keyState,
+    laneLength,
+    memberCount,
+    parseLane,
+    type Chip,
+    type LaneId,
+  } from "../../music/etudes/lanes.ts";
+  import {
+    listSaved,
+    removeSaved,
+    saveEtude,
+    type SavedEtude,
+  } from "../../music/etudes/shelf.ts";
   import { AbcEditor } from "../../music/abc-editor/abc-editor.ts";
 
   const form = document.getElementById("builder") as HTMLFormElement;
   const errorsEl = document.getElementById("errors")!;
-  const summaryEl = document.getElementById("summary")!;
-  const openInEditor = document.getElementById("open-in-editor") as HTMLAnchorElement;
+  const cycleEl = document.getElementById("cycle")!;
+  const setupSummary = document.getElementById("setup-summary")!;
+  const shelfList = document.getElementById("shelf")!;
+  const openInEditor = document.getElementById(
+    "open-in-editor",
+  ) as HTMLAnchorElement;
 
-  /** The picker option that means "whatever is in the box". */
-  const CUSTOM = "__custom__";
+  /**
+   * Every field by name, radio groups included.
+   *
+   * A `RadioNodeList` has the same `value` getter and setter as an `<input>` — reading
+   * gives the checked radio, writing checks the one with that value — so the mode and
+   * the key need no special case anywhere else on the page.
+   */
+  type Control = RadioNodeList | HTMLInputElement | HTMLSelectElement;
 
-  const field = (id: string) => document.getElementById(id) as HTMLInputElement;
-  const select = (id: string) => document.getElementById(id) as HTMLSelectElement;
+  function readValue(name: string): string {
+    const control = form.elements.namedItem(name) as Control | null;
+    return control === null ? "" : control.value;
+  }
 
-  // Which control each URL parameter restores into. The builder's state is small and
-  // flat, so the query string is the whole store — no localStorage to fall out of sync.
+  function writeValue(name: string, value: string): void {
+    const control = form.elements.namedItem(name) as Control | null;
+    if (control !== null) control.value = value;
+  }
+
+  const checkbox = (id: string) =>
+    document.getElementById(id) as HTMLInputElement;
+
+  // Which URL parameter restores into which control. The builder's state is small and
+  // flat, so the query string is the whole store — no second copy to fall out of sync,
+  // and a saved etude on the shelf is nothing but one of these strings.
   const PARAMS = [
-    "title", "notes", "rhythm", "bowing", "articulation",
-    "mode", "key", "instrument", "octave", "meter", "tempo", "length",
+    "title",
+    "notes",
+    "rhythm",
+    "bowing",
+    "articulation",
+    "mode",
+    "key",
+    "instrument",
+    "octave",
+    "meter",
+    "tempo",
+    "length",
   ];
 
-  function readEtude(): Etude {
-    const length = Number(field("length").value);
-    const mode = select("mode").value as ModeSlug;
-    // The clef is the instrument's; nothing else about the instrument reaches the
-    // generator, because the register is the root octave and that is set on its own.
-    return defineEtude({
-      title: field("title").value,
-      notes: field("notes").value,
-      rhythm: field("rhythm").value,
-      bowing: field("bowing").value,
-      articulation: field("articulation").value,
-      mode,
-      keyOffset: Number(select("key").value) || 0,
-      clef: instrumentFor(select("instrument").value).clef,
-      rootOctave: Number(field("octave").value) || 4,
-      meter: select("meter").value,
-      tempo: Number(field("tempo").value) || 72,
-      length: Number.isFinite(length) && length > 0 ? length : null,
-      showBowings: field("show-bowings").checked,
-      startUpBow: field("start-up-bow").checked,
+  const laneSections = new Map<LaneId, HTMLElement>();
+  for (const section of form.querySelectorAll<HTMLElement>("[data-lane]")) {
+    laneSections.set(section.dataset.lane as LaneId, section);
+  }
+
+  /**
+   * Which chip is being edited, and which note of it when it is a double stop.
+   *
+   * The chips themselves are not state: they are parsed out of the lane's text box every
+   * time they are drawn, so this selection is the only thing the editor remembers.
+   */
+  let selected: { lane: LaneId; index: number; member: number } | null = null;
+
+  const laneInput = (lane: LaneId) =>
+    document.getElementById(lane) as HTMLInputElement;
+
+  const laneChips = (lane: LaneId): Chip[] =>
+    parseLane(lane, laneInput(lane).value);
+
+  /** Write chips back to the box they came from, which is what the model reads. */
+  function setChips(lane: LaneId, chips: Chip[]): void {
+    laneInput(lane).value = formatLane(chips);
+    renderLane(lane);
+    render();
+  }
+
+  /** A lane's own complaints, so they sit under the lane rather than in one heap. */
+  function laneErrors(lane: LaneId): string[] {
+    const text = laneInput(lane).value;
+    switch (lane) {
+      case "notes":
+        return parseNotes(text).errors;
+      case "rhythm":
+        return parseRhythm(text).errors;
+      case "bowing":
+        return parseBowing(text).errors;
+      case "articulation":
+        return parseArticulation(text).errors;
+    }
+  }
+
+  function renderLane(lane: LaneId): void {
+    const section = laneSections.get(lane)!;
+    const chips = laneChips(lane);
+    const strip = section.querySelector("[data-chips]")!;
+
+    strip.textContent = "";
+    chips.forEach((chip, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = chip.token === null ? "chip invalid" : "chip";
+      button.dataset.index = String(index);
+      button.setAttribute(
+        "aria-pressed",
+        String(selected?.lane === lane && selected.index === index),
+      );
+      // A double stop stacks, highest note on top, the way the staff does it.
+      const lines = chip.token === null ? [chip.raw] : chipLines(chip.token);
+      for (const line of lines) {
+        const span = document.createElement("span");
+        span.textContent = line;
+        button.append(span);
+      }
+      strip.append(button);
     });
+
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "chip chip-add";
+    add.dataset.add = "";
+    add.setAttribute("aria-label", `Add to ${lane}`);
+    add.textContent = "+";
+    strip.append(add);
+
+    section.querySelector("[data-length]")!.textContent = String(
+      laneLength(chips),
+    );
+    section.querySelector("[data-error]")!.textContent = laneErrors(lane).join(" ");
+    renderKeypad(lane);
+  }
+
+  function renderLanes(): void {
+    for (const lane of laneSections.keys()) renderLane(lane);
+  }
+
+  /**
+   * The keypad for the selected chip.
+   *
+   * Which keys are lit is read back out of the token by `keyState` rather than tracked
+   * beside it, so the keypad cannot disagree with the chip. An unreadable chip still
+   * gets its keypad — with nothing lit — because otherwise there would be no way to
+   * delete one.
+   */
+  function renderKeypad(lane: LaneId): void {
+    const section = laneSections.get(lane)!;
+    const keypad = section.querySelector<HTMLElement>("[data-keypad]")!;
+    const chip =
+      selected?.lane === lane ? laneChips(lane)[selected.index] : undefined;
+
+    keypad.hidden = chip === undefined;
+    const token = chip?.token ?? null;
+    if (token === null || selected === null) return;
+
+    const member = Math.min(selected.member, memberCount(token) - 1);
+    const state = keyState(token, member);
+    for (const key of keypad.querySelectorAll<HTMLElement>("[data-act]")) {
+      const act = key.dataset.act!;
+      if (!(act in state)) {
+        key.removeAttribute("aria-pressed");
+        continue;
+      }
+      // A toggle's value is itself, so a key with no value of its own asks about "on".
+      const value = key.dataset.value ?? "on";
+      key.setAttribute("aria-pressed", String(state[act] === value));
+    }
+
+    const octave = keypad.querySelector("[data-oct]");
+    if (octave !== null && token.lane === "notes") {
+      const note = token.members[member]!;
+      octave.textContent =
+        note.octave > 0 ? `+${note.octave}` : String(note.octave);
+    }
+
+    const count = keypad.querySelector("[data-count]");
+    if (
+      count !== null &&
+      (token.lane === "rhythm" || token.lane === "articulation")
+    ) {
+      count.textContent = String(token.count);
+    }
+
+    const members = keypad.querySelector("[data-members]");
+    if (members !== null && token.lane === "notes") {
+      members.textContent = "";
+      token.members.forEach((note, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "member";
+        button.dataset.member = String(index);
+        button.setAttribute("aria-pressed", String(index === member));
+        button.textContent = formatToken({ lane: "notes", members: [note] });
+        members.append(button);
+      });
+    }
   }
 
   /** The twelve keys are per mode, so their labels are rewritten when the mode changes. */
   function relabelKeys(): void {
-    const keys = KEYS[select("mode").value as ModeSlug];
-    const chosen = select("key").value;
-    for (const [i, option] of [...select("key").options].entries()) {
+    const keys = KEYS[readValue("mode") as ModeSlug];
+    form.querySelectorAll<HTMLElement>("[data-key-label]").forEach((label, i) => {
       const key = keys[i];
-      if (!key) continue;
-      option.value = String(key.offset);
-      option.textContent = key.label;
-    }
-    select("key").value = chosen;
+      if (key) label.textContent = key.label;
+    });
+  }
+
+  function readEtude(): Etude {
+    const length = Number(readValue("length"));
+    // The clef is the instrument's; nothing else about the instrument reaches the
+    // generator, because the register is the root octave and that is set on its own.
+    return defineEtude({
+      title: readValue("title"),
+      notes: laneInput("notes").value,
+      rhythm: laneInput("rhythm").value,
+      bowing: laneInput("bowing").value,
+      articulation: laneInput("articulation").value,
+      mode: readValue("mode") as ModeSlug,
+      keyOffset: Number(readValue("key")) || 0,
+      clef: instrumentFor(readValue("instrument")).clef,
+      rootOctave: Number(readValue("octave")) || 4,
+      meter: readValue("meter"),
+      tempo: Number(readValue("tempo")) || 72,
+      length: Number.isFinite(length) && length > 0 ? length : null,
+      showBowings: checkbox("show-bowings").checked,
+      startUpBow: checkbox("start-up-bow").checked,
+    });
   }
 
   /**
-   * Point each preset picker at the pattern now in its box, falling back to Custom.
-   * A `<select>` whose value matches no option selects nothing, so the empty-valued
-   * Custom option is what catches a typed pattern.
+   * The one line the folded-away setup shows.
+   *
+   * The sounding range is in it because the mistake this model makes easy — a
+   * three-octave scale that walks off the top of the fingerboard — is otherwise
+   * invisible until it is a complaint.
    */
-  function syncPickers(): void {
-    for (const picker of form.querySelectorAll<HTMLSelectElement>(".picker")) {
-      const value = field(picker.dataset.pickerFor!).value.trim().split(/\s+/).join(" ");
-      const known = [...picker.options].some((option) => option.value === value);
-      picker.value = known ? value : CUSTOM;
+  function renderSetupSummary(etude: Etude): void {
+    const instrument = instrumentFor(readValue("instrument"));
+    const range = soundingRange(etude);
+    const parts = [
+      instrument.name,
+      etude.meter,
+      `♩=${etude.tempo}`,
+      `root ${etude.rootOctave}`,
+    ];
+    if (range !== null) {
+      parts.push(`${pitchName(range.low)}–${pitchName(range.high)}`);
+    }
+    setupSummary.textContent = parts.join(" · ");
+  }
+
+  function renderShelf(saved: SavedEtude[]): void {
+    shelfList.textContent = "";
+    for (const etude of saved) {
+      const item = document.createElement("li");
+
+      const link = document.createElement("a");
+      link.href = etude.search === "" ? "?" : etude.search;
+      link.textContent = etude.name;
+
+      const forget = document.createElement("button");
+      forget.type = "button";
+      forget.className = "forget";
+      forget.dataset.forget = etude.name;
+      forget.setAttribute("aria-label", `Forget ${etude.name}`);
+      forget.textContent = "✕";
+
+      item.append(link, forget);
+      shelfList.append(item);
     }
   }
 
@@ -306,35 +525,39 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
       params.set("octave", legacy === "major" ? "4" : "3");
     }
 
-    if (params.has("mode")) select("mode").value = params.get("mode")!;
+    if (params.has("mode")) writeValue("mode", params.get("mode")!);
     relabelKeys();
 
     // Notes used to be spelled `1'`, `7,` and `1+3`, with the fingers in a field of their
     // own. A bookmark is an etude, so an old one is respelled — fingers moved onto the
     // notes — rather than left to fail.
     const notes = params.get("notes");
-    if (notes !== null && (params.has("fingering") || parseNotes(notes).errors.length > 0)) {
+    if (
+      notes !== null &&
+      (params.has("fingering") || parseNotes(notes).errors.length > 0)
+    ) {
       const respelled = fromLegacyNotes(notes, params.get("fingering") ?? "");
       if (respelled !== null) params.set("notes", respelled);
     }
 
     for (const name of PARAMS) {
       const value = params.get(name);
-      if (value === null) continue;
-      const el = document.getElementById(name) as HTMLInputElement | HTMLSelectElement | null;
-      if (el) el.value = value;
+      if (value !== null) writeValue(name, value);
     }
-    if (params.has("bows")) field("show-bowings").checked = params.get("bows") !== "0";
-    if (params.has("up")) field("start-up-bow").checked = params.get("up") === "1";
-    syncPickers();
+    if (params.has("bows")) {
+      checkbox("show-bowings").checked = params.get("bows") !== "0";
+    }
+    if (params.has("up")) {
+      checkbox("start-up-bow").checked = params.get("up") === "1";
+    }
   }
 
   function writeUrl(etude: Etude): void {
     const url = new URL(location.href);
     url.search = "";
     for (const name of PARAMS) {
-      const el = document.getElementById(name) as HTMLInputElement | HTMLSelectElement;
-      if (el.value) url.searchParams.set(name, el.value);
+      const value = readValue(name);
+      if (value !== "") url.searchParams.set(name, value);
     }
     if (!etude.showBowings) url.searchParams.set("bows", "0");
     if (etude.startUpBow) url.searchParams.set("up", "1");
@@ -349,18 +572,25 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
   function render(): void {
     const etude = readEtude();
     const result = buildEtude(etude);
+    renderSetupSummary(etude);
 
-    errorsEl.textContent = result.errors.join("\n");
+    // A lane's own errors are shown under that lane, so this line is left with the ones
+    // that belong to no single lane: the range and the meter.
+    const placed = new Set(LANES.flatMap((lane) => laneErrors(lane.id)));
+    errorsEl.textContent = result.errors
+      .filter((error) => !placed.has(error))
+      .join("\n");
 
     if (result.errors.length > 0) {
-      summaryEl.textContent = "";
+      cycleEl.textContent = "";
       return;
     }
 
-    const cycled = result.noteCount >= result.cycle;
-    summaryEl.textContent = `${describeEtude(etude)} ${result.noteCount} notes — ${
-      cycled ? "one full cycle" : `${result.cycle} would complete the cycle`
-    }.`;
+    cycleEl.textContent = `${result.noteCount} notes · ${result.bars} bars · ${
+      result.noteCount >= result.cycle
+        ? "one full cycle"
+        : `cycle completes at ${result.cycle}`
+    }`;
 
     // The key is a transposition rather than something written into the source, so it
     // reaches the track as its base offset.
@@ -369,90 +599,412 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     writeUrl(etude);
   }
 
-  form.addEventListener("input", (event) => {
-    // A `<select>` fires `input` before `change`, so re-syncing the pickers here would
-    // point one back at the box's old contents before its own handler had filled it.
+  // Nothing here submits: the etude is the query string, written on every change.
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+  });
+
+  /**
+   * One listener for every tap in the form.
+   *
+   * The chips and the keypad keys are the same kind of thing — a target carrying what it
+   * does in a data attribute — so they are read in one place rather than wired up one by
+   * one as they are built.
+   */
+  form.addEventListener("click", (event) => {
     const target = event.target as HTMLElement;
-    if (!target.classList.contains("picker")) syncPickers();
+    const section = target.closest<HTMLElement>("[data-lane]");
+    if (section === null) return;
+    const lane = section.dataset.lane as LaneId;
+
+    if (target.closest("[data-text-toggle]") !== null) {
+      const toText = section.dataset.mode === "chips";
+      section.dataset.mode = toText ? "text" : "chips";
+      section
+        .querySelector("[data-text-toggle]")!
+        .setAttribute("aria-pressed", String(toText));
+      if (toText) selected = null;
+      renderLanes();
+      return;
+    }
+
+    // A `+` repeats the chip at the end and opens it, because the next note of a pattern
+    // is nearly always a small change to the last one.
+    if (target.closest("[data-add]") !== null) {
+      const chips = laneChips(lane);
+      const last = chips[chips.length - 1]?.token;
+      const token = last === undefined || last === null ? defaultToken(lane) : last;
+      chips.push({ raw: formatToken(token), token });
+      selected = { lane, index: chips.length - 1, member: 0 };
+      setChips(lane, chips);
+      return;
+    }
+
+    const chipEl = target.closest<HTMLElement>(".chip");
+    if (chipEl !== null && chipEl.dataset.index !== undefined) {
+      const index = Number(chipEl.dataset.index);
+      const same =
+        selected !== null && selected.lane === lane && selected.index === index;
+      selected = same ? null : { lane, index, member: 0 };
+      renderLanes();
+      section
+        .querySelector<HTMLElement>(`.chip[data-index="${index}"]`)
+        ?.focus();
+      return;
+    }
+
+    if (selected === null || selected.lane !== lane) return;
+
+    const memberEl = target.closest<HTMLElement>("[data-member]");
+    if (memberEl !== null) {
+      selected = { ...selected, member: Number(memberEl.dataset.member) };
+      renderKeypad(lane);
+      return;
+    }
+
+    const key = target.closest<HTMLElement>("[data-act]");
+    if (key !== null) {
+      const chips = laneChips(lane);
+      const chip = chips[selected.index];
+      if (chip === undefined || chip.token === null) return;
+      const token = applyKey(
+        chip.token,
+        { act: key.dataset.act!, value: key.dataset.value ?? "" },
+        selected.member,
+      );
+      chips[selected.index] = { raw: formatToken(token), token };
+      // Dropping a note of a double stop can leave the selection past its end.
+      if (selected.member >= memberCount(token)) {
+        selected = { ...selected, member: memberCount(token) - 1 };
+      }
+      setChips(lane, chips);
+      return;
+    }
+
+    const action = target.closest<HTMLElement>("[data-chip-act]")?.dataset
+      .chipAct;
+    if (action === undefined) return;
+
+    if (action === "close") {
+      selected = null;
+      renderLanes();
+      return;
+    }
+
+    const chips = laneChips(lane);
+    if (action === "duplicate") {
+      const chip = chips[selected.index];
+      if (chip === undefined) return;
+      chips.splice(selected.index + 1, 0, { ...chip });
+      selected = { ...selected, index: selected.index + 1 };
+      setChips(lane, chips);
+      return;
+    }
+
+    if (action === "remove") {
+      chips.splice(selected.index, 1);
+      selected =
+        chips.length === 0
+          ? null
+          : {
+              lane,
+              index: Math.min(selected.index, chips.length - 1),
+              member: 0,
+            };
+      setChips(lane, chips);
+    }
+  });
+
+  form.addEventListener("input", (event) => {
+    const section = (event.target as HTMLElement).closest<HTMLElement>(
+      "[data-lane]",
+    );
+    if (section !== null) {
+      // Typing in the box is the other way to edit a lane, so the chips follow it.
+      selected = null;
+      renderLane(section.dataset.lane as LaneId);
+    }
     render();
   });
 
-  // A picker fills its field's box rather than replacing it: the text stays editable,
-  // which is the point of having a box behind the names at all. Custom fills nothing.
-  for (const picker of form.querySelectorAll<HTMLSelectElement>(".picker")) {
-    picker.addEventListener("change", () => {
-      if (picker.value === CUSTOM) return;
-      field(picker.dataset.pickerFor!).value = picker.value;
-      render();
-    });
-  }
+  form.addEventListener("change", (event) => {
+    const target = event.target as HTMLElement;
 
-  // An instrument is a clef and a sensible register; the register stays editable after.
-  select("instrument").addEventListener("change", () => {
-    const octave = select("instrument").selectedOptions[0]?.dataset.octave;
-    if (octave) field("octave").value = octave;
+    if ((target as HTMLInputElement).name === "mode") relabelKeys();
+
+    // An instrument is a clef and a sensible register; the register stays editable after.
+    if (target.id === "instrument") {
+      const octave = (target as HTMLSelectElement).selectedOptions[0]?.dataset
+        .octave;
+      if (octave !== undefined) writeValue("octave", octave);
+    }
+
     render();
   });
 
-  select("mode").addEventListener("change", () => {
-    relabelKeys();
+  document.getElementById("one-cycle")!.addEventListener("click", () => {
+    writeValue("length", "");
     render();
+  });
+
+  document.getElementById("save")!.addEventListener("click", () => {
+    renderShelf(saveEtude(readValue("title"), location.search));
+  });
+
+  shelfList.addEventListener("click", (event) => {
+    const forget = (event.target as HTMLElement).closest<HTMLElement>(
+      "[data-forget]",
+    );
+    if (forget === null) return;
+    renderShelf(removeSaved(forget.dataset.forget!));
   });
 
   restoreFromUrl();
+  renderLanes();
+  renderShelf(listSaved());
   render();
 </script>
 
 <style>
+  /* The shelf: etudes kept by name, which is what a tool you open before practising wants. */
+  .shelf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 1rem 0 1.5rem;
+  }
+
+  .shelf-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .shelf-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.3rem 0.2rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 0.85rem;
+  }
+
+  .shelf-list a {
+    color: var(--text);
+  }
+
+  .shelf-list :global(.forget) {
+    padding: 0 0.3rem;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .shelf-list :global(.forget:hover) {
+    color: var(--accent);
+  }
+
+  #save {
+    padding: 0.35rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  #save:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /*
+   * The staff stays put while the lanes under it are edited: on this page the music is
+   * the thing being looked at, and the controls are what you reach for without looking.
+   */
+  .etude-track {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+    background: var(--bg);
+  }
+
   .builder {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    margin-top: 2rem;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  /* Mode and key as rows of keys, because they are the two things changed most often. */
+  .picks {
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .picks legend {
+    padding: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .pick-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+  }
+
+  .pick {
+    position: relative;
+  }
+
+  /* Clipped rather than removed, so the radio still takes focus and reads as a radio. */
+  .pick input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .pick span {
+    display: block;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .pick input:checked + span {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    color: var(--accent);
+  }
+
+  .pick input:focus-visible + span {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .lanes {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .length {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .length label {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  #one-cycle {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  #one-cycle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  #length {
+    width: 6rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+
+  /* What the three lanes add up to, which is the whole premise of the generator. */
+  .cycle {
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  .setup {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .setup summary {
+    font-size: 0.9rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .setup-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
   }
 
   .field {
     display: flex;
+    flex: 1 1 7rem;
     flex-direction: column;
     gap: 0.35rem;
   }
 
   .field label {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text);
   }
 
   .field input,
   .field select {
-    padding: 0.55rem 0.7rem;
+    padding: 0.5rem 0.6rem;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--surface);
     color: var(--text);
     font-family: var(--font-mono);
-    font-size: 0.95rem;
-  }
-
-  .hint {
-    margin: 0;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    color: var(--muted);
-  }
-
-  .row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .field-small {
-    flex: 1 1 7rem;
+    font-size: 0.9rem;
   }
 
   .checks {
+    display: flex;
+    flex-wrap: wrap;
     gap: 1.25rem;
+    margin-top: 1rem;
   }
 
   .check {
@@ -463,36 +1015,8 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     color: var(--text);
   }
 
-  /* The label, its preset picker and the link to what the presets mean, on one line. */
-  .field-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.6rem;
-  }
-
-  .field-head label {
-    flex: 0 0 auto;
-  }
-
-  .picker {
-    flex: 0 1 14rem;
-    padding: 0.3rem 0.5rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 0.85rem;
-  }
-
-  .about {
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-
   .errors {
-    min-height: 0;
-    margin: 1rem 0 0;
+    margin: 0.75rem 0 0;
     font-family: var(--font-mono);
     font-size: 0.85rem;
     color: #c0392b;
@@ -509,30 +1033,18 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     }
   }
 
-  .summary {
-    margin: 0.75rem 0 0;
-    font-size: 0.9rem;
-    color: var(--muted);
-  }
-
   .actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 1rem;
-    margin-top: 1rem;
-  }
-
-  .etude-track {
-    margin-top: 2rem;
-    padding-top: 2rem;
-    border-top: 2px solid var(--border);
+    margin-top: 1.5rem;
   }
 
   .etude-track :global(.abc-track) {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .etude-track :global(.abc-notation-wrap) {
@@ -566,19 +1078,26 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     font-size: 0.9rem;
   }
 
+  .etude-track :global(.abc-downloads summary) {
+    font-size: 0.85rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
   .etude-track :global(.abc-controls) {
     display: flex;
     flex-wrap: wrap;
     gap: 0.6rem;
+    margin-top: 0.6rem;
   }
 
   .etude-track :global(.abc-controls button) {
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 0.8rem;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--surface);
     color: var(--text);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     cursor: pointer;
   }
 
@@ -589,16 +1108,18 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
 
   .etude-track :global(.abc-download-status) {
     min-height: 1.2em;
-    margin: 0;
+    margin: 0.4rem 0 0;
     font-size: 0.85rem;
     color: var(--muted);
   }
 
   @media print {
     .etude-track {
-      margin-top: 0;
-      padding-top: 0;
-      border-top: none;
+      position: static;
+      max-height: none;
+      overflow: visible;
+      padding-bottom: 0;
+      border-bottom: none;
     }
 
     .etude-track :global(.abc-notation-wrap) {

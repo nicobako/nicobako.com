@@ -45,12 +45,12 @@ Requires Node `>=22.12.0`.
 | Route | File |
 |---|---|
 | `/` | `src/pages/index.astro` |
-| `/music/`, `/music/{metronome,drone,vibrato,ear-training,etude-builder,abc-editor}`, `/music/presets/` and a page per family | `src/pages/music/` |
+| `/music/`, `/music/{metronome,drone,vibrato,ear-training,etude-builder,abc-editor}` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/printables/`, `/printables/bookmark-calendar` (+ a page per year), `/printables/sketchbook` | `src/pages/printables/` |
 | `/offline` | `src/pages/offline.astro` |
 
-29 pages. Keep it that way: every page is precached by the service worker, so a
+22 pages. Keep it that way: every page is precached by the service worker, so a
 new one costs install size as well as attention.
 
 ## Architecture
@@ -87,7 +87,10 @@ of them should be a deliberate decision:
    browser genuinely has to re-render, it builds nodes with `document.createElement`.
 2. **Prefer a static component over a control.** The default answer to "the user might
    want this a bit different" is a component with props plus a short, hand-picked list
-   of presets — not a panel of sliders.
+   of presets — not a panel of sliders. The etude builder is the standing exception, and
+   the only one: every other page *shows* something, while that page is used to *make*
+   something, so the controls there are the product rather than a way around writing it
+   down. An etude it has built opens in the ABC editor, which is the quiet version.
 3. **Variation that is purely visual belongs in CSS.** Prefer setting a CSS custom
    property over rebuilding DOM.
 4. **Variation that changes content belongs in a route.** A control that picks between
@@ -135,6 +138,17 @@ of it (`cae2bfb` and before) if any of it comes back.
 - `synth.ts` — `ToneSynth`, single notes, chords and melodies placed on the audio clock rather than held by hand the way `Drone` is. Used by the ear trainer.
 - `abc-track/abc-track.ts` — mounting logic for `components/AbcTrack.astro`, one self-contained tune: SVG notation plus abcjs's playback widget. Its only props are `abcText`, `transposition` and `audio`, because everything else abcjs understands is said in the ABC source itself. The source travels to the browser as data attributes and the component's `<script>` (hoisted and bundled once per page) hands it to abcjs. `transposition` shifts notation *and* playback: abcjs reads `visualTranspose` as a transposing-instrument offset and subtracts it back out of the MIDI, so the synth gets a matching `midiTranspose`. Playback fetches soundfonts from abcjs's CDN at first Play, so it is the one part of the site that needs the network even though the page itself is precached.
 - `abc-editor/` — the ABC editor page's logic and its `localStorage` persistence.
+- `etudes/lanes.ts` — the etude builder's four axes as things you can *tap*: each lane's
+  vocabulary as data, one token as a record rather than a string, and the writer that
+  spells that record the way `etude.ts` reads it. The grammar has one definition — the
+  token regexes exported from `etude.ts` — and two directions, so a chip can never spell
+  something its own lane cannot parse. Data only; `components/EtudeLane.astro` maps a
+  chip to an element and a keypress to `applyKey`, and `keyState` is read back out of the
+  token so a keypad cannot disagree with the chip it is editing.
+- `etudes/shelf.ts` — the builder's saved etudes, in `localStorage`. An etude is already a
+  URL, so what is stored is a name and a query string and nothing else; every call is
+  wrapped against a browser that throws on `localStorage`, and a shelf that cannot be read
+  is empty rather than an error.
 - `abc-pitch.ts` / `abc-key.ts` — `abcPitch` writes the letter and octave marks for a note *n* letters above written middle C; `TONIC_SPELLINGS` mirrors abcjs's own unconfigurable key-signature spellings.
 
 #### Etudes
@@ -145,12 +159,27 @@ intends to extend the presets.
 
 - `scale.ts` — the seven diatonic modes, as **rotations** of one parent scale rather than sets of intervals over a fixed tonic: the mode decides which letter degree 1 sits on (Ionian C, Dorian D, Aeolian A), so every unaltered degree is a white key, the tune is always written `K:C`, and there is no table of semitone offsets or key signatures per mode. `KEYS` resolves all 7 × 12 keys at build time, and each label comes from the *parent major* at that offset so the page and the staff can never disagree.
 - `etude.ts` — what an etude *is*, and the generator that turns one into ABC. Notes, rhythm and bowing cycle independently and the tune runs until they realign (`cycleLength`), which is the whole premise: five notes against a rhythm of three against a bowing of two do not repeat for thirty notes. A **finger is part of its note**, written after it — `3.2` is degree 3, second finger. The notes are spelled for a phone keyboard: digits, letters, `.` and `,` only — `u`/`d` after a degree for an octave up or down, `s`/`b` in front for sharp or flat, `,` to join a double stop (`1.1,3.3`). Parsing is case-insensitive, since a phone capitalises the first letter of a field. `fromLegacyNotes` respells the old `1'`/`7,`/`1+3` syntax so bookmarked builder links still open. The **key** is a transposition handed to abcjs and picks a pitch *class* only; the **root octave** is the register the music is written in — keeping those apart is what lets changing the key never move the octave. The **articulation** cycles with the other axes, and is optional. A token that is a *word* may carry a trailing repeat count (`q14 h`), unambiguous because a rhythm letter is not a number; each count is capped at `MAX_NOTES` where it is read. A *leading* `3` on a rhythm token makes a triplet, expanded at parse time into one slot per note so nothing downstream knows about tuplets. A slot carries the duration it is *written* at and, separately, the time it *takes*, counted in thirds of a unit so a triplet member's two-thirds stays a whole number. `defineEtude` fills every default. The clef is one token on the key line and nothing more: in ABC a letter names an absolute pitch whatever clef is in force, which is the entire viola and cello story.
-- `presets/` — the named constants, one module per family (`notes`, `rhythms`, `bowings`, `articulations`, `instruments`), plus `families.ts` listing them so `/music/presets/` and `presets/[family].astro` are maps over data. An `Instrument` is violin, viola or cello: a clef, a default root octave, and the open strings. **Fingerings are not a family**: a finger only means something against a particular note, so it is written on the note. `articulations.ts` is two layers because **a symbol cannot name a bow stroke** — a dot is staccato on the string, spiccato off it or sautillé faster still — so each `Technique` declares the decoration drawn on every note *and* the short instruction written once above the run. `ARTICULATIONS` on top of those is the named patterns *of* technique codes, the first of them empty, because an unmarked etude is the normal case.
+- `tables/` — the vocabularies the model and the keypads are built from, and nothing more. `instruments.ts`: an `Instrument` is violin, viola or cello — a clef, a default root octave, the open strings and the range the check reads. `rhythms.ts`: the five letters and their words, which is what the rhythm lane's keys are labelled with; `etude.ts` owns what each is *worth*. `articulations.ts`: the twelve techniques, two layers because **a symbol cannot name a bow stroke** — a dot is staccato on the string, spiccato off it or sautillé faster still — so each `Technique` declares the decoration drawn on every note *and* the short instruction written once above the run. **Fingerings are not a table**: a finger only means something against a particular note, so it is written on the note.
 
-Each preset carries a `description`. **Those descriptions are AI-written and
-Nico has not replaced them yet** — they are the one body of prose still on the
-site that isn't his. When he adds presets, he writes their descriptions; don't
-write them for him, and don't backfill the existing ones.
+### What isn't in the etude code any more
+
+There were **presets**: named patterns (`NOTE_PATTERNS`, `RHYTHMS`, `BOWINGS`,
+`ARTICULATIONS` in a `presets/` folder, listed by `families.ts`), each with an
+AI-written `description`, a page per family under `/music/presets/`, and a picker
+on the builder that filled a lane from them. All of it is gone, and the reasoning
+so it isn't rebuilt:
+
+- A list of named patterns in the code is **someone else's answer to which
+  patterns are worth having**, shipped to everyone who opens the page. The
+  patterns worth keeping are the ones Nico built, and those go on the shelf
+  (`shelf.ts`) under the names he gave them.
+- The descriptions were the last body of prose on the site that wasn't his.
+
+So: **don't re-add a preset table, a `Fill…` picker, a presets page, or
+descriptions and blurbs on the tables that remain.** The builder's own
+`LANE_DEFAULTS` is the one pattern in the code, because a tool has to open on
+something playable. Git history has the lot (`f4af6f4` and before) if any of it
+comes back.
 
 ### Printables subsystem
 
@@ -202,7 +231,7 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site is precached (73 files, ~1.4 MB), so every page works offline after
+The whole site is precached (63 files, ~1.2 MB), so every page works offline after
 the first visit. `npm run build` prints the file count; check it when adding pages.
 Caching is network-first for navigations, cache-first for hashed `/_astro/` assets,
 and stale-while-revalidate for everything else same-origin. A navigation to a page

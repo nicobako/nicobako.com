@@ -35,8 +35,6 @@ export interface Mode {
   name: string;
   /** How many letters above C degree 1 sits: Ionian 0, Dorian 1, … Locrian 6. */
   rotation: number;
-  /** One or two lines on what the mode sounds like and where it is met. */
-  description: string;
 }
 
 export const MODES: Mode[] = [
@@ -44,50 +42,36 @@ export const MODES: Mode[] = [
     slug: "ionian",
     name: "Ionian",
     rotation: 0,
-    description:
-      "The major scale. Written on C, it is the white keys from C to C, and it is the mode every other one here is measured against.",
   },
   {
     slug: "dorian",
     name: "Dorian",
     rotation: 1,
-    description:
-      "Minor with a raised sixth — the white keys from D. Brighter than natural minor without leaving it, which is why so much folk and modal jazz lives here.",
   },
   {
     slug: "phrygian",
     name: "Phrygian",
     rotation: 2,
-    description:
-      "Minor with a flattened second, the white keys from E. The half step straight above the tonic is the whole character of it.",
   },
   {
     slug: "lydian",
     name: "Lydian",
     rotation: 3,
-    description:
-      "Major with a raised fourth, the white keys from F. The tritone above the tonic makes it the most open-sounding of the major modes.",
   },
   {
     slug: "mixolydian",
     name: "Mixolydian",
     rotation: 4,
-    description:
-      "Major with a flattened seventh, the white keys from G. No leading note pulling home, so it sits still rather than resolving.",
   },
   {
     slug: "aeolian",
     name: "Aeolian",
     rotation: 5,
-    description:
-      "Natural minor, the white keys from A. Writing #7 in the notes gives harmonic minor, and #6 #7 gives the ascending melodic form, at exactly the notes you mean them.",
   },
   {
     slug: "locrian",
     name: "Locrian",
     rotation: 6,
-    description:
-      "A flattened second and a flattened fifth, the white keys from B. The tonic is a diminished chord, so it is studied more often than it is played.",
   },
 ];
 
@@ -182,9 +166,4 @@ export function keyFor(mode: Mode, offset: number): Key {
   const key = KEYS[mode.slug].find((candidate) => candidate.offset === normaliseOffset(offset));
   if (!key) throw new Error(`No key at offset ${offset}`);
   return key;
-}
-
-/** The mode's seven degrees as written letters, for the modes reference page. */
-export function degreeLetters(mode: Mode): string[] {
-  return Array.from({ length: 7 }, (_, i) => LETTERS[(mode.rotation + i) % 7]!);
 }
