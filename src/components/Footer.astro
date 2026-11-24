@@ -1,13 +1,26 @@
 ---
+// The copyright line, and the site's one link off itself. GitHub sits here
+// rather than on a page of its own: it is a pointer to the code, which every
+// page can carry in a line, not a subject needing a page.
+import SimpleLink from "./SimpleLink.astro";
+
 const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer">
   <p>© {year} Nico Bako · Built with <a href="https://astro.build">Astro</a></p>
+  <p>
+    <SimpleLink href="https://github.com/nicobako" external label="GitHub" />
+  </p>
 </footer>
 
 <style>
   .site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1.5rem;
     max-width: var(--measure);
     margin: 0 auto;
     padding: 1.5rem 1.25rem 2.5rem;

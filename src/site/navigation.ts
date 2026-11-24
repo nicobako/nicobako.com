@@ -16,12 +16,10 @@ export interface Section {
 
 /**
  * The top-level sections, in the order the home page lists them. This replaced
- * the header's "Pages" dropdown: the cards are the way in, and the breadcrumb
- * every page carries is the way back out.
+ * the header's "Pages" dropdown: the home page's rows are the way in, and the
+ * breadcrumb every page carries is the way back out.
  */
 export const SECTIONS: Section[] = [
-  { label: "About Me", href: "/about/" },
-  { label: "Blog", href: "/blog/" },
   { label: "Music", href: "/music/" },
   { label: "Printables", href: "/printables/" },
   { label: "Timers", href: "/timers/" },
@@ -37,8 +35,6 @@ export const SECTIONS: Section[] = [
  * where a page is called something other than its slug.
  */
 const PATH_LABELS: Record<string, string> = {
-  "/about/": "About Me",
-  "/blog/": "Blog",
   "/music/": "Music",
   "/music/presets/": "Presets",
   "/printables/": "Printables",

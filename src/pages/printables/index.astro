@@ -1,11 +1,14 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import LinkList, { type LinkListItem } from "../../components/LinkList.astro";
+
+const pages: LinkListItem[] = [
+  { label: "Bookmark Calendar", href: "/printables/bookmark-calendar" },
+  { label: "Sketchbook", href: "/printables/sketchbook" },
+];
 ---
 
 <Layout title="Printables — Nico Bako">
-  <h1>Printables</h1>
-  <ul>
-    <li><a href="/printables/bookmark-calendar">Bookmark Calendar</a></li>
-    <li><a href="/printables/sketchbook">Sketchbook</a></li>
-  </ul>
+  <h1 id="printables">Printables</h1>
+  <LinkList links={pages} labelledby="printables" />
 </Layout>

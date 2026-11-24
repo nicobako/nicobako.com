@@ -1,16 +1,22 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import LinkList, { type LinkListItem } from "../../components/LinkList.astro";
+
+// The pages in this section, in the order they are listed. These are leaves, so
+// they have no entry in `PATH_LABELS` — a breadcrumb never names the page you
+// are standing on.
+const pages: LinkListItem[] = [
+  { label: "Metronome", href: "/music/metronome" },
+  { label: "Drone", href: "/music/drone" },
+  { label: "Vibrato", href: "/music/vibrato" },
+  { label: "Ear Training", href: "/music/ear-training" },
+  { label: "Etude Builder", href: "/music/etude-builder" },
+  { label: "Presets", href: "/music/presets/" },
+  { label: "ABC Editor", href: "/music/abc-editor" },
+];
 ---
 
 <Layout title="Music — Nico Bako">
-  <h1>Music</h1>
-  <ul>
-    <li><a href="/music/metronome">Metronome</a></li>
-    <li><a href="/music/drone">Drone</a></li>
-    <li><a href="/music/vibrato">Vibrato</a></li>
-    <li><a href="/music/ear-training">Ear Training</a></li>
-    <li><a href="/music/etude-builder">Etude Builder</a></li>
-    <li><a href="/music/presets/">Presets</a></li>
-    <li><a href="/music/abc-editor">ABC Editor</a></li>
-  </ul>
+  <h1 id="music">Music</h1>
+  <LinkList links={pages} labelledby="music" />
 </Layout>

@@ -2,12 +2,11 @@
 // Site-wide header + primary navigation.
 // Layout styles the semantic <nav>/<a> elements; this component owns the
 // header's own layout (the bar, the brand, spacing).
-// The header is the brand and the Share menu, and nothing else. The feed sits
-// in that menu rather than beside it: subscribing is the same kind of act as
-// sharing or copying the link, and an installed PWA has no toolbar offering it. Section links
-// live on the home page as cards, the way back up is the breadcrumb every page
-// carries, and the links off the site are on /about/ — so the bar stays the
-// same width on a phone as on a desktop.
+// The header is the brand and the Share menu, and nothing else: an installed
+// PWA has no toolbar to share, copy a link or print with. Section links live on
+// the home page, the way back up is the breadcrumb every page carries, and the
+// one link off the site is in the footer — so the bar stays the same width on a
+// phone as on a desktop.
 ---
 
 <header class="site-header">
@@ -27,7 +26,6 @@
             <li>
               <button type="button" data-action="print">Print</button>
             </li>
-            <li><a href="/rss.xml">RSS feed</a></li>
           </ul>
         </details>
       </li>

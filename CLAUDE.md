@@ -11,7 +11,7 @@ prop, not a tagline. Helping means the frame around the words: the schema, the
 pages, the layout, the styling, and — where he asks for one — an empty skeleton
 to fill in.
 
-This site was cut from 646 pages to 31 precisely because it had filled up with
+This site was cut from 646 pages to 29 precisely because it had filled up with
 prose nobody wrote. If a change would add a sentence a visitor reads, don't; add
 the markup and leave the sentence to Nico. Code comments are the exception —
 they explain how things work and they should stay thorough.
@@ -24,8 +24,10 @@ them does not belong here.
 ## What this is
 
 `nicobako.com` — Nico Bako's personal site, built with **Astro 6** as a static
-site. No backend, no client-side framework, no database. A home page, an about
-page, a blog, violin practice tools, a few timers, and two printables.
+site. No backend, no client-side framework, no database. A home page, violin
+practice tools, a few timers, and two printables. There is no page *about* Nico
+and no blog: what a visitor can infer from the things he made is as much as the
+site says about him, and that is deliberate — see "What isn't here".
 
 ## Commands
 
@@ -43,15 +45,12 @@ Requires Node `>=22.12.0`.
 | Route | File |
 |---|---|
 | `/` | `src/pages/index.astro` |
-| `/about/` | `src/pages/about.astro` |
-| `/blog/`, and a page per post | `src/pages/blog/` |
-| `/rss.xml` | `src/pages/rss.xml.ts` |
 | `/music/`, `/music/{metronome,drone,vibrato,ear-training,etude-builder,abc-editor}`, `/music/presets/` and a page per family | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/printables/`, `/printables/bookmark-calendar` (+ a page per year), `/printables/sketchbook` | `src/pages/printables/` |
 | `/offline` | `src/pages/offline.astro` |
 
-31 pages. Keep it that way: every page is precached by the service worker, so a
+29 pages. Keep it that way: every page is precached by the service worker, so a
 new one costs install size as well as attention.
 
 ## Architecture
@@ -60,8 +59,8 @@ new one costs install size as well as attention.
 
 - `src/layouts/Layout.astro` — the HTML document shell. Accepts `title` and `description` props (with defaults). Composes `Header` + `Footer`, exposes `<slot />` for page content. Owns **all global CSS** via `<style is:global>`, including the design-token `:root` custom properties and their `prefers-color-scheme: dark` overrides.
 - `src/pages/*.astro` — each file is a route. Pages import `Layout` and pass content into its slot.
-- `src/site/navigation.ts` — the site's map of itself: `SECTIONS` (the list on the home page) and the path-label table a breadcrumb trail is written from. Both live here because a section's name in the list and its name in a trail are otherwise the same fact said twice. Neither carries a blurb — see the one rule.
-- `src/components/` — shared UI pieces. `Header.astro` is the brand and a Share menu, and nothing else — **no section links and no off-site links**: the home page's list is the way into the site, the breadcrumb every page carries is the way back out, and the links off the site are on `/about/`. The Share menu (Share…, Copy link, Print) is on every page because an installed PWA has no browser toolbar to do any of the three; Share… only appears where `navigator.share` exists. It is the only print, share or copy-link control on the site. `Footer.astro` renders the copyright line. `SimpleLink.astro` and `Link.astro` are small link primitives.
+- `src/site/navigation.ts` — the site's map of itself: `SECTIONS` (the list on the home page) and the path-label table a breadcrumb trail is written from. Both live here because a section's name in the list and its name in a trail are otherwise the same fact said twice. Neither carries a blurb — see the one rule. The home page styles `SECTIONS` as full-width menu rows (hairline between each, an arrow on the right), not cards, because a one-word label in a card reads as a card someone forgot to finish.
+- `src/components/` — shared UI pieces. `Header.astro` is the brand and a Share menu, and nothing else — **no section links and no off-site links**: the home page's list is the way into the site, and the breadcrumb every page carries is the way back out. The Share menu (Share…, Copy link, Print) is on every page because an installed PWA has no browser toolbar to do any of the three; Share… only appears where `navigator.share` exists. It is the only print, share or copy-link control on the site. `Footer.astro` renders the copyright line and the site's **one** link off itself, to GitHub — a pointer to the code fits in a line, so it does not need a page. `SimpleLink.astro` and `Link.astro` are small link primitives.
 
 ### Breadcrumbs
 
@@ -102,33 +101,28 @@ Rule 4 cuts both ways. Generating a page per variant is cheap to write and
 expensive to own: this is how the site ended up with 418 etude pages and a
 74-page planner. Generate a route only when a reader would actually open each one.
 
-### Blog
+### What isn't here
 
-The one part of the site whose content is prose, and the prose is Nico's.
+The site carries **no page about Nico and no blog**, and both were removed on
+purpose after being built. The reasoning, so it isn't re-litigated or quietly
+undone:
 
-- `src/content/blog/*.md` — one Markdown file per post, the filename being the
-  slug. Frontmatter is `title`, `description` (one sentence; it is both the
-  index's summary and the page's meta description), `date`, and an optional
-  `draft`.
-- `src/content.config.ts` — the `blog` collection, read by `glob()`.
-- `src/blog/blog.ts` — `publishedPosts()` (newest first, drafts dropped from a
-  production build but kept in `npm run dev`, so a half-written post is
-  readable in place without being published or precached) plus the two date
-  formatters. The query lives here rather than in a page so the index, a post
-  and anything added later agree without repeating it.
-- `src/pages/rss.xml.ts` — the feed, through `@astrojs/rss`. It needs `site` in
-  `astro.config.mjs` — `rss()` throws without it — which is also what makes the
-  canonical and Open Graph URLs absolute.
-- `src/pages/blog/index.astro` — the list. `blog/[post].astro` — one post:
-  title, date, breadcrumb, `<Content />`, and the prose styles the global
-  stylesheet has no rule for (blockquotes, code blocks, tables, figures),
-  written with `:global()` because the markup comes from Markdown and carries
-  no scoping attribute.
+- A visitor can infer plenty from the tools, the etude presets and the
+  printables, and that is the amount Nico wants to say. Someone who wants to
+  know him can look around.
+- Being explicit about biography or opinions is a commitment he isn't making
+  right now. "Not yet" is the state, not "forgotten".
 
-The home page ends with the three newest posts, from the same `publishedPosts()`;
-the section is omitted entirely when there are none. **There are none right now** —
-the collection is empty and the build prints a warning saying so, which is
-correct and clears the moment Nico publishes his first post.
+So: do not add an About, Now, Uses, Contact or Links page, do not add a blog or
+a feed, and do not put biography, a location, a job history or an opinion into
+any page's prose — not in a section index, not in a `description` prop. If a
+change would tell a visitor something about Nico rather than give them something
+to use, it belongs to him to decide, and the answer today is no.
+
+Removed with it: `src/blog/`, `src/content.config.ts`, `src/content/`,
+`/rss.xml`, the `<link rel="alternate">` in `Layout.astro`, the feed item in the
+Share menu, and the `@astrojs/rss` and `zod` dependencies. Git history has all
+of it (`cae2bfb` and before) if any of it comes back.
 
 ### Music subsystem
 
@@ -208,7 +202,7 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site is precached (78 files, ~1.4 MB), so every page works offline after
+The whole site is precached (73 files, ~1.4 MB), so every page works offline after
 the first visit. `npm run build` prints the file count; check it when adding pages.
 Caching is network-first for navigations, cache-first for hashed `/_astro/` assets,
 and stale-while-revalidate for everything else same-origin. A navigation to a page
@@ -223,4 +217,4 @@ safe zone). Edit the SVG sources and re-render the PNGs if the mark changes.
 - All colours are CSS custom properties defined in `Layout.astro` (e.g. `--bg`, `--text`, `--muted`, `--border`, `--surface`, `--accent`, `--accent-text`), with `prefers-color-scheme: dark` overrides. Never hardcode colours in page or component files — consume the tokens.
 - `--measure: 46rem` is the shared max-width used by header, main, and footer.
 - Styles in page and component files are Astro-scoped by default; only `Layout.astro`'s `<style is:global>` affects the whole document.
-- `build.inlineStylesheets: 'never'` in `astro.config.mjs` keeps stylesheets as shared, hashed files in `/_astro/` instead of inlining them. This mattered far more at 646 pages than at 31, but one cached stylesheet is still cheaper than a copy per page.
+- `build.inlineStylesheets: 'never'` in `astro.config.mjs` keeps stylesheets as shared, hashed files in `/_astro/` instead of inlining them. This mattered far more at 646 pages than at 29, but one cached stylesheet is still cheaper than a copy per page.

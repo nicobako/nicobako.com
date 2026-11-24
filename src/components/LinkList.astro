@@ -1,0 +1,111 @@
+---
+// A list of links styled as a menu of full-width rows: label left, arrow right,
+// a hairline under each and one above the first. The whole row is the link, so
+// the whole width is tappable — which is what a thumb needs, and what a bulleted
+// list of one-word links does not give.
+//
+// This is the shape every "here is what's in this section" list on the site
+// uses: the home page's sections, and each section index's own pages. It takes
+// *data* and maps it to elements, so a page declares what its links are and
+// nothing else.
+//
+// Name the list with `labelledby`, the id of the heading above it — a <nav>
+// needs an accessible name, and the heading is already the right words, so
+// there is nothing new to write. `label` is the fallback for a list with no
+// heading of its own.
+
+export interface LinkListItem {
+  label: string;
+  href: string;
+}
+
+export interface Props {
+  links: LinkListItem[];
+  labelledby?: string;
+  label?: string;
+}
+
+const { links, labelledby, label } = Astro.props;
+---
+
+<nav
+  class="link-list"
+  aria-labelledby={labelledby}
+  aria-label={labelledby ? undefined : label}
+>
+  <ul>
+    {links.map((link) => (
+      <li>
+        <a href={link.href}>
+          <span class="row-label">{link.label}</span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  /* The hairline above the first row. `nav ul` in the global stylesheet has
+     already dropped the bullets and the padding. */
+  .link-list {
+    border-top: 1px solid var(--border);
+  }
+
+  .link-list a {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 0.25rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .row-label {
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* The arrow is the affordance, so it is the thing that moves and the thing
+     that takes the accent colour. `transform` on an inline element needs a
+     block-ish display to take effect. */
+  .arrow {
+    display: inline-block;
+    color: var(--muted);
+    transition:
+      transform 0.12s ease,
+      color 0.12s ease;
+  }
+
+  .link-list a:hover .row-label,
+  .link-list a:focus-visible .row-label {
+    color: var(--accent);
+  }
+
+  .link-list a:hover .arrow,
+  .link-list a:focus-visible .arrow {
+    color: var(--accent);
+    transform: translateX(0.25rem);
+  }
+
+  /* A row is its own focus target; the global 2px outline sits tight against
+     the hairlines without the offset. */
+  .link-list a:focus-visible {
+    outline-offset: -2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .arrow {
+      transition: none;
+    }
+
+    .link-list a:hover .arrow,
+    .link-list a:focus-visible .arrow {
+      transform: none;
+    }
+  }
+</style>

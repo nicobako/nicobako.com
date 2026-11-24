@@ -26,7 +26,7 @@ const MONTH_NAMES = [
 // Monday-first weekday abbreviations (ISO weekday 1..7 = Mon..Sun).
 export const WEEKDAY_ABBR = ["M", "T", "W", "R", "F", "S", "K"] as const;
 
-const MS_PER_DAY = 86_400_000;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /** ISO weekday for a UTC date: Monday = 1 ... Sunday = 7. */
 function isoWeekday(date: Date): number {

@@ -1,13 +1,13 @@
 ---
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import Breadcrumbs from '../components/Breadcrumbs.astro';
-import { breadcrumbTrail } from '../site/navigation.ts';
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import { breadcrumbTrail } from "../site/navigation.ts";
 
 const {
-	title = 'Nico Bako — Software Engineer',
-	description = 'Nico Bako',
-	crumbLabels,
+  title = "Nico Bako",
+  description = "Nico Bako's digital cornucopia",
+  crumbLabels,
 } = Astro.props;
 
 // Every page but the home page carries a trail, and it is derived here rather
@@ -17,367 +17,373 @@ const {
 // generated, like an etude's tonic or a planner layout.
 const trail = breadcrumbTrail(Astro.url.pathname, crumbLabels);
 
-const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : Astro.url.pathname;
+const canonical = Astro.site
+  ? new URL(Astro.url.pathname, Astro.site).href
+  : Astro.url.pathname;
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
 
-		<title>{title}</title>
-		<meta name="description" content={description} />
-		<meta name="author" content="Nico Bako" />
-		<meta name="theme-color" content="#16161a" media="(prefers-color-scheme: dark)" />
-		<meta name="theme-color" content="#fdfdfc" media="(prefers-color-scheme: light)" />
-		<link rel="canonical" href={canonical} />
-		<link
-			rel="alternate"
-			type="application/rss+xml"
-			title="Nico Bako — Blog"
-			href="/rss.xml"
-		/>
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content="Nico Bako" />
+    <meta
+      name="theme-color"
+      content="#16161a"
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta
+      name="theme-color"
+      content="#fdfdfc"
+      media="(prefers-color-scheme: light)"
+    />
+    <link rel="canonical" href={canonical} />
 
-		<!-- Installable web app -->
-		<link rel="manifest" href="/manifest.webmanifest" />
-		<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-		<meta name="application-name" content="Nico Bako" />
-		<meta name="mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-title" content="Nico Bako" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-		<script>
-			import '../pwa/register.ts';
-		</script>
+    <!-- Installable web app -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="application-name" content="Nico Bako" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Nico Bako" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script>
+      import "../pwa/register.ts";
+    </script>
 
-		<!-- Open Graph / social -->
-		<meta property="og:type" content="website" />
-		<meta property="og:title" content={title} />
-		<meta property="og:description" content={description} />
-		<meta property="og:url" content={canonical} />
-		<meta name="twitter:card" content="summary" />
-		<meta name="twitter:title" content={title} />
-		<meta name="twitter:description" content={description} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			{Astro.url.pathname !== '/' && <Breadcrumbs trail={trail} />}
-			<slot />
-		</main>
-		<Footer />
-	</body>
+    <!-- Open Graph / social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+  </head>
+  <body>
+    <Header />
+    <main>
+      {Astro.url.pathname !== "/" && <Breadcrumbs trail={trail} />}
+      <slot />
+    </main>
+    <Footer />
+  </body>
 </html>
 
 <style is:global>
-	/* ------------------------------------------------------------------ *
-	 * Design tokens
-	 * ------------------------------------------------------------------ */
-	:root {
-		color-scheme: light dark;
+  /* ------------------------------------------------------------------ *
+   * Design tokens
+   * ------------------------------------------------------------------ */
+  :root {
+    color-scheme: light dark;
 
-		--font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
-			'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
-		--font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
-			'Liberation Mono', monospace;
+    --font-sans:
+      system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+    --font-mono:
+      ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+      "Liberation Mono", monospace;
 
-		--bg: #fdfdfc;
-		--text: #1f1f1f;
-		--muted: #5e5e5e;
-		--border: #e3e2dd;
-		--surface: #f4f3ef;
-		--accent: #2a5db0;
-		--accent-text: #ffffff;
+    --bg: #fdfdfc;
+    --text: #1f1f1f;
+    --muted: #5e5e5e;
+    --border: #e3e2dd;
+    --surface: #f4f3ef;
+    --accent: #2a5db0;
+    --accent-text: #ffffff;
 
-		/* Readable line-length shared by header, main, and footer. */
-		--measure: 46rem;
-	}
+    /* Readable line-length shared by header, main, and footer. */
+    --measure: 46rem;
+  }
 
-	@media (prefers-color-scheme: dark) {
-		:root {
-			--bg: #16161a;
-			--text: #e6e6e3;
-			--muted: #a0a0a0;
-			--border: #2c2c33;
-			--surface: #1f1f25;
-			--accent: #8fb4ff;
-			--accent-text: #16161a;
-		}
-	}
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16161a;
+      --text: #e6e6e3;
+      --muted: #a0a0a0;
+      --border: #2c2c33;
+      --surface: #1f1f25;
+      --accent: #8fb4ff;
+      --accent-text: #16161a;
+    }
+  }
 
-	/* ------------------------------------------------------------------ *
-	 * CSS reset — Josh W. Comeau's Custom CSS Reset
-	 * https://www.joshwcomeau.com/css/custom-css-reset/
-	 * ------------------------------------------------------------------ */
-	*,
-	*::before,
-	*::after {
-		box-sizing: border-box;
-	}
+  /* ------------------------------------------------------------------ *
+   * CSS reset — Josh W. Comeau's Custom CSS Reset
+   * https://www.joshwcomeau.com/css/custom-css-reset/
+   * ------------------------------------------------------------------ */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-	* {
-		margin: 0;
-	}
+  * {
+    margin: 0;
+  }
 
-	html {
-		-moz-text-size-adjust: none;
-		-webkit-text-size-adjust: none;
-		text-size-adjust: none;
-	}
+  html {
+    -moz-text-size-adjust: none;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+  }
 
-	body {
-		line-height: 1.6;
-		-webkit-font-smoothing: antialiased;
-	}
+  body {
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
 
-	img,
-	picture,
-	video,
-	canvas,
-	svg {
-		display: block;
-		max-width: 100%;
-	}
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
 
-	input,
-	button,
-	textarea,
-	select {
-		font: inherit;
-	}
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+  }
 
-	p,
-	h1,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6 {
-		overflow-wrap: break-word;
-	}
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    overflow-wrap: break-word;
+  }
 
-	p {
-		text-wrap: pretty;
-	}
+  p {
+    text-wrap: pretty;
+  }
 
-	h1,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6 {
-		text-wrap: balance;
-	}
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+  }
 
-	/* ------------------------------------------------------------------ *
-	 * Semantic element styling
-	 * Element selectors only — no classes, no component layout. Components
-	 * add their own scoped CSS on top of these defaults.
-	 * ------------------------------------------------------------------ */
-	body {
-		font-family: var(--font-sans);
-		font-size: 1.0625rem;
-		color: var(--text);
-		background: var(--bg);
-	}
+  /* ------------------------------------------------------------------ *
+   * Semantic element styling
+   * Element selectors only — no classes, no component layout. Components
+   * add their own scoped CSS on top of these defaults.
+   * ------------------------------------------------------------------ */
+  body {
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    color: var(--text);
+    background: var(--bg);
+  }
 
-	main {
-		max-width: var(--measure);
-		margin: 0 auto;
-		padding: 3rem 1.25rem 4rem;
-	}
+  main {
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: 3rem 1.25rem 4rem;
+  }
 
-	h1 {
-		font-size: clamp(2rem, 5vw, 2.6rem);
-		line-height: 1.15;
-		letter-spacing: -0.02em;
-		margin-bottom: 0.5rem;
-	}
+  h1 {
+    font-size: clamp(2rem, 5vw, 2.6rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
 
-	h2 {
-		font-size: 1.4rem;
-		line-height: 1.25;
-		margin-top: 2.75rem;
-		margin-bottom: 0.75rem;
-	}
+  h2 {
+    font-size: 1.4rem;
+    line-height: 1.25;
+    margin-top: 2.75rem;
+    margin-bottom: 0.75rem;
+  }
 
-	h3 {
-		font-size: 1.1rem;
-		margin-top: 1.75rem;
-		margin-bottom: 0.5rem;
-	}
+  h3 {
+    font-size: 1.1rem;
+    margin-top: 1.75rem;
+    margin-bottom: 0.5rem;
+  }
 
-	p {
-		margin-bottom: 1rem;
-	}
+  p {
+    margin-bottom: 1rem;
+  }
 
-	a {
-		color: var(--accent);
-		text-decoration: underline;
-		text-underline-offset: 0.15em;
-	}
+  a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
 
-	a:hover {
-		text-decoration: none;
-	}
+  a:hover {
+    text-decoration: none;
+  }
 
-	ul,
-	ol {
-		padding-left: 1.4rem;
-		margin-bottom: 1rem;
-	}
+  ul,
+  ol {
+    padding-left: 1.4rem;
+    margin-bottom: 1rem;
+  }
 
-	li + li {
-		margin-top: 0.35rem;
-	}
+  li + li {
+    margin-top: 0.35rem;
+  }
 
-	/* Navigation lists read as rows of links, not bullets. */
-	nav ul {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
+  /* Navigation lists read as rows of links, not bullets. */
+  nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
 
-	nav li + li {
-		margin-top: 0;
-	}
+  nav li + li {
+    margin-top: 0;
+  }
 
-	hr {
-		border: none;
-		border-top: 1px solid var(--border);
-		margin: 2.5rem 0;
-	}
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
 
-	code {
-		font-family: var(--font-mono);
-		font-size: 0.9em;
-		background: var(--surface);
-		border-radius: 4px;
-		padding: 0.1em 0.35em;
-	}
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--surface);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
 
-	kbd {
-		font-family: var(--font-mono);
-		font-size: 0.85em;
-		color: var(--text);
-		background: var(--surface);
-		border: 1px solid var(--border);
-		border-radius: 6px;
-		padding: 0.15em 0.5em;
-	}
+  kbd {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.15em 0.5em;
+  }
 
-	small {
-		font-size: 0.85rem;
-		color: var(--muted);
-	}
+  small {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
 
-	:focus-visible {
-		outline: 2px solid var(--accent);
-		outline-offset: 2px;
-		border-radius: 2px;
-	}
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
 
-	/* ------------------------------------------------------------------ *
-	 * Timer widgets — shared by src/pages/timers/*. Each page keeps its
-	 * own scoped overrides for the sizes that genuinely vary (min-width,
-	 * padding, font-size); the rest is identical across all five pages.
-	 * ------------------------------------------------------------------ */
-	.timer-display {
-		font-family: var(--font-mono);
-		font-variant-numeric: tabular-nums;
-		line-height: 1;
-		color: var(--text);
-	}
+  /* ------------------------------------------------------------------ *
+   * Timer widgets — shared by src/pages/timers/*. Each page keeps its
+   * own scoped overrides for the sizes that genuinely vary (min-width,
+   * padding, font-size); the rest is identical across all five pages.
+   * ------------------------------------------------------------------ */
+  .timer-display {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--text);
+  }
 
-	.timer-controls button {
-		border: 1px solid var(--border);
-		border-radius: 6px;
-		background: var(--surface);
-		color: var(--text);
-		font-size: 1rem;
-		font-weight: 600;
-		cursor: pointer;
-	}
+  .timer-controls button {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
 
-	.timer-controls button:disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
-	}
+  .timer-controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
-	.timer-controls button.primary {
-		border-color: var(--accent);
-		background: transparent;
-		color: var(--accent);
-		transition:
-			background 0.12s,
-			color 0.12s;
-	}
+  .timer-controls button.primary {
+    border-color: var(--accent);
+    background: transparent;
+    color: var(--accent);
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
 
-	.timer-controls button.primary:hover {
-		background: var(--accent);
-		color: var(--accent-text);
-	}
+  .timer-controls button.primary:hover {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
 
-	.timer-status {
-		min-height: 1.4em;
-		font-weight: 600;
-		color: var(--accent);
-	}
+  .timer-status {
+    min-height: 1.4em;
+    font-weight: 600;
+    color: var(--accent);
+  }
 
-	.number-input {
-		text-align: center;
-		border: 1px solid var(--border);
-		border-radius: 6px;
-		background: var(--bg);
-		color: var(--text);
-		padding: 0.35rem 0.5rem;
-		-moz-appearance: textfield;
-	}
+  .number-input {
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0.35rem 0.5rem;
+    -moz-appearance: textfield;
+  }
 
-	.number-input::-webkit-outer-spin-button,
-	.number-input::-webkit-inner-spin-button {
-		-webkit-appearance: none;
-	}
+  .number-input::-webkit-outer-spin-button,
+  .number-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
 
-	/* ------------------------------------------------------------------ *
-	 * Print — hide site chrome so printable pages fill the sheet.
-	 * Elements opt out of printing with the `.no-print` class.
-	 * ------------------------------------------------------------------ */
-	@media print {
-		/* Paper is white, so always print the light palette. Printing while the
-		   dark theme is active would otherwise put light-grey ink on a white
-		   sheet, and paint the page background solid black wherever the user has
-		   "background graphics" enabled. */
-		:root {
-			color-scheme: light;
+  /* ------------------------------------------------------------------ *
+   * Print — hide site chrome so printable pages fill the sheet.
+   * Elements opt out of printing with the `.no-print` class.
+   * ------------------------------------------------------------------ */
+  @media print {
+    /* Paper is white, so always print the light palette. Printing while the
+  	   dark theme is active would otherwise put light-grey ink on a white
+  	   sheet, and paint the page background solid black wherever the user has
+  	   "background graphics" enabled. */
+    :root {
+      color-scheme: light;
 
-			--bg: #fdfdfc;
-			--text: #1f1f1f;
-			--muted: #5e5e5e;
-			--border: #e3e2dd;
-			--surface: #f4f3ef;
-			--accent: #2a5db0;
-			--accent-text: #ffffff;
-		}
+      --bg: #fdfdfc;
+      --text: #1f1f1f;
+      --muted: #5e5e5e;
+      --border: #e3e2dd;
+      --surface: #f4f3ef;
+      --accent: #2a5db0;
+      --accent-text: #ffffff;
+    }
 
-		body {
-			background: #fff;
-		}
+    body {
+      background: #fff;
+    }
 
-		.site-header,
-		footer,
-		.no-print {
-			display: none !important;
-		}
+    .site-header,
+    footer,
+    .no-print {
+      display: none !important;
+    }
 
-		main {
-			max-width: none;
-			margin: 0;
-			padding: 0;
-		}
-	}
+    main {
+      max-width: none;
+      margin: 0;
+      padding: 0;
+    }
+  }
 </style>

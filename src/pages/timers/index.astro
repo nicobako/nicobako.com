@@ -1,14 +1,17 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import LinkList, { type LinkListItem } from "../../components/LinkList.astro";
+
+const pages: LinkListItem[] = [
+  { label: "Timer", href: "/timers/timer" },
+  { label: "Pomodoro", href: "/timers/pomodoro" },
+  { label: "Meditation", href: "/timers/meditation" },
+  { label: "Interval", href: "/timers/interval" },
+  { label: "Stopwatch", href: "/timers/stopwatch" },
+];
 ---
 
 <Layout title="Timers — Nico Bako">
-  <h1>Timers</h1>
-  <ul>
-    <li><a href="/timers/timer">Timer</a></li>
-    <li><a href="/timers/pomodoro">Pomodoro</a></li>
-    <li><a href="/timers/meditation">Meditation</a></li>
-    <li><a href="/timers/interval">Interval</a></li>
-    <li><a href="/timers/stopwatch">Stopwatch</a></li>
-  </ul>
+  <h1 id="timers">Timers</h1>
+  <LinkList links={pages} labelledby="timers" />
 </Layout>

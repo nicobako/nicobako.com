@@ -1,51 +1,27 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { publishedPosts, formatDate, isoDate } from "../blog/blog.ts";
+import LinkList from "../components/LinkList.astro";
 import { SECTIONS } from "../site/navigation.ts";
-
-// The three newest posts. The section disappears entirely when there are none,
-// so the home page never advertises an empty blog.
-const latestPosts = (await publishedPosts()).slice(0, 3);
 ---
 
 <Layout>
   <section class="intro">
-    <h1>Hi, I'm Nico Bako.</h1>
-    <p class="role">Lifelong Learner and Amateur</p>
+    <h1>Nico Bako</h1>
+    <p class="role">Lifelong Learner</p>
     <p>
       Welcome to Nico's digital cornucopia, where, with the help of my
       childrens' imagination, and AI's typing speed, I create and share a
       variety of digital curiosities.
     </p>
+    <p>Please explore and enjoy the content.</p>
   </section>
 
-  <h2>Around the site</h2>
-  <ul class="sections">
-    {SECTIONS.map((section) => (
-      <li><a href={section.href}>{section.label}</a></li>
-    ))}
-  </ul>
-
-  {latestPosts.length > 0 && (
-    <>
-      <h2>Latest writing</h2>
-      <ul class="posts">
-        {latestPosts.map((post) => (
-          <li>
-            <a href={`/blog/${post.id}/`}>{post.data.title}</a>
-            <p class="post-meta">
-              <time datetime={isoDate(post.data.date)}>
-                {formatDate(post.data.date)}
-              </time>
-            </p>
-          </li>
-        ))}
-      </ul>
-      <p>
-        <a href="/blog/">All posts →</a>
-      </p>
-    </>
-  )}
+  <h2 id="around">Around the site</h2>
+  {/*
+    This list is the only way into the site — the header carries no section
+    links — so it gets the same row treatment as every section index's list.
+  */}
+  <LinkList links={SECTIONS} labelledby="around" />
 </Layout>
 
 <style>
@@ -60,27 +36,4 @@ const latestPosts = (await publishedPosts()).slice(0, 3);
     margin-bottom: 1rem;
   }
 
-  .posts {
-    list-style: none;
-    padding: 0;
-  }
-
-  .posts > li + li {
-    margin-top: 1rem;
-  }
-
-  .posts a {
-    font-weight: 600;
-    text-decoration: none;
-  }
-
-  .posts a:hover {
-    text-decoration: underline;
-  }
-
-  .post-meta {
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--muted);
-  }
 </style>
