@@ -223,6 +223,24 @@ why the cut is drawn.
   The one string of CSS built by hand on the site is its `@page` rule: `size`
   cannot read a custom property and an Astro `<style>` cannot carry an
   expression, so the printed size is written out with `set:html`.
+- **The printed sheet fits the page; it does not demand it.** `@page` asks for
+  a paper size and the browser is not obliged to give it back: the paper loaded
+  may be another size, a printer's own margins can shrink the printable area,
+  and Chrome's **Scale** setting divides the page box by whatever percentage is
+  in it — anything over spills onto a second, blank sheet, which is what a
+  "Scale: Custom 150" left over from an earlier print job does. So in print the
+  sheet keeps its proportions and takes the *smaller* of what it wants and what
+  the page is (`min(100vh, …mm)`, less a fraction for rounding), and everything
+  inside measures itself against the sheet's own width through a container
+  query rather than against the paper. Changing that back to fixed millimetres
+  is how the two-page bug comes back.
+
+  **Testing this needs DevTools, not the CLI.** `google-chrome --print-to-pdf`
+  silently shrinks a page to fit, so it reports one page whatever the CSS says.
+  Drive `Page.printToPDF` over the debugging port instead, with
+  `preferCSSPageSize: false`, explicit `paperWidth`/`paperHeight`, zero margins
+  and a `scale` — that is the path the print dialog takes, and at `scale: 1.5`
+  it reproduces the bug on the old CSS and prints one page on the new.
 - **What fits is still a judgement.** Twenty ruled lines fit an A5 page and
   crowd a B6 one, and nothing can measure a page at build time. So a page that
   has outgrown its paper *shows* itself: panels clip only in print, and on

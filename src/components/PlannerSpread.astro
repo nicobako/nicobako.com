@@ -96,21 +96,22 @@ const tickLength = sheet.height / 35;
 </div>
 
 <style>
-  /* The frame is what the sheet measures itself against: one millimetre,
-     `--mm`, is a fixed share of its width. On screen that scales the whole
-     sheet to the column it sits in; on paper the frame is exactly the sheet,
-     so a millimetre is a millimetre. */
   .spread-frame {
-    container-type: inline-size;
     width: 100%;
   }
 
+  /* The sheet is what everything inside it measures itself against: one
+     millimetre, `--mm`, is a fixed share of the sheet's own width, whatever
+     width the sheet ends up with. On screen that is the column it sits in; on
+     paper it is as much of the page as the sheet can fill. Measuring against
+     the sheet rather than against the paper is what lets the printed sheet be
+     fitted to the page without anything inside it knowing. */
   .spread-sheet {
-    --mm: calc(100cqw / var(--sheet-w));
+    container-type: inline-size;
     position: relative;
     display: grid;
     grid-template-columns: repeat(var(--columns), 1fr);
-    width: 100cqw;
+    width: 100%;
     box-sizing: border-box;
     background: var(--bg);
     outline: 1px solid var(--border);
@@ -119,6 +120,7 @@ const tickLength = sheet.height / 35;
   /* Everything inside a page is sized in `em` off this one declaration, which
      is why the same `paper/` parts work here and on a mini zine panel. */
   .panel {
+    --mm: calc(100cqw / var(--sheet-w));
     font-size: calc(var(--mm) * var(--base));
     min-width: 0;
     min-height: 0;
@@ -158,12 +160,32 @@ const tickLength = sheet.height / 35;
   }
 
   @media print {
+    /*
+      Fit the page, rather than demand it.
+
+      The obvious way to print this sheet is to give it the exact size the
+      `@page` rule asks for, and it is the wrong way: the browser is not
+      obliged to give the page box those millimetres back. The paper loaded
+      may not be the paper asked for, a printer's own margins can shrink the
+      printable area, and Chrome's scale setting shrinks the page box by
+      whatever percentage is in the box — anything left over spills onto a
+      second, blank sheet.
+
+      So the sheet keeps its proportions and takes the smaller of what it
+      wants and what the page actually is: `vh`/`vw` are the page box in
+      printed output, and the millimetres are the cap for a browser that reads
+      them as the screen instead. The fraction off each one is for rounding —
+      a box exactly as tall as the page is sometimes a hair taller.
+    */
     .spread-frame {
-      width: calc(var(--sheet-w) * 1mm);
+      width: auto;
     }
 
     .spread-sheet {
-      height: calc(var(--sheet-h) * 1mm);
+      width: auto;
+      height: min(calc(100vh - 0.6mm), calc(var(--sheet-h) * 1mm));
+      max-width: min(calc(100vw - 0.6mm), calc(var(--sheet-w) * 1mm));
+      margin: 0 auto;
       outline: none;
       /* Never paint the page fill: with background graphics enabled, the dark
          theme's --bg would print as a solid sheet of ink. */
