@@ -48,10 +48,10 @@ Requires Node `>=22.12.0`.
 | `/music/`, `/music/{metronome,drone,vibrato,ear-training,etude-builder,abc-editor}` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/printables/`, `/printables/bookmark-calendar` (+ a page per year), `/printables/sketchbook` | `src/pages/printables/` |
-| `/printables/planner/`, `/printables/planner/{yearly,quarterly,monthly,weekly,lists,index-sheet,habits,budget,calories,mood,practice,japanese-kana,japanese-kanji}` | `src/pages/printables/planner/` |
+| `/printables/planner/`, `/printables/planner/{yearly,quarterly,monthly,weekly,week-at-a-glance,lists,index-sheet,habits,budget,calories,mood,practice,japanese-kana,japanese-kanji}` | `src/pages/printables/planner/` |
 | `/offline` | `src/pages/offline.astro` |
 
-36 pages. Keep it that way: every page is precached by the service worker, so a
+37 pages. Keep it that way: every page is precached by the service worker, so a
 new one costs install size as well as attention.
 
 ## Architecture
@@ -194,7 +194,7 @@ comes back.
 
 #### Planner
 
-`/printables/planner/*` is the A5 binder: thirteen sheets, each one A4 page.
+`/printables/planner/*` is the A5 binder: fourteen sheets, each one A4 page.
 
 The whole section rests on one arrangement, not on one paper size, which
 `printables/planner/spread.ts` states and every component derives from: **a
