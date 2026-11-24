@@ -90,6 +90,13 @@ const canonical = Astro.site
     --font-mono:
       ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
       "Liberation Mono", monospace;
+    /* Kana and kanji. Most systems fall back to an installed CJK face on
+       their own, but naming the usual ones first picks a face drawn for
+       reading rather than whatever the fallback happens to be — and on a
+       sheet meant to be copied by hand, the shapes are the content. */
+    --font-ja:
+      "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic,
+      "Noto Sans JP", "Noto Sans CJK JP", Meiryo, "MS Gothic", sans-serif;
 
     --bg: #fdfdfc;
     --text: #1f1f1f;

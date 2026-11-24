@@ -1,0 +1,33 @@
+---
+// The two syllabaries, one per page: hiragana on the left, katakana on the
+// right, each as its gojūon followed by its dakuten rows. A reference sheet —
+// the practice squares are on the kanji sheet.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import KanaChart from "../../../components/paper/KanaChart.astro";
+import { kanaTable } from "../../../printables/japanese/kana.ts";
+
+const hiragana = kanaTable("hiragana");
+const katakana = kanaTable("katakana");
+---
+
+<Layout title="Japanese Kana — Nico Bako">
+  <h1 class="no-print">Japanese Kana</h1>
+  <PlannerSpread>
+    <Page slot="left">
+      <Heading text="ひらがな" />
+      {/* The vowel headings are printed once; the dakuten rows sit in the
+          same five columns. */}
+      <KanaChart rows={hiragana.gojuon} />
+      <KanaChart rows={hiragana.dakuten} headings={false} />
+    </Page>
+
+    <Page slot="right">
+      <Heading text="カタカナ" />
+      <KanaChart rows={katakana.gojuon} />
+      <KanaChart rows={katakana.dakuten} headings={false} />
+    </Page>
+  </PlannerSpread>
+</Layout>

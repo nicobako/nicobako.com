@@ -6,15 +6,21 @@
 // Every component in this folder is sized in `em`, so a page is drawn at
 // whatever scale its font size sets — `MiniZine` sets one tenth of a printed
 // inch — and the same parts work on any printable that sets a font size.
+interface Props {
+  /** Space between the page's parts, in `em`. */
+  gap?: number;
+}
+
+const { gap = 0.5 } = Astro.props;
 ---
 
-<div class="page"><slot /></div>
+<div class="page" style={`--gap: ${gap}em;`}><slot /></div>
 
 <style>
   .page {
     display: flex;
     flex-direction: column;
-    gap: 0.5em;
+    gap: var(--gap);
     width: 100%;
     height: 100%;
     box-sizing: border-box;

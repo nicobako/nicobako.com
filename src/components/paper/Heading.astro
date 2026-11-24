@@ -1,16 +1,22 @@
 ---
 // A page or section heading over a rule, optionally with a blank for the date
 // beside it.
+//
+// `level` is the only thing that varies, because a page that is a stack of
+// parts (a weekly spread's seven days) needs a heading that is smaller than
+// the one naming the page itself.
 interface Props {
   text: string;
   /** Draw a write-in rule for the date after the text. */
   dated?: boolean;
+  /** `page` names the whole page; `section` names one part of it. */
+  level?: "page" | "section";
 }
 
-const { text, dated = false } = Astro.props;
+const { text, dated = false, level = "page" } = Astro.props;
 ---
 
-<p class="heading">
+<p class:list={["heading", level]}>
   {text}
   {dated && <span class="date" />}
 </p>
@@ -21,14 +27,29 @@ const { text, dated = false } = Astro.props;
     align-items: baseline;
     gap: 0.6em;
     margin: 0;
-    font-size: 1.4em;
     font-weight: 600;
     padding-bottom: 0.2em;
     border-bottom: 0.09em solid var(--text);
   }
 
+  .heading.page {
+    font-size: 1.4em;
+  }
+
+  /* A part of a page is named, not announced: the type is body size and the
+     rule under it is a hairline, so seven of them down a page stay quiet. */
+  .heading.section {
+    font-size: 1em;
+    padding-bottom: 0.1em;
+    border-bottom-width: 0.06em;
+  }
+
+  /* The blank stops well short of the right edge: run it the whole way and it
+     lands a hairline above the heading's own rule, and the two read as one
+     doubled line rather than as somewhere to write a date. */
   .date {
     flex: 1;
+    max-width: 11em;
     border-bottom: 0.04em solid var(--muted);
   }
 </style>

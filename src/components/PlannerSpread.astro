@@ -1,0 +1,183 @@
+---
+// One planner sheet: a landscape page holding two pages side by side, with the
+// cut drawn down the middle.
+//
+// Which paper it is printed on is the `sheet` prop, from
+// `printables/planner/spread.ts`; everything here is derived from it, so a
+// sheet in another size is `sheet={SHEETS.b5}` on the page that wants it and
+// no change in this file. The pages themselves are named slots, `left` and
+// `right`, and the parts in `components/paper/` are made to go in them:
+//
+//   <PlannerSpread>
+//     <Page slot="left">…</Page>
+//     <Page slot="right">…</Page>
+//   </PlannerSpread>
+//
+// Both halves are punched along the cut, so a page's margins mirror: the
+// gutter is always the edge nearest the middle of the sheet. See the module's
+// comment for why that is the arrangement that makes the sheet a spread.
+//
+// No hole positions are drawn. A Japanese 20-hole punch, a 6-ring punch and a
+// 2-hole punch each have their own pitch; the sheet keeps the gutter clear for
+// all of them and lets the punch decide, which is also why `PUNCH_DEPTH` is a
+// depth and not a hole table.
+import {
+  checkSheet,
+  DEFAULT_SHEET,
+  type SheetFormat,
+} from "../printables/planner/spread.ts";
+
+interface Props {
+  /** The paper. Defaults to A4 landscape, cut into two A5 pages. */
+  sheet?: SheetFormat;
+}
+
+const { sheet = DEFAULT_SHEET } = Astro.props;
+// A format that cannot be bound or cannot be written on fails the build.
+checkSheet(sheet);
+
+const { margins } = sheet;
+// Where the blade goes. Derived from the number of pages across rather than
+// assumed to be the middle, so a one-page sheet draws no cut at all.
+const cuts = Array.from(
+  { length: sheet.columns - 1 },
+  (_, i) => (sheet.width / sheet.columns) * (i + 1),
+);
+// A tick at each edge, so the cut line is still findable once the sheet is
+// covered in writing. A fortieth of the sheet, so it scales with the paper.
+const tickLength = sheet.height / 35;
+---
+
+<div
+  class="spread-frame"
+  style={`--sheet-w: ${sheet.width}; --sheet-h: ${sheet.height};
+          --columns: ${sheet.columns}; --base: ${sheet.baseFont};
+          --gutter: ${margins.gutter}; --outer: ${margins.outer};
+          --top: ${margins.top}; --bottom: ${margins.bottom};`}
+>
+  {/*
+    The printed size of the paper. `@page` cannot read a custom property, and
+    an Astro `<style>` block cannot carry an expression, so this one rule is
+    written out — the only string of CSS on the site built this way, and the
+    reason the rest of the sheet can be data.
+  */}
+  <style
+    is:inline
+    set:html={`@page { size: ${sheet.width}mm ${sheet.height}mm; margin: 0; }`}
+  />
+  <div
+    class="spread-sheet"
+    style={`aspect-ratio: ${sheet.width} / ${sheet.height};`}
+  >
+    <div class="panel left"><slot name="left" /></div>
+    <div class="panel right"><slot name="right" /></div>
+    <svg
+      class="sheet-lines"
+      viewBox={`0 0 ${sheet.width} ${sheet.height}`}
+      aria-hidden="true"
+    >
+      {
+        cuts.map((x) => (
+          <>
+            <line class="cut" x1={x} y1="0" x2={x} y2={sheet.height} />
+            <line class="tick" x1={x} y1="0" x2={x} y2={tickLength} />
+            <line
+              class="tick"
+              x1={x}
+              y1={sheet.height - tickLength}
+              x2={x}
+              y2={sheet.height}
+            />
+          </>
+        ))
+      }
+    </svg>
+  </div>
+</div>
+
+<style>
+  /* The frame is what the sheet measures itself against: one millimetre,
+     `--mm`, is a fixed share of its width. On screen that scales the whole
+     sheet to the column it sits in; on paper the frame is exactly the sheet,
+     so a millimetre is a millimetre. */
+  .spread-frame {
+    container-type: inline-size;
+    width: 100%;
+  }
+
+  .spread-sheet {
+    --mm: calc(100cqw / var(--sheet-w));
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--columns), 1fr);
+    width: 100cqw;
+    box-sizing: border-box;
+    background: var(--bg);
+    outline: 1px solid var(--border);
+  }
+
+  /* Everything inside a page is sized in `em` off this one declaration, which
+     is why the same `paper/` parts work here and on a mini zine panel. */
+  .panel {
+    font-size: calc(var(--mm) * var(--base));
+    min-width: 0;
+    min-height: 0;
+    padding: calc(var(--mm) * var(--top)) 0 calc(var(--mm) * var(--bottom));
+  }
+
+  .panel.left {
+    padding-left: calc(var(--mm) * var(--outer));
+    padding-right: calc(var(--mm) * var(--gutter));
+  }
+
+  .panel.right {
+    padding-left: calc(var(--mm) * var(--gutter));
+    padding-right: calc(var(--mm) * var(--outer));
+  }
+
+  .sheet-lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* Faint down the length of the sheet, solid at the two edges where the
+     blade starts and finishes. The widths are a share of the sheet, since the
+     SVG's user unit is a millimetre of whatever paper this is. */
+  .cut {
+    stroke: var(--muted);
+    stroke-width: 0.12;
+    stroke-dasharray: 2 2;
+  }
+
+  .tick {
+    stroke: var(--text);
+    stroke-width: 0.3;
+  }
+
+  @media print {
+    .spread-frame {
+      width: calc(var(--sheet-w) * 1mm);
+    }
+
+    .spread-sheet {
+      height: calc(var(--sheet-h) * 1mm);
+      outline: none;
+      /* Never paint the page fill: with background graphics enabled, the dark
+         theme's --bg would print as a solid sheet of ink. */
+      background: none;
+    }
+
+    /* On paper a page can only be what the paper is, so anything that did
+       not fit is cut off here. On screen nothing clips: a page with one row
+       too many spills past the sheet's outline, which is the only warning
+       there can be that a layout has outgrown its paper — there is no way to
+       measure a page at build time. Changing a sheet's size, or adding lines
+       to a page, is a thing to look at on screen before printing. */
+    .panel {
+      overflow: hidden;
+    }
+  }
+</style>

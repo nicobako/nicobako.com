@@ -1,0 +1,33 @@
+---
+// The sheet the short forms are agreed on: a thing on the left, the letters it
+// is written as everywhere else on the right.
+//
+// Both pages carry the same heading, so the two halves of the table line up
+// across the cut and the sheet reads as one list.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Table, { type PaperColumn } from "../../../components/paper/Table.astro";
+
+const columns: PaperColumn[] = [
+  { label: "Item", width: 4 },
+  { label: "Short", width: 1, centre: true },
+];
+const ROWS = 21;
+---
+
+<Layout title="Index — Nico Bako">
+  <h1 class="no-print">Index</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="Index" />
+      <Table columns={columns} rows={ROWS} />
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      <Heading text="Index" />
+      <Table columns={columns} rows={ROWS} />
+    </Page>
+  </PlannerSpread>
+</Layout>

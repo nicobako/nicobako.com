@@ -1,0 +1,29 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import LinkList, { type LinkListItem } from "../../../components/LinkList.astro";
+
+// Every sheet is one A4 page: print it landscape, cut it down the middle, and
+// the two halves face each other in the binder. The calendar sheets carry no
+// dates — see `printables/planner/spread.ts` for the paper, and each page for
+// what is on it.
+const pages: LinkListItem[] = [
+  { label: "Yearly", href: "/printables/planner/yearly" },
+  { label: "Quarterly", href: "/printables/planner/quarterly" },
+  { label: "Monthly", href: "/printables/planner/monthly" },
+  { label: "Weekly", href: "/printables/planner/weekly" },
+  { label: "Lists", href: "/printables/planner/lists" },
+  { label: "Index", href: "/printables/planner/index-sheet" },
+  { label: "Habits", href: "/printables/planner/habits" },
+  { label: "Budget", href: "/printables/planner/budget" },
+  { label: "Calories", href: "/printables/planner/calories" },
+  { label: "Mood", href: "/printables/planner/mood" },
+  { label: "Practice", href: "/printables/planner/practice" },
+  { label: "Japanese Kana", href: "/printables/planner/japanese-kana" },
+  { label: "Japanese Kanji", href: "/printables/planner/japanese-kanji" },
+];
+---
+
+<Layout title="Planner — Nico Bako">
+  <h1 id="planner">Planner</h1>
+  <LinkList links={pages} labelledby="planner" />
+</Layout>

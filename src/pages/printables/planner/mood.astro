@@ -1,0 +1,39 @@
+---
+// A month of days with a five-point scale beside each, split at the cut the
+// same way the calorie sheet is. The scale is marked, not described: what a 3
+// means is yours, and it only has to mean the same thing on the 2nd as on the
+// 25th.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Table, { type PaperColumn } from "../../../components/paper/Table.astro";
+import { dayRows } from "../../../printables/planner/days.ts";
+
+const SCALE = [1, 2, 3, 4, 5];
+
+const columns: PaperColumn[] = [
+  { label: "Day", width: 0.7, centre: true },
+  ...SCALE.map((point) => ({
+    label: String(point),
+    width: 0.6,
+    centre: true,
+  })),
+  { label: "Note", width: 5 },
+];
+---
+
+<Layout title="Mood — Nico Bako">
+  <h1 class="no-print">Mood</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="Mood" dated />
+      <Table columns={columns} rowLabels={dayRows("first")} />
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      <Heading text="Mood" dated />
+      <Table columns={columns} rowLabels={dayRows("second")} />
+    </Page>
+  </PlannerSpread>
+</Layout>

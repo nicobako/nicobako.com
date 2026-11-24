@@ -1,0 +1,48 @@
+---
+// A month of money: what comes in and what is already spoken for on the left
+// page, everything else as it happens on the right.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Block from "../../../components/paper/Block.astro";
+import Rules from "../../../components/paper/Rules.astro";
+import Table, { type PaperColumn } from "../../../components/paper/Table.astro";
+
+const income: PaperColumn[] = [
+  { label: "Source", width: 3 },
+  { label: "Amount", width: 1 },
+];
+const fixed: PaperColumn[] = [
+  { label: "Item", width: 3 },
+  { label: "Amount", width: 1 },
+];
+const spending: PaperColumn[] = [
+  { label: "Date", width: 1 },
+  { label: "Item", width: 3.4 },
+  { label: "Amount", width: 1.2 },
+];
+---
+
+<Layout title="Budget — Nico Bako">
+  <h1 class="no-print">Budget</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="Budget" dated />
+      <Block label="In">
+        <Table columns={income} rows={5} />
+      </Block>
+      <Block label="Fixed" grow={1.7}>
+        <Table columns={fixed} rows={9} />
+      </Block>
+      <Block label="Left" grow={0.4}>
+        <Rules lines={2} />
+      </Block>
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      <Heading text="Spending" dated />
+      <Table columns={spending} rows={22} />
+    </Page>
+  </PlannerSpread>
+</Layout>

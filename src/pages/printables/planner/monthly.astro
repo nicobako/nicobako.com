@@ -1,0 +1,39 @@
+---
+// A month across one sheet: the grid on the left page, what the month is for
+// on the right. The grid is empty — Monday-first, six rows, enough for any
+// month in any year, with the dates written in.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Block from "../../../components/paper/Block.astro";
+import Rules from "../../../components/paper/Rules.astro";
+import Table, { type PaperColumn } from "../../../components/paper/Table.astro";
+import { WEEKDAY_SHORT } from "../../../printables/calendar/calendar.ts";
+
+const weekdays: PaperColumn[] = WEEKDAY_SHORT.map((day) => ({
+  label: day,
+  centre: true,
+}));
+/** Six rows holds any month, whichever weekday it starts on. */
+const WEEKS = 6;
+---
+
+<Layout title="Monthly — Nico Bako">
+  <h1 class="no-print">Monthly</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="Month" dated />
+      <Table columns={weekdays} rows={WEEKS} />
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      <Block label="Tasks" grow={1.3}>
+        <Rules lines={7} marker="box" />
+      </Block>
+      <Block label="Notes" grow={1.5}>
+        <Rules lines={11} />
+      </Block>
+    </Page>
+  </PlannerSpread>
+</Layout>

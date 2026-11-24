@@ -1,0 +1,35 @@
+---
+// A week of practice: what is being worked on and which days it was touched
+// on the left page, what actually happened on the right.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Table, { type PaperColumn } from "../../../components/paper/Table.astro";
+import { WEEKDAY_ABBR } from "../../../printables/calendar/calendar.ts";
+
+const schedule: PaperColumn[] = [
+  { label: "Item", width: 5 },
+  ...WEEKDAY_ABBR.map((day) => ({ label: day, width: 0.8, centre: true })),
+];
+const log: PaperColumn[] = [
+  { label: "Day", width: 1 },
+  { label: "Min", width: 0.8, centre: true },
+  { label: "What happened", width: 4 },
+];
+---
+
+<Layout title="Practice — Nico Bako">
+  <h1 class="no-print">Practice</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="Practice" dated />
+      <Table columns={schedule} rows={16} />
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      <Heading text="Log" />
+      <Table columns={log} rows={16} />
+    </Page>
+  </PlannerSpread>
+</Layout>

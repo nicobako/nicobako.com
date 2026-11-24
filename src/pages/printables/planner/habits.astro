@@ -1,0 +1,40 @@
+---
+// Habits down the side, the month across the sheet: days 1–16 on the left
+// page, 17–31 on the right. The habit is written once, on the left; the row it
+// is on continues across the cut, which is the whole reason this is a spread
+// and not two pages.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Table, { type PaperColumn } from "../../../components/paper/Table.astro";
+import { dayColumns } from "../../../printables/planner/days.ts";
+
+// The same first column on both pages, so the rows line up across the cut.
+// On the right page its heading is blank: the habit is already named opposite.
+const HABIT_WIDTH = 5;
+const left: PaperColumn[] = [
+  { label: "Habit", width: HABIT_WIDTH },
+  ...dayColumns("first"),
+];
+const right: PaperColumn[] = [
+  { label: "", width: HABIT_WIDTH },
+  ...dayColumns("second"),
+];
+const ROWS = 14;
+---
+
+<Layout title="Habits — Nico Bako">
+  <h1 class="no-print">Habits</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="Habits" dated />
+      <Table columns={left} rows={ROWS} />
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      <Heading text="Habits" dated />
+      <Table columns={right} rows={ROWS} />
+    </Page>
+  </PlannerSpread>
+</Layout>

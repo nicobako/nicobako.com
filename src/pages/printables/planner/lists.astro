@@ -1,0 +1,28 @@
+---
+// Two numbered lists, one per page. Numbered rather than ticked: a list on
+// this sheet is as often a set of things to refer back to as a set of things
+// to finish, and a number is what the index sheet points at.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Rules from "../../../components/paper/Rules.astro";
+
+/** As many as fit at a spacing you can still write between. */
+const LINES = 20;
+---
+
+<Layout title="Lists — Nico Bako">
+  <h1 class="no-print">Lists</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="List" dated />
+      <Rules lines={LINES} marker="number" />
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      <Heading text="List" dated />
+      <Rules lines={LINES} marker="number" />
+    </Page>
+  </PlannerSpread>
+</Layout>

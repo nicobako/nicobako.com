@@ -1,0 +1,68 @@
+---
+// Ruled lines to write on, filling the space left on the page.
+//
+// The count is what is declared, not the spacing: a page has a height, and the
+// lines share whatever of it the rest of the page leaves, so a sheet is never
+// a few millimetres short of its last line. `minHeight` is the floor — if the
+// lines cannot be at least that tall, there are too many for the page, which
+// is worth seeing rather than hiding.
+interface Props {
+  lines: number;
+  /** What sits at the start of each line. */
+  marker?: "none" | "box" | "number";
+  /** Smallest line height, in `em`. Below ~1.4 there is no room to write. */
+  minHeight?: number;
+}
+
+const { lines, marker = "none", minHeight = 1.5 } = Astro.props;
+const numbers = Array.from({ length: lines }, (_, i) => i + 1);
+---
+
+<div class="rules" style={`--min-height: ${minHeight}em;`}>
+  {
+    numbers.map((n) => (
+      <div class="rule">
+        {marker === "box" && <span class="check" />}
+        {marker === "number" && <span class="num">{n}</span>}
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .rules {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Every line takes an equal share of the height the page has left. */
+  .rule {
+    flex: 1;
+    min-height: var(--min-height);
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5em;
+    border-bottom: 0.06em solid var(--muted);
+  }
+
+  /* The box and the number sit just above the rule, where writing goes. */
+  .check {
+    width: 0.9em;
+    height: 0.9em;
+    margin-bottom: 0.25em;
+    border: 0.06em solid var(--muted);
+    border-radius: 0.15em;
+  }
+
+  .num {
+    font-size: 0.75em;
+    line-height: 1;
+    margin-bottom: 0.3em;
+    min-width: 1.4em;
+    text-align: right;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

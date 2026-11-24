@@ -38,6 +38,7 @@ const PATH_LABELS: Record<string, string> = {
   "/music/": "Music",
   "/printables/": "Printables",
   "/printables/bookmark-calendar/": "Bookmark Calendar",
+  "/printables/planner/": "Planner",
   "/timers/": "Timers",
 };
 

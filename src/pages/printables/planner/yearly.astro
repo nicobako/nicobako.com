@@ -1,0 +1,43 @@
+---
+// A year across one sheet: January to June on the left page, July to December
+// on the right, a few lines each. The months are printed because a month's
+// name is the same in every year; the year itself is a rule you write on.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Block from "../../../components/paper/Block.astro";
+import Rules from "../../../components/paper/Rules.astro";
+import { MONTH_NAMES } from "../../../printables/calendar/calendar.ts";
+
+const FIRST_HALF = MONTH_NAMES.slice(0, 6);
+const SECOND_HALF = MONTH_NAMES.slice(6);
+/** Lines in a month. A year sheet holds what a month was *for*, not its days. */
+const MONTH_LINES = 3;
+---
+
+<Layout title="Yearly — Nico Bako">
+  <h1 class="no-print">Yearly</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="Year" dated />
+      {
+        FIRST_HALF.map((month) => (
+          <Block label={month}>
+            <Rules lines={MONTH_LINES} />
+          </Block>
+        ))
+      }
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      {
+        SECOND_HALF.map((month) => (
+          <Block label={month}>
+            <Rules lines={MONTH_LINES} />
+          </Block>
+        ))
+      }
+    </Page>
+  </PlannerSpread>
+</Layout>

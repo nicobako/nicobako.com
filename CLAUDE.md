@@ -48,9 +48,10 @@ Requires Node `>=22.12.0`.
 | `/music/`, `/music/{metronome,drone,vibrato,ear-training,etude-builder,abc-editor}` | `src/pages/music/` |
 | `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
 | `/printables/`, `/printables/bookmark-calendar` (+ a page per year), `/printables/sketchbook` | `src/pages/printables/` |
+| `/printables/planner/`, `/printables/planner/{yearly,quarterly,monthly,weekly,lists,index-sheet,habits,budget,calories,mood,practice,japanese-kana,japanese-kanji}` | `src/pages/printables/planner/` |
 | `/offline` | `src/pages/offline.astro` |
 
-22 pages. Keep it that way: every page is precached by the service worker, so a
+36 pages. Keep it that way: every page is precached by the service worker, so a
 new one costs install size as well as attention.
 
 ## Architecture
@@ -186,10 +187,66 @@ comes back.
 - `calendar/calendar.ts` — ISO-8601 week maths and the row builders; `calendar/years.ts` decides which years get pages (one back, three forward — each is a real precached page, so keep the range small). Rendered by `components/BookmarkTable.astro` and `BookmarkSheet.astro`, with `YearPicker.astro` as a pair of links.
 - `booklet/mini-zine.ts` — the eight-page mini zine: one side of a landscape US Letter sheet, folded into a 2 × 4 grid with one slit along the middle crease, and collapsed into a booklet with no staples. It declares only the page layout (which page is in which panel, and which are upside down); the folds, the cut and each fold's direction are *derived*, because the paper is a single ring running through the pages in reading order — neighbouring panels are joined exactly when their pages are consecutive, a leaf folds printing-out, a spread folds printing-in. The module throws, failing the build, if a layout cannot form that ring.
 
-  `components/MiniZine.astro` is the sheet: eight named slots, `page-1` to `page-8`, in reading order and written the right way up; it places them (through `MiniZinePanel.astro`), turns over the upside-down ones, numbers the inside pages and draws the cut. `MiniZineSteps.astro` is the screen-only folding instructions. What goes in the slots comes from `components/paper/`: `Page`, `CoverTitle`, `Heading`, `Blank`, `Box` and `Grid` (dots or squares, drawn as an SVG pattern because CSS background hairlines drop out of print). They are sized in `em` — the sheet sets a panel's font size to a tenth of a printed inch. Astro only accepts static slot names, which is why the eight panels are written out rather than mapped.
+  `components/MiniZine.astro` is the sheet: eight named slots, `page-1` to `page-8`, in reading order and written the right way up; it places them (through `MiniZinePanel.astro`), turns over the upside-down ones, numbers the inside pages and draws the cut. `MiniZineSteps.astro` is the screen-only folding instructions. What goes in the slots comes from `components/paper/`, which is shared with the planner: `Page` (a stack with a `gap`), `CoverTitle`, `Heading` (`page` or `section` level, with an optional write-in rule for a date), `Block` (a named region that shares the page's spare height), `Blank`, `Box`, `Rules` (ruled lines, optionally numbered or with a checkbox), `Table` (columns as data, empty rows or printed row labels), `WritingBoxes` (田字格 squares), `KanaChart` and `Grid` (dots or squares, drawn as an SVG pattern because CSS background hairlines drop out of print). Everything in the folder is sized in `em`, so the same part works at any sheet's scale — this sheet sets a panel's font size to a tenth of a printed inch, a planner sheet sets it in millimetres. Astro only accepts static slot names, which is why the eight panels are written out rather than mapped.
 
   Only one booklet survives, `/printables/sketchbook`. Its drawing prompts are
   AI-written placeholder content; they are Nico's to replace.
+
+#### Planner
+
+`/printables/planner/*` is the A5 binder: thirteen sheets, each one A4 page.
+
+The whole section rests on one arrangement, not on one paper size, which
+`printables/planner/spread.ts` states and every component derives from: **a
+sheet is printed landscape, cut once down the middle, and both halves are
+punched along that cut.** A page punched on its *right* edge hangs to the left
+of the rings, so the two halves of a sheet face each other in the binder — the
+sheet is read as the spread it was laid out as. That is why a page's margins
+mirror (the gutter is always the edge nearest the middle of the sheet), why
+the gutter is wide (`PUNCH_DEPTH`, checked by `checkSheet` at build time), and
+why the cut is drawn.
+
+- **The paper is data.** A `SheetFormat` in `SHEETS` is a size in millimetres,
+  how many pages across, a body size and the margins; `a4` (two A5 pages),
+  `letter` (two half-letter) and `b5` (two B6) are there now, and another size
+  is another entry and nothing else. A page prints on it with
+  `<PlannerSpread sheet={SHEETS.b5}>`; the default is A4. `PUNCH_DEPTH` is not
+  per-format, because it is a property of the punch rather than of the paper.
+- `components/PlannerSpread.astro` is the sheet: a named slot per page, the
+  mirrored margins, and the cut line with a tick at each edge, all derived from
+  the format — the cut is drawn between the columns, so a one-column format
+  draws none. It draws no hole positions: a 20-hole, a 6-ring and a 2-hole
+  punch each have their own pitch, so the sheet keeps the gutter clear and lets
+  the punch decide. It sets a panel's font size to the format's body size in
+  millimetres, and every part in `components/paper/` is sized in `em` off that,
+  which is what lets the same parts work at any sheet size and on a mini zine.
+  The one string of CSS built by hand on the site is its `@page` rule: `size`
+  cannot read a custom property and an Astro `<style>` cannot carry an
+  expression, so the printed size is written out with `set:html`.
+- **What fits is still a judgement.** Twenty ruled lines fit an A5 page and
+  crowd a B6 one, and nothing can measure a page at build time. So a page that
+  has outgrown its paper *shows* itself: panels clip only in print, and on
+  screen an over-full page spills past the sheet's outline. Look at a sheet on
+  screen after changing its size or adding rows to it. `WritingBoxes` is the
+  exception that handles itself — it shrinks to the height left rather than
+  spilling, because squares that stay square can.
+- The sheets are **undated**: a month's days are printed (the 14th is the 14th
+  in every year) but a year, a month name on a quarterly or a week number is a
+  rule you write on. One page each, rather than a page per week per year. If
+  dated variants are ever wanted, the shape to add is a *hybrid*: generated
+  dates for the monthly, quarterly and yearly sheets, which are few pages, and
+  the weekly left blank. Nico has flagged that as a maybe, not a plan.
+- A spread earns its format when a row runs across the cut. The habit grid is
+  the clearest case — days 1–16 on the left page, 17–31 on the right, one habit
+  per row — and the calorie and mood sheets split a month the same way. Both
+  pages of such a sheet carry the same heading, because identical headings are
+  what keeps the rows at the same height on either side of the cut.
+- `printables/planner/days.ts` holds that split (`dayRows`, `dayColumns`), so
+  no page counts to 16 itself.
+- `printables/japanese/kana.ts` is the gojūon as one table, not two: a row
+  carries the romaji once with both spellings beside it, and the chart throws
+  at build time if a row ever drifts out of step with its readings. Kana and
+  kanji are set in `--font-ja`.
 
 ### Timers subsystem
 
@@ -231,7 +288,7 @@ The site is an installable, offline-capable PWA. No PWA library is used —
   `import.meta.env.PROD`, because `sw.js` only exists in a build. Test the PWA
   with `npm run build && npm run preview`, never with `npm run dev`.
 
-The whole site is precached (63 files, ~1.2 MB), so every page works offline after
+The whole site is precached (84 files, ~1.5 MB), so every page works offline after
 the first visit. `npm run build` prints the file count; check it when adding pages.
 Caching is network-first for navigations, cache-first for hashed `/_astro/` assets,
 and stale-while-revalidate for everything else same-origin. A navigation to a page
@@ -245,5 +302,6 @@ safe zone). Edit the SVG sources and re-render the PNGs if the mark changes.
 
 - All colours are CSS custom properties defined in `Layout.astro` (e.g. `--bg`, `--text`, `--muted`, `--border`, `--surface`, `--accent`, `--accent-text`), with `prefers-color-scheme: dark` overrides. Never hardcode colours in page or component files — consume the tokens.
 - `--measure: 46rem` is the shared max-width used by header, main, and footer.
+- `--font-ja` is the Japanese face used by the kana chart and the kanji sheet; most systems fall back to an installed CJK font on their own, but on a sheet meant to be copied by hand the letterforms are the content.
 - Styles in page and component files are Astro-scoped by default; only `Layout.astro`'s `<style is:global>` affects the whole document.
 - `build.inlineStylesheets: 'never'` in `astro.config.mjs` keeps stylesheets as shared, hashed files in `/_astro/` instead of inlining them. This mattered far more at 646 pages than at 29, but one cached stylesheet is still cheaper than a copy per page.

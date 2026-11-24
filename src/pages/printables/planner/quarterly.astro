@@ -1,0 +1,39 @@
+---
+// A quarter across one sheet: its three months on the left page, what the
+// quarter is for on the right. The months are blanks rather than names — which
+// three they are depends on the quarter, and writing it is one word.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Block from "../../../components/paper/Block.astro";
+import Rules from "../../../components/paper/Rules.astro";
+
+const MONTHS_IN_QUARTER = 3;
+const months = Array.from({ length: MONTHS_IN_QUARTER }, (_, i) => i);
+---
+
+<Layout title="Quarterly — Nico Bako">
+  <h1 class="no-print">Quarterly</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="Quarter" dated />
+      {
+        months.map(() => (
+          <Block label="Month" dated>
+            <Rules lines={7} />
+          </Block>
+        ))
+      }
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      <Block label="Goals" grow={1.2}>
+        <Rules lines={8} marker="box" />
+      </Block>
+      <Block label="Notes" grow={1.6}>
+        <Rules lines={11} />
+      </Block>
+    </Page>
+  </PlannerSpread>
+</Layout>

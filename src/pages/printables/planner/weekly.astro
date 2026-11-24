@@ -1,0 +1,55 @@
+---
+// A week across one sheet: Monday to Thursday on the left page, Friday to
+// Sunday and the week's tasks on the right. Monday-first, like every other
+// week on the site.
+//
+// Nothing is dated. The sheet is one page rather than fifty-two because the
+// dates are a rule you write on — see `printables/planner/spread.ts` for the
+// sheet, and the section index for what else is on this paper.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Block from "../../../components/paper/Block.astro";
+import Rules from "../../../components/paper/Rules.astro";
+import { WEEKDAY_NAMES } from "../../../printables/calendar/calendar.ts";
+
+// Thursday is where the week breaks across the cut: four days on the left page
+// and three on the right leaves the right page room for the week's tasks.
+const LEFT_DAYS = WEEKDAY_NAMES.slice(0, 4);
+const RIGHT_DAYS = WEEKDAY_NAMES.slice(4);
+/** Lines in a weekday. */
+const DAY_LINES = 4;
+---
+
+<Layout title="Weekly — Nico Bako">
+  <h1 class="no-print">Weekly</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="Week" dated />
+      {
+        LEFT_DAYS.map((day) => (
+          <Block label={day} dated>
+            <Rules lines={DAY_LINES} />
+          </Block>
+        ))
+      }
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      {
+        RIGHT_DAYS.map((day) => (
+          <Block label={day} dated>
+            <Rules lines={DAY_LINES} />
+          </Block>
+        ))
+      }
+      {/* The tasks sit where Monday would be if the week were split evenly.
+          Six lines at the same spacing as a day, rather than more lines at a
+          tighter one: the sheet is written on by hand. */}
+      <Block label="Tasks" grow={1.6}>
+        <Rules lines={6} marker="box" />
+      </Block>
+    </Page>
+  </PlannerSpread>
+</Layout>

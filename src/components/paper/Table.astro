@@ -1,0 +1,121 @@
+---
+// A table to write in: a row of column headings, then empty rows that share
+// whatever height the page has left.
+//
+// This is the shape most of a planner is — an index, a list with a date beside
+// it, a budget ledger, a tracker with a day per column — so it takes the
+// columns as *data* and nothing else. A column's `width` is a share, not a
+// size: `{ width: 4 }` beside `{ width: 1 }` is four times as wide, whatever
+// the page is. A heading can be blank, for a column whose meaning is the row
+// it is in (a tracker's first column).
+export interface PaperColumn {
+  label: string;
+  /** Share of the width, relative to the other columns. Default 1. */
+  width?: number;
+  /** Centre the heading, for narrow columns like a day number. */
+  centre?: boolean;
+}
+
+interface Props {
+  /** How many empty rows. Ignored when `rowLabels` says what the rows are. */
+  rows?: number;
+  /**
+   * The first cell of each row, printed rather than written: the days of a
+   * month, which are the same every year, are the reason this exists.
+   */
+  rowLabels?: string[];
+  columns: PaperColumn[];
+  /** Smallest row height, in `em`. */
+  minHeight?: number;
+}
+
+const { columns, rows, rowLabels, minHeight = 1.5 } = Astro.props;
+
+if (rowLabels === undefined && rows === undefined) {
+  throw new Error("A table needs either `rows` or `rowLabels`");
+}
+
+// Either the printed first cells, or that many empty ones.
+const bodyRows: string[] =
+  rowLabels ?? Array.from({ length: rows ?? 0 }, () => "");
+
+const total = columns.reduce((sum, column) => sum + (column.width ?? 1), 0);
+// Percentages, because the table is laid out `fixed`: the browser then takes
+// the heading row's widths as the whole table's, and no cell's contents can
+// widen a column later.
+const widths = columns.map(
+  (column) => `${(((column.width ?? 1) / total) * 100).toFixed(3)}%`,
+);
+---
+
+<table class="sheet-table" style={`--min-height: ${minHeight}em;`}>
+  <thead>
+    <tr>
+      {
+        columns.map((column, i) => (
+          <th class:list={[{ centre: column.centre }]} style={`width: ${widths[i]};`}>
+            {column.label}
+          </th>
+        ))
+      }
+    </tr>
+  </thead>
+  <tbody>
+    {
+      bodyRows.map((label) => (
+        <tr>
+          {columns.map((column, i) => (
+            <td class:list={[{ centre: column.centre }]}>{i === 0 && label}</td>
+          ))}
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .sheet-table {
+    flex: 1;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  th {
+    font-size: 0.8em;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 0 0.3em 0.2em;
+    color: var(--muted);
+    border-bottom: 0.09em solid var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  th.centre,
+  td.centre {
+    text-align: center;
+    padding-inline: 0.1em;
+  }
+
+  /* The rows share the height the page leaves; the table element having
+     `flex: 1` is what gives them something to share. */
+  td {
+    height: var(--min-height);
+    font-size: 0.8em;
+    color: var(--muted);
+    padding: 0 0.3em;
+    border-bottom: 0.06em solid var(--muted);
+  }
+
+  /* A vertical hairline between columns, thinner than the rules: it is there
+     to keep a column's writing in its column, not to be read. It still takes
+     the ink colour — `--border` is pale enough on screen to vanish from a
+     sheet of paper entirely. */
+  td + td,
+  th + th {
+    border-left: 0.04em solid var(--muted);
+  }
+</style>

@@ -1,0 +1,35 @@
+---
+// A named region of a page: a heading, then whatever is written in it.
+//
+// A planner page is mostly a stack of these — a day, a section of a list, the
+// notes at the foot of a sheet — so they share the page's height the way the
+// ruled lines inside them share the region's. `grow` is a share, not a size:
+// two blocks at 2 and 1 take two thirds and one third of what is spare.
+import Heading from "./Heading.astro";
+
+interface Props {
+  label: string;
+  /** Draw a write-in rule for the date beside the heading. */
+  dated?: boolean;
+  /** Share of the page's spare height. Default 1. */
+  grow?: number;
+}
+
+const { label, dated = false, grow = 1 } = Astro.props;
+---
+
+<section class="block" style={`flex-grow: ${grow};`}>
+  <Heading text={label} level="section" dated={dated} />
+  <slot />
+</section>
+
+<style>
+  .block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-height: 0;
+  }
+</style>

@@ -1,0 +1,91 @@
+---
+// A grid of squares to write characters in, with faint guides through the
+// middle of each — the 田字格 a kanji or kana is practised in.
+//
+// Drawn as one SVG rather than a grid of elements, for the same reason
+// `Grid.astro` is: browsers leave backgrounds off paper by default, and drop
+// hairlines at some positions even when told to print them.
+//
+// A box stays square whatever the page is: the SVG keeps its aspect ratio, so
+// it takes the width it is given and the height that follows — and, where the
+// page is too short for that, shrinks to the height left instead of spilling
+// off the bottom. `columns` and `rows` therefore set the *shape* of the grid;
+// how big a square comes out is the page's business.
+interface Props {
+  columns: number;
+  rows: number;
+  /** Draw the centre cross inside each square. */
+  guides?: boolean;
+}
+
+const { columns, rows, guides = true } = Astro.props;
+
+// User units are cells: one cell is 1 × 1, so a stroke width is a fraction of
+// a cell and reads the same at any printed size.
+const verticals = Array.from({ length: columns - 1 }, (_, i) => i + 1);
+const horizontals = Array.from({ length: rows - 1 }, (_, i) => i + 1);
+const cells = Array.from({ length: columns * rows }, (_, i) => ({
+  x: i % columns,
+  y: Math.floor(i / columns),
+}));
+---
+
+<svg
+  class="writing-boxes"
+  viewBox={`0 0 ${columns} ${rows}`}
+  style={`aspect-ratio: ${columns} / ${rows};`}
+  aria-hidden="true"
+>
+  {
+    guides &&
+      cells.map((cell) => (
+        <>
+          <line
+            class="guide"
+            x1={cell.x + 0.5}
+            y1={cell.y}
+            x2={cell.x + 0.5}
+            y2={cell.y + 1}
+          />
+          <line
+            class="guide"
+            x1={cell.x}
+            y1={cell.y + 0.5}
+            x2={cell.x + 1}
+            y2={cell.y + 0.5}
+          />
+        </>
+      ))
+  }
+  {verticals.map((x) => <line class="edge" x1={x} y1="0" x2={x} y2={rows} />)}
+  {
+    horizontals.map((y) => (
+      <line class="edge" x1="0" y1={y} x2={columns} y2={y} />
+    ))
+  }
+  <rect class="edge" x="0" y="0" width={columns} height={rows} />
+</svg>
+
+<style>
+  .writing-boxes {
+    width: 100%;
+    height: auto;
+    /* `flex: 0 1 auto` lets the page shrink it; `max-height` is what it
+       shrinks to. The viewBox keeps the squares square either way. */
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 100%;
+  }
+
+  .edge {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 0.012;
+  }
+
+  .guide {
+    stroke: var(--muted);
+    stroke-width: 0.008;
+    stroke-dasharray: 0.06 0.05;
+  }
+</style>

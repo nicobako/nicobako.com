@@ -1,0 +1,37 @@
+---
+// Kanji: squares to practise in on the left page, the characters that were
+// practised on the right. The squares carry the centre guides a character is
+// drawn against; what goes in them is whatever is being learnt that week.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import WritingBoxes from "../../../components/paper/WritingBoxes.astro";
+import Table, { type PaperColumn } from "../../../components/paper/Table.astro";
+
+// Seven across is a square of about 18 mm — big enough for a kanji with a
+// dozen strokes, and ten rows reach the foot of the page.
+const BOX_COLUMNS = 7;
+const BOX_ROWS = 10;
+
+const columns: PaperColumn[] = [
+  { label: "漢字", width: 1, centre: true },
+  { label: "Reading", width: 2 },
+  { label: "Meaning", width: 3 },
+];
+---
+
+<Layout title="Japanese Kanji — Nico Bako">
+  <h1 class="no-print">Japanese Kanji</h1>
+  <PlannerSpread>
+    <Page slot="left" gap={0.9}>
+      <Heading text="漢字" dated />
+      <WritingBoxes columns={BOX_COLUMNS} rows={BOX_ROWS} />
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      <Heading text="Readings" />
+      <Table columns={columns} rows={18} />
+    </Page>
+  </PlannerSpread>
+</Layout>

@@ -8,7 +8,7 @@
 // All week math is ISO-8601: weeks start on Monday, and week 1 is the week that
 // contains the year's first Thursday (equivalently, the week containing Jan 4).
 
-const MONTH_NAMES = [
+export const MONTH_NAMES = [
   "January",
   "February",
   "March",
@@ -25,6 +25,21 @@ const MONTH_NAMES = [
 
 // Monday-first weekday abbreviations (ISO weekday 1..7 = Mon..Sun).
 export const WEEKDAY_ABBR = ["M", "T", "W", "R", "F", "S", "K"] as const;
+
+// The same seven days at the two other lengths a sheet asks for: a column
+// heading on a tracker, and a day's own heading on a weekly spread. Monday
+// first, like everything else here.
+export const WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+
+export const WEEKDAY_NAMES = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+] as const;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 

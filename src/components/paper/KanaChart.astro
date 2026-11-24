@@ -1,0 +1,83 @@
+---
+// One script's gojūon chart: five vowel columns, a kana per cell with its
+// romaji under it. The rows come from `printables/japanese/kana.ts`; this maps
+// them to a table and decides nothing about which syllables exist.
+import { VOWELS, type KanaRow } from "../../printables/japanese/kana.ts";
+
+interface Props {
+  rows: KanaRow[];
+  /** Print the vowel headings. The second half of a chart doesn't repeat them. */
+  headings?: boolean;
+}
+
+const { rows, headings = true } = Astro.props;
+---
+
+<table class="kana-chart">
+  {
+    headings && (
+      <thead>
+        <tr>
+          {VOWELS.map((vowel) => (
+            <th>{vowel}</th>
+          ))}
+        </tr>
+      </thead>
+    )
+  }
+  <tbody>
+    {
+      rows.map((row) => (
+        <tr>
+          {row.map((cell) => (
+            <td>
+              {cell && (
+                <>
+                  <span class="kana">{cell.kana}</span>
+                  <span class="romaji">{cell.romaji}</span>
+                </>
+              )}
+            </td>
+          ))}
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .kana-chart {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+
+  th {
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--muted);
+    border-bottom: 0.09em solid var(--text);
+    padding-bottom: 0.15em;
+  }
+
+  td {
+    text-align: center;
+    padding: 0.4em 0;
+    border-bottom: 0.05em solid var(--border);
+  }
+
+  /* The character is the content; the reading is the footnote to it. */
+  .kana {
+    display: block;
+    font-family: var(--font-ja);
+    font-size: 1.7em;
+    line-height: 1.05;
+  }
+
+  .romaji {
+    display: block;
+    font-size: 0.7em;
+    line-height: 1.1;
+    color: var(--muted);
+  }
+</style>

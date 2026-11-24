@@ -1,0 +1,37 @@
+---
+// A month of eating, split at the cut: the 1st to the 16th on the left page,
+// the 17th to the end on the right. The days are printed — the 14th is the
+// 14th in every year — and which month it is is a rule at the top.
+import Layout from "../../../layouts/Layout.astro";
+import PlannerSpread from "../../../components/PlannerSpread.astro";
+import Page from "../../../components/paper/Page.astro";
+import Heading from "../../../components/paper/Heading.astro";
+import Table, { type PaperColumn } from "../../../components/paper/Table.astro";
+import { dayRows } from "../../../printables/planner/days.ts";
+
+const columns: PaperColumn[] = [
+  { label: "Day", width: 0.7, centre: true },
+  { label: "Breakfast", width: 2 },
+  { label: "Lunch", width: 2 },
+  { label: "Dinner", width: 2 },
+  { label: "Other", width: 1.6 },
+  { label: "Total", width: 1, centre: true },
+];
+---
+
+<Layout title="Calories — Nico Bako">
+  <h1 class="no-print">Calories</h1>
+  <PlannerSpread>
+    {/* Both pages carry the same heading, so a day's row sits at the same
+        height on either side of the cut. */}
+    <Page slot="left" gap={0.9}>
+      <Heading text="Calories" dated />
+      <Table columns={columns} rowLabels={dayRows("first")} />
+    </Page>
+
+    <Page slot="right" gap={0.9}>
+      <Heading text="Calories" dated />
+      <Table columns={columns} rowLabels={dayRows("second")} />
+    </Page>
+  </PlannerSpread>
+</Layout>
