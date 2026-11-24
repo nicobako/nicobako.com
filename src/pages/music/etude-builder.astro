@@ -31,7 +31,7 @@ const DEFAULTS = {
   instrument: "violin",
   octave: "4",
   meter: "4/4",
-  tempo: 72,
+  tempo: 52,
 };
 
 // The key options are per mode, so the page renders the default mode's and the script
@@ -47,7 +47,9 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
 
   <div class="shelf no-print">
     <ul class="shelf-list" id="shelf"></ul>
-    <button type="button" id="save">Save</button>
+    <button type="button" id="save">
+      Save
+    </button>
   </div>
 
   <div id="etude-track" class="etude-track"></div>
@@ -96,7 +98,9 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     </div>
 
     <div class="length">
-      <button type="button" id="one-cycle">One cycle</button>
+      <button type="button" id="one-cycle">
+        One cycle
+      </button>
       <label for="length">Notes</label>
       <input
         id="length"
@@ -111,7 +115,9 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     <p id="cycle" class="cycle" aria-live="polite"></p>
 
     <details class="setup">
-      <summary><span id="setup-summary"></span></summary>
+      <summary>
+        <span id="setup-summary"></span>
+      </summary>
 
       <div class="setup-grid">
         <div class="field">
@@ -172,7 +178,8 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
 
       <div class="checks">
         <label class="check">
-          <input id="show-bowings" type="checkbox" checked /> Mark bow directions
+          <input id="show-bowings" type="checkbox" checked /> Mark bow
+          directions
         </label>
         <label class="check">
           <input id="start-up-bow" type="checkbox" /> Start up-bow
@@ -182,7 +189,9 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
   </form>
 
   <div class="actions no-print">
-    <a id="open-in-editor" href="/music/abc-editor">Open in ABC editor</a>
+    <a id="open-in-editor" href="/music/abc-editor">
+      Open in ABC editor
+    </a>
   </div>
 
   <template id="track-template">
@@ -195,9 +204,15 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
       <details class="abc-downloads no-print">
         <summary>Download</summary>
         <div class="abc-controls">
-          <button type="button" data-download-abc>.abc</button>
-          <button type="button" data-download-wav>WAV</button>
-          <button type="button" data-download-midi>MIDI</button>
+          <button type="button" data-download-abc>
+            .abc
+          </button>
+          <button type="button" data-download-wav>
+            WAV
+          </button>
+          <button type="button" data-download-midi>
+            MIDI
+          </button>
         </div>
         <p class="abc-download-status" data-status aria-live="polite"></p>
       </details>
@@ -368,7 +383,8 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     section.querySelector("[data-length]")!.textContent = String(
       laneLength(chips),
     );
-    section.querySelector("[data-error]")!.textContent = laneErrors(lane).join(" ");
+    section.querySelector("[data-error]")!.textContent =
+      laneErrors(lane).join(" ");
     renderKeypad(lane);
   }
 
@@ -440,10 +456,12 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
   /** The twelve keys are per mode, so their labels are rewritten when the mode changes. */
   function relabelKeys(): void {
     const keys = KEYS[readValue("mode") as ModeSlug];
-    form.querySelectorAll<HTMLElement>("[data-key-label]").forEach((label, i) => {
-      const key = keys[i];
-      if (key) label.textContent = key.label;
-    });
+    form
+      .querySelectorAll<HTMLElement>("[data-key-label]")
+      .forEach((label, i) => {
+        const key = keys[i];
+        if (key) label.textContent = key.label;
+      });
   }
 
   function readEtude(): Etude {
@@ -633,7 +651,8 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
     if (target.closest("[data-add]") !== null) {
       const chips = laneChips(lane);
       const last = chips[chips.length - 1]?.token;
-      const token = last === undefined || last === null ? defaultToken(lane) : last;
+      const token =
+        last === undefined || last === null ? defaultToken(lane) : last;
       chips.push({ raw: formatToken(token), token });
       selected = { lane, index: chips.length - 1, member: 0 };
       setChips(lane, chips);
@@ -681,8 +700,8 @@ const METERS = ["4/4", "3/4", "2/4", "6/8", "5/4"];
       return;
     }
 
-    const action = target.closest<HTMLElement>("[data-chip-act]")?.dataset
-      .chipAct;
+    const action =
+      target.closest<HTMLElement>("[data-chip-act]")?.dataset.chipAct;
     if (action === undefined) return;
 
     if (action === "close") {
