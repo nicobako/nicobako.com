@@ -59,6 +59,12 @@
 			"icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
 		},
 		{
+			"name": "Noise",
+			"short_name": "Noise",
+			"url": "/timers/noise",
+			"icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+		},
+		{
 			"name": "Timers",
 			"short_name": "Timers",
 			"url": "/timers/",

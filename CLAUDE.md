@@ -46,12 +46,12 @@ Requires Node `>=22.12.0`.
 |---|---|
 | `/` | `src/pages/index.astro` |
 | `/music/`, `/music/{metronome,drone,vibrato,ear-training,etude-builder,abc-editor}` | `src/pages/music/` |
-| `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation}` | `src/pages/timers/` |
+| `/timers/`, `/timers/{timer,stopwatch,pomodoro,interval,meditation,noise}` | `src/pages/timers/` |
 | `/printables/`, `/printables/bookmark-calendar` (+ a page per year), `/printables/sketchbook` | `src/pages/printables/` |
 | `/printables/planner/`, `/printables/planner/{yearly,quarterly,monthly,weekly,week-at-a-glance,lists,index-sheet,habits,budget,calories,mood,practice,japanese-kana,japanese-kanji}` | `src/pages/printables/planner/` |
 | `/offline` | `src/pages/offline.astro` |
 
-37 pages. Keep it that way: every page is precached by the service worker, so a
+38 pages. Keep it that way: every page is precached by the service worker, so a
 new one costs install size as well as attention.
 
 ## Architecture
@@ -284,6 +284,17 @@ one replaces the last and still buzzes. Permission is asked on Start (it needs a
 user gesture), a skipped phase sends nothing, and `components/TimerNotifications.astro`
 is the one line under each timer saying whether notifications are on. The service
 worker's `notificationclick` focuses the timer's tab.
+
+`noise/noise.ts` — the noise machine: white, pink and brown static, with a sleep
+timer that fades out. It plays through an `<audio>` element looping a WAV rendered
+in memory, **not** straight out of Web Audio, because a media element is what a
+phone keeps playing with the screen off or the app in the background, and what the
+Media Session API puts on the lock screen; iOS suspends a bare `AudioContext` on
+lock. Pink and brown are filtered, so a buffer's end does not meet its start: each
+loop is rendered a second long and the overhang crossfaded into the beginning,
+which is what keeps the seam from clicking. Closing the tab still stops it —
+nothing on a static site can play after its page is gone. No notification at the
+end of the sleep timer, on purpose: it would wake the person it was for.
 
 ### PWA subsystem
 

@@ -1,0 +1,366 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { DEFAULT_COLOUR, NOISES, SLEEP_MINUTES } from "../../timers/noise/noise.ts";
+---
+
+<Layout title="Noise — Nico Bako">
+  <h1>Noise</h1>
+
+  <div class="noise">
+    <fieldset class="choices" id="colours">
+      <legend>Colour</legend>
+      <div class="choice-row">
+        {NOISES.map((noise) => (
+          <button
+            type="button"
+            class="choice colour"
+            data-colour={noise.colour}
+            data-label={noise.label}
+            aria-pressed={noise.colour === DEFAULT_COLOUR ? "true" : "false"}
+          >
+            <span class="swatch" aria-hidden="true"></span>
+            {noise.label}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+
+    <fieldset class="choices" id="sleep">
+      <legend>Sleep timer</legend>
+      <div class="choice-row">
+        {SLEEP_MINUTES.map((minutes) => (
+          <button
+            type="button"
+            class="choice"
+            data-minutes={String(minutes)}
+            aria-pressed={minutes === 0 ? "true" : "false"}
+          >
+            {minutes === 0 ? "Off" : `${minutes} min`}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+
+    <div id="remaining" class="timer-display remaining" aria-live="off" hidden></div>
+
+    <div class="timer-controls">
+      <button id="play" class="primary" type="button">Play</button>
+    </div>
+
+    <audio id="audio" loop preload="none"></audio>
+  </div>
+</Layout>
+
+<script>
+  import { Countdown, formatClock } from "../../timers/shared/countdown.ts";
+  import { NOISES, noiseUrl, type NoiseColour } from "../../timers/noise/noise.ts";
+
+  const audio = document.getElementById("audio") as HTMLAudioElement;
+  const playBtn = document.getElementById("play") as HTMLButtonElement;
+  const remainingEl = document.getElementById("remaining")!;
+  const colourBtns = [...document.querySelectorAll<HTMLButtonElement>("#colours .choice")];
+  const sleepBtns = [...document.querySelectorAll<HTMLButtonElement>("#sleep .choice")];
+
+  /** Long enough to drift off under rather than be woken by the silence. */
+  const FADE_OUT_MS = 20_000;
+  /** Short enough that Play still feels like it did something. */
+  const FADE_IN_MS = 1_500;
+
+  const pressed = (btns: HTMLButtonElement[]) =>
+    btns.find((btn) => btn.getAttribute("aria-pressed") === "true") ?? btns[0]!;
+
+  const colour = () => pressed(colourBtns).dataset.colour as NoiseColour;
+  const sleepMs = () => Number(pressed(sleepBtns).dataset.minutes) * 60_000;
+
+  function press(btns: HTMLButtonElement[], chosen: HTMLButtonElement): void {
+    for (const btn of btns) btn.setAttribute("aria-pressed", String(btn === chosen));
+  }
+
+  // --- Volume ramps --------------------------------------------------------
+  //
+  // An <audio> element has no scheduled ramps the way a GainNode does, so a fade
+  // is a short interval stepping `volume`. A page that is playing sound is exempt
+  // from background timer throttling, so this keeps running with the screen off.
+  // iOS ignores `volume` altogether; there the fade is a no-op and the noise
+  // simply stops at the end.
+
+  let rampId: ReturnType<typeof setInterval> | null = null;
+
+  function ramp(to: number, ms: number, done?: () => void): void {
+    if (rampId !== null) clearInterval(rampId);
+    const from = audio.volume;
+    const start = performance.now();
+    rampId = setInterval(() => {
+      const t = Math.min(1, (performance.now() - start) / ms);
+      audio.volume = from + (to - from) * t;
+      if (t >= 1) {
+        clearInterval(rampId!);
+        rampId = null;
+        done?.();
+      }
+    }, 50);
+  }
+
+  // --- Sleep timer ---------------------------------------------------------
+
+  /** True from the moment the sleep timer runs out until the fade finishes. */
+  let fadingOut = false;
+
+  const countdown = new Countdown(
+    ({ remainingMs }) => {
+      remainingEl.textContent = formatClock(remainingMs);
+    },
+    () => {
+      fadingOut = true;
+      ramp(0, FADE_OUT_MS, () => {
+        fadingOut = false;
+        audio.pause();
+        // Ready for tomorrow night: the same timer, at full length.
+        showRemaining();
+      });
+    },
+  );
+
+  /** The timer's full length while it is not counting, so the reader sees what they chose. */
+  function showRemaining(): void {
+    const ms = sleepMs();
+    remainingEl.hidden = ms === 0;
+    if (!countdown.isRunning && !fadingOut) remainingEl.textContent = formatClock(ms);
+  }
+
+  function restartSleepTimer(): void {
+    countdown.reset();
+    showRemaining();
+    if (!audio.paused && sleepMs() > 0) countdown.start(sleepMs());
+  }
+
+  // --- Playback ------------------------------------------------------------
+
+  /** Set while the source is being swapped, when the element's own pause is not a stop. */
+  let switching = false;
+
+  function play(): void {
+    if (!audio.src) audio.src = noiseUrl(colour());
+    audio.volume = 0;
+    void audio.play().catch(() => syncPlaying());
+  }
+
+  function stop(): void {
+    audio.pause();
+  }
+
+  function setColour(btn: HTMLButtonElement): void {
+    if (btn.getAttribute("aria-pressed") === "true") return;
+    press(colourBtns, btn);
+    const wasPlaying = !audio.paused;
+    switching = true;
+    audio.src = noiseUrl(colour());
+    switching = false;
+    if (wasPlaying) void audio.play().catch(() => syncPlaying());
+    describeMedia();
+    writeUrl();
+  }
+
+  /** The play state is the element's: it can be paused from the lock screen, or by a phone call. */
+  function syncPlaying(): void {
+    const playing = !audio.paused;
+    playBtn.textContent = playing ? "Pause" : "Play";
+    playBtn.classList.toggle("playing", playing);
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = playing ? "playing" : "paused";
+    }
+  }
+
+  audio.addEventListener("play", () => {
+    ramp(1, FADE_IN_MS);
+    if (sleepMs() > 0 && !countdown.isRunning) {
+      // Resume a paused timer, or start one that had run out or never begun.
+      countdown.resume();
+      if (!countdown.isRunning) countdown.start(sleepMs());
+    }
+    syncPlaying();
+  });
+
+  audio.addEventListener("pause", () => {
+    if (switching) return;
+    if (rampId !== null && !fadingOut) {
+      clearInterval(rampId);
+      rampId = null;
+    }
+    if (!fadingOut) countdown.pause();
+    syncPlaying();
+  });
+
+  playBtn.addEventListener("click", () => {
+    if (audio.paused) {
+      play();
+    } else {
+      // Stopping by hand mid-fade cancels the fade and puts the timer back.
+      if (fadingOut) {
+        fadingOut = false;
+        if (rampId !== null) clearInterval(rampId);
+        rampId = null;
+        countdown.reset();
+        showRemaining();
+      }
+      stop();
+    }
+  });
+
+  for (const btn of colourBtns) btn.addEventListener("click", () => setColour(btn));
+
+  for (const btn of sleepBtns) {
+    btn.addEventListener("click", () => {
+      press(sleepBtns, btn);
+      if (fadingOut) {
+        fadingOut = false;
+        ramp(1, FADE_IN_MS);
+      }
+      restartSleepTimer();
+      writeUrl();
+    });
+  }
+
+  // --- Lock screen ---------------------------------------------------------
+  //
+  // The Media Session is what puts a title and play/pause on the lock screen and
+  // in the notification shade, so the noise can be stopped without unlocking.
+
+  function describeMedia(): void {
+    if (!("mediaSession" in navigator)) return;
+    const noise = NOISES.find((entry) => entry.colour === colour())!;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: `${noise.label} noise`,
+      artwork: [{ src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }],
+    });
+  }
+
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.setActionHandler("play", play);
+    navigator.mediaSession.setActionHandler("pause", stop);
+    navigator.mediaSession.setActionHandler("stop", stop);
+  }
+
+  // --- Query string --------------------------------------------------------
+  //
+  // Two values, so the URL is the whole store: a bookmark or a home-screen
+  // shortcut opens on the noise and the timer last chosen.
+
+  function restoreFromUrl(): void {
+    const params = new URLSearchParams(location.search);
+    const colourBtn = colourBtns.find((btn) => btn.dataset.colour === params.get("colour"));
+    if (colourBtn) press(colourBtns, colourBtn);
+    const sleepBtn = sleepBtns.find((btn) => btn.dataset.minutes === params.get("sleep"));
+    if (sleepBtn) press(sleepBtns, sleepBtn);
+  }
+
+  function writeUrl(): void {
+    const url = new URL(location.href);
+    url.search = "";
+    url.searchParams.set("colour", colour());
+    if (sleepMs() > 0) url.searchParams.set("sleep", pressed(sleepBtns).dataset.minutes!);
+    history.replaceState(null, "", url);
+  }
+
+  restoreFromUrl();
+  describeMedia();
+  showRemaining();
+  writeUrl();
+</script>
+
+<style>
+  .noise {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.75rem;
+    margin-top: 2rem;
+  }
+
+  .choices {
+    width: 100%;
+    margin: 0;
+    padding: 1rem 1.25rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+
+  .choices legend {
+    padding: 0 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .choice-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+    gap: 0.5rem;
+  }
+
+  .choice {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      border-color 0.12s,
+      background 0.12s,
+      color 0.12s;
+  }
+
+  .choice:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .choice[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+
+  /* The swatches are the noises' names drawn, so like the drone's piano keys they
+     are fixed colours rather than theme tokens: white noise stays white in the dark. */
+  .swatch {
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    border: 1px solid rgb(0 0 0 / 0.25);
+  }
+
+  .colour[data-colour="white"] .swatch {
+    background: #f7f6f2;
+  }
+
+  .colour[data-colour="pink"] .swatch {
+    background: #e8a3b4;
+  }
+
+  .colour[data-colour="brown"] .swatch {
+    background: #7b5236;
+  }
+
+  .remaining {
+    font-size: 2.5rem;
+  }
+
+  .timer-controls button {
+    min-width: 9rem;
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+  }
+
+  .timer-controls button.playing {
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+</style>
