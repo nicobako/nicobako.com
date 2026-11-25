@@ -1,6 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { DEFAULT_COLOUR, NOISES, SLEEP_MINUTES } from "../../timers/noise/noise.ts";
+import { DEFAULT_COLOUR, NOISES, SLEEP_MINUTES, sleepLabel } from "../../timers/noise/noise.ts";
 ---
 
 <Layout title="Noise — Nico Bako">
@@ -35,7 +35,7 @@ import { DEFAULT_COLOUR, NOISES, SLEEP_MINUTES } from "../../timers/noise/noise.
             data-minutes={String(minutes)}
             aria-pressed={minutes === 0 ? "true" : "false"}
           >
-            {minutes === 0 ? "Off" : `${minutes} min`}
+            {sleepLabel(minutes)}
           </button>
         ))}
       </div>

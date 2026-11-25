@@ -286,7 +286,7 @@ is the one line under each timer saying whether notifications are on. The servic
 worker's `notificationclick` focuses the timer's tab.
 
 `noise/noise.ts` — the noise machine: white, pink and brown static, with a sleep
-timer that fades out. It plays through an `<audio>` element looping a WAV rendered
+timer (up to twelve hours) that fades out. It plays through an `<audio>` element looping a WAV rendered
 in memory, **not** straight out of Web Audio, because a media element is what a
 phone keeps playing with the screen off or the app in the background, and what the
 Media Session API puts on the lock screen; iOS suspends a bare `AudioContext` on

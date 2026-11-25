@@ -37,8 +37,17 @@ export const NOISES: readonly Noise[] = [
 
 export const DEFAULT_COLOUR: NoiseColour = "brown";
 
-/** Sleep timer stops, in minutes; 0 is no timer. */
-export const SLEEP_MINUTES: readonly number[] = [0, 15, 30, 60, 90, 120];
+/**
+ * Sleep timer stops, in minutes; 0 is no timer. Short ones for falling asleep,
+ * then whole hours out to twelve, which covers a full night with room over.
+ */
+export const SLEEP_MINUTES: readonly number[] = [0, 15, 30, 60, 120, 240, 360, 480, 720];
+
+/** A stop's button label: minutes under an hour, whole hours from there. */
+export function sleepLabel(minutes: number): string {
+  if (minutes === 0) return "Off";
+  return minutes < 60 ? `${minutes} min` : `${minutes / 60} hr`;
+}
 
 const SAMPLE_RATE = 44_100;
 
